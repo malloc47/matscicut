@@ -84,46 +84,10 @@ GCO_SetSmoothCost(h,smooth_cost);
 
 disp('Computing neighbor cost');
 
-% neighbor_cost = ones(length(img0list),length(img0list));
-% neighbor_cost = (GCO_MAX_ENERGYTERM) .* neighbor_cost;
 neighbor_cost = zeros(length(img0list),length(img0list));
 
 ioffset = [0  0 1 -1  1  1 -1 -1];
 joffset = [1 -1 0  0  1 -1  1 -1];
-
-%for i = 1:size(img0,1)
-%	for j = 1:size(img0,2)
-%		for n = 1:length(ioffset) % Neighbors
-%			k=i+ioffset(n);
-%			l=j+joffset(n);
-%			if k<1 || l<1 || k>imgsize(1) || l>imgsize(2)
-%				continue;
-%			end
-%			if(img0labels(i,j)~=img0labels(k,l)) % Not same label
-%				if(labelsadj(img0labels(i,j)+1,img0labels(k,l)+1) == 0) % Not neighboring
-%					neighbor_cost(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l))=GCO_MAX_ENERGYTERM;
-%                    neighbor_cost(sub2ind(imgsize,k,l),sub2ind(imgsize,i,j))=GCO_MAX_ENERGYTERM;
-%				else
-%					if( abs( img0(i,j) - img0(k,l) ) < 10 ) % Similar intensities
-%						neighbor_cost(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l))=10;
-%                        neighbor_cost(sub2ind(imgsize,k,l),sub2ind(imgsize,i,j))=10;
-%                    else
-%                        neighbor_cost(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l))=1/(double(abs(img0(i,j) - img0(k,l))));
-%                        neighbor_cost(sub2ind(imgsize,k,l),sub2ind(imgsize,i,j))=1/(double(abs(img0(i,j) - img0(k,l))));
-%                        disp(['Not same, not neighboring, not similar: ' num2str(neighbor_cost(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l)))]);
-%					end
-%				end
-%			else
-%				neighbor_cost(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l))=0;
-%				neighbor_cost(sub2ind(imgsize,k,l),sub2ind(imgsize,i,j))=0;
-%			end
-%		end
-%	end
-%end
-%for i = 1:size(img0list)
-%	neighbor_cost(i,i) = 0;
-%end
-
 
 for i = 1:size(img0,1)
 	for j = 1:size(img0,2)
