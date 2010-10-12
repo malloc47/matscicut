@@ -61,7 +61,7 @@ labelsadj = regionadj(img0labels);
 
 labelsadj
 
-%c = 10;
+c = 10;
 
 for i = 1:numlabels
 	for j = 1:numlabels
@@ -84,7 +84,7 @@ GCO_SetSmoothCost(h,smooth_cost);
 
 disp('Computing neighbor cost');
 
-neighbor_cost = zeros(length(img0list),length(img0list));
+neighbor_cost = sparse(length(img0list),length(img0list));
 
 ioffset = [0  0 1 -1  1  1 -1 -1];
 joffset = [1 -1 0  0  1 -1  1 -1];
@@ -107,9 +107,8 @@ for i = 1:size(img0,1)
 	end
 end
 
-
 % neighbor_cost(find(neighbor_cost < GCO_MAX_ENERGYTERM)) .* GCO_MAX_ENERGYTERM;
-neighbor_cost = double(int32(round(neighbor_cost)));
+neighbor_cost = round(neighbor_cost);
 
 % dlmwrite('neighborcost.txt',neighbor_cost);
 
@@ -128,8 +127,8 @@ new_labels = reshape(labels,imgsize);
 % figure; imshow(label2rgb(img0labels,'jet','w','shuffle'));
 % figure; imshow(label2rgb(new_labels,'jet','w','shuffle'));
 
-imwrite(label2rgb(new_labels,'jet','w','shuffle'),'new_labels.png','png');
-imwrite(label2rgb(img0labels+1,'jet','w','shuffle'),'old_labels.png','png');
+imwrite(overlay(img1,label2rgb(new_labels,'jet','w','shuffle')),'new_labels.png','png');
+imwrite(overlay(img0,label2rgb(img0labels+1,'jet','w','shuffle')),'old_labels.png','png');
 
 [E D S] = GCO_ComputeEnergy(h)
 
@@ -185,4 +184,20 @@ function adj = regionadj(labels)
 		end
 	end
 
+end
+
+
+function final_overlay = overlay(img1,img2,alpha)
+
+if nargin < 3
+    alpha = 0.5;
+end
+
+img1(:,:,2) = img1(:,:,1);
+img1(:,:,3) = img1(:,:,1);
+
+final_overlay = img1;
+final_overlay(:,:,1) = alpha.*img1(:,:,1) + (1-alpha).*img2(:,:,1);
+final_overlay(:,:,2) = alpha.*img1(:,:,2) + (1-alpha).*img2(:,:,2);
+final_overlay(:,:,3) = alpha.*img1(:,:,3) + (1-alpha).*img2(:,:,3);
 end
