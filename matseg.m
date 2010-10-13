@@ -2,11 +2,13 @@ function matseg(imgnum)
 
 %% Boilerplate
 
+tic;
+
 addpath(genpath('../../programs/gco/'));
 
 %GCO_MAX_ENERGYTERM = 10000000;
 GCO_MAX_ENERGYTERM = 3162;
-DILATE_AMOUNT=10;
+DILATE_AMOUNT=5;
 
 disp('Reading Images');
 
@@ -87,28 +89,42 @@ disp('Computing neighbor costs');
 ioffset = [0  0 1 -1  1  1 -1 -1];
 joffset = [1 -1 0  0  1 -1  1 -1];
 
-% for count = 1:pixels
-%     disp(int2str(i));
-% end
-
-for j = 1:imgsize(2)
-    for i = 1:imgsize(1)
-        disp(int2str(sub2ind(imgsize,i,j)));
-        for n = 1:length(ioffset)
-            k=i+ioffset(n);
-            l=j+joffset(n);
-            if k<1 || l<1 || k>imgsize(1) || l>imgsize(2) ; continue; end
-            w = round((1/(double(abs(int32(imgn(i,j,1)) - int32(imgn(k,l,1))))+1))*GCO_MAX_ENERGYTERM);
-            
-            if w<=0 ; continue; end
-            
-            idx1 = min(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l));
-            idx2 = max(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l));
-            
-            neighbor_cost(idx1,idx2)=w;
-        end
+for ind = 1:pixels
+    disp(int2str(ind));
+    [i,j] = ind2sub(imgsize,ind);
+    for n = 1:length(ioffset)
+        k=i+ioffset(n);
+        l=j+joffset(n);
+        if k<1 || l<1 || k>imgsize(1) || l>imgsize(2) ; continue; end
+        w = round((1/(double(abs(int32(imgn(i,j,1)) - int32(imgn(k,l,1))))+1))*GCO_MAX_ENERGYTERM);
+        
+        if w<=0 ; continue; end
+        
+        idx1 = min(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l));
+        idx2 = max(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l));
+        
+        neighbor_cost(idx1,idx2)=w;
     end
 end
+
+% for j = 1:imgsize(2)
+%     for i = 1:imgsize(1)
+%         disp(int2str(sub2ind(imgsize,i,j)));
+%         for n = 1:length(ioffset)
+%             k=i+ioffset(n);
+%             l=j+joffset(n);
+%             if k<1 || l<1 || k>imgsize(1) || l>imgsize(2) ; continue; end
+%             w = round((1/(double(abs(int32(imgn(i,j,1)) - int32(imgn(k,l,1))))+1))*GCO_MAX_ENERGYTERM);
+%             
+%             if w<=0 ; continue; end
+%             
+%             idx1 = min(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l));
+%             idx2 = max(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l));
+%             
+%             neighbor_cost(idx1,idx2)=w;
+%         end
+%     end
+% end
 
 
 % neighbor_cost = double(int32(round(neighbor_cost)));
@@ -135,66 +151,7 @@ whos
 
 GCO_Delete(h);
 
-return;
-
-%% Old
-
-
-
-%% Neighbor cost calculation
-
-disp('Computing neighbor cost');
-
-neighbor_cost = zeros(length(img0list),length(img0list));
-
-ioffset = [0  0 1 -1  1  1 -1 -1];
-joffset = [1 -1 0  0  1 -1  1 -1];
-
-for i = 1:size(img0,1)
-	for j = 1:size(img0,2)
-		for n = 1:length(ioffset)
-			neighbor_cost(sub2ind(imgsize,i,j),sub2ind(imgsize,i,j))=0;
-			k=i+ioffset(n);
-			l=j+joffset(n);
-			if k<1 || l<1 || k>imgsize(1) || l>imgsize(2)
-				continue;
-			end
-			
-			w = (1/(double(abs(int32(img0(i,j)) - int32(img0(k,l))))+1))*GCO_MAX_ENERGYTERM;
-
-			neighbor_cost(sub2ind(imgsize,i,j),sub2ind(imgsize,k,l))=w;
-			neighbor_cost(sub2ind(imgsize,k,l),sub2ind(imgsize,i,j))=w;
-		end
-	end
-end
-
-
-% neighbor_cost(find(neighbor_cost < GCO_MAX_ENERGYTERM)) .* GCO_MAX_ENERGYTERM;
-neighbor_cost = double(int32(round(neighbor_cost)));
-
-% dlmwrite('neighborcost.txt',neighbor_cost);
-
-GCO_SetNeighbors(h,neighbor_cost);
-
-
-%% Computatation
-
-disp('Computing labeling');
-
-GCO_Expansion(h);                % Compute optimal labeling via alpha-expansion
-labels = GCO_GetLabeling(h);
-
-new_labels = reshape(labels,imgsize);
-
-
-imwrite(label2rgb(new_labels,'jet','w','shuffle'),'new_labels.png','png');
-imwrite(label2rgb(img0labels+1,'jet','w','shuffle'),'old_labels.png','png');
-
-[E D S] = GCO_ComputeEnergy(h)
-
-GCO_Delete(h);
-
-
+disp(toc);
 
 end
 
