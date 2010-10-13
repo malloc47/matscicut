@@ -55,9 +55,7 @@ end
 
 whos
 
-dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.data' ],data);
-
-return;
+% dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.data' ],data);
 
 %% Smooth Cost
 
@@ -79,6 +77,9 @@ for i = 1:numlabels
 	end
 end
 
+dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.adj' ],labelsadj);
+
+return;
 
 disp(toc);
 

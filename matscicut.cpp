@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-// #include <fstream>
+ #include <fstream>
 #include "GCoptimization.h"
 // OpenCV
 #include <cv.h>
@@ -15,20 +15,29 @@
 using namespace std;
 using namespace cv;
 
+struct ForSmoothFn {
+	int num_labels;
+	int *data;
+	int *adj;
+};
+
+
+int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
+	ForSmoothFn *extra = (ForSmoothFn *) extraData;
+	int num_labels = extra->num_labels;
+	int *data = extra->data;
+	int *adj = extra->adj;
+
+	return(0);
+}
+
 struct ForDataFn{
 	int numLab;
 	int *data;
 };
 
 
-int smoothFn(int p1, int p2, int l1, int l2)
-{
-	if ( (l1-l2)*(l1-l2) <= 4 ) return((l1-l2)*(l1-l2));
-	else return(4);
-}
-
-int dataFn(int p, int l, void *data)
-{
+int dataFn(int p, int l, void *data) {
 	ForDataFn *myData = (ForDataFn *) data;
 	int numLab = myData->numLab;
 	
@@ -41,8 +50,7 @@ int dataFn(int p, int l, void *data)
 // in this version, set data and smoothness terms using arrays
 // grid neighborhood structure is assumed
 //
-void GridGraph_DfnSfn(int width,int height,int num_pixels,int num_labels)
-{
+void GridGraph_DfnSfn(int width,int height,int num_pixels,int num_labels) {
 
 	int *result = new int[num_pixels];   // stores result of optimization
 
@@ -71,7 +79,7 @@ void GridGraph_DfnSfn(int width,int height,int num_pixels,int num_labels)
 		gc->setDataCost(&dataFn,&toFn);
 
 		// smoothness comes from function pointer
-		gc->setSmoothCost(&smoothFn);
+//		gc->setSmoothCost(&smoothFn);
 
 		printf("\nBefore optimization energy is %d",gc->compute_energy());
 		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
@@ -94,8 +102,7 @@ void GridGraph_DfnSfn(int width,int height,int num_pixels,int num_labels)
 // Uses spatially varying smoothness terms. That is 
 // V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with 
 // w_{p1,p2} = p1+p2 if |p1-p2| == 1 and w_{p1,p2} = p1*p2 if |p1-p2| is not 1
-void GridGraph_DArraySArraySpatVarying(int width,int height,int num_pixels,int num_labels)
-{
+void GridGraph_DArraySArraySpatVarying(int width,int height,int num_pixels,int num_labels) {
 	int *result = new int[num_pixels];   // stores result of optimization
 
 	// first set up the array for data costs
@@ -152,22 +159,59 @@ void GridGraph_DArraySArraySpatVarying(int width,int height,int num_pixels,int n
 
 }
 
-std::string ZeroPadNumber(int num,int pad)
-{
+std::string ZeroPadNumber(int num,int pad) {
 	std::ostringstream ss;
 	ss << std::setw(pad) << std::setfill('0') << num;
 	return ss.str();
 }
 
+int ind2subx(int ind, int w) {
+	return ind % w;
+}
+
+int ind2suby(int ind, int w, int x) {
+	return (ind - x) / w;
+}
+
+int sub2ind(int x, int y, int w) {
+	return x+(y*w);
+}
+
+int* loadRaw(string filename, int size) {
+	cout << "Reading " << filename << endl;
+
+	ifstream rawfilein;
+	rawfilein.open(filename.c_str(),ios::in);
+
+	if(!rawfilein) {
+		cerr << "Can't open file: " << filename << endl;
+		return 0;
+	}
+
+	int *raw = new int[size];
+
+	for(int i=0;i<size;i++){
+		int temp;
+		rawfilein >> temp;	
+		raw[i] = temp;
+	}
+
+	rawfilein.close();
+
+	return raw;
+	
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 
 	if (argc < 2) {
 		cerr << "No argument" << std::endl;
 		return 2;
 	}
+
+	// Read in basic files and information
 
 	int framenum = atoi(argv[1]);
 
@@ -195,16 +239,101 @@ int main(int argc, char **argv)
 	cout << "Image size: " << width  << "x" << height << endl;
 
 
-	int num_labels = 0;
+//	int num_labels = 0;
 
 	// Why there's no good, unary max in opencv, I don't know
-	for(int i=0;i<width;i++) for(int j=0;j<height;j++)
-		num_labels = max( int(seedimg.at<unsigned char>(i,j)) , num_labels);
+//	for(int i=0;i<width;i++) for(int j=0;j<height;j++)
+//		num_labels = max( int(seedimg.at<unsigned char>(i,j)) , num_labels);
+
+	double templabels = 0;
+
+	// So there is
+	minMaxLoc(seedimg,NULL,&templabels,NULL,NULL);
+
+	int num_labels = int(templabels);
 
 	cout << "Number of labels: " <<  num_labels << endl;
 
+	// Time to fetch the data matrix, since I don't compute it here
+
+/*	string datafile = "data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data";
+
+	cout << "Reading " << datafile << endl;
+
+	ifstream datafilein;
+	datafilein.open(datafile.c_str(),ios::in);
+
+	if(!datafilein) {
+		cerr << "Can't open data file!" << endl;
+		return 2;
+	}
+
 	int *data = new int[num_pixels*num_labels];
 
+//	int count = 0;
+	for(int i=0;i<num_pixels*num_labels;i++){
+//	while(!datafilein.eof()) {
+		int temp;
+		datafilein >> temp;	
+//		data[count] = temp;
+		data[i] = temp;
+//		count++;
+//	}
+	}
+
+	datafilein.close();
+*/
+	int *data = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data",num_pixels*num_labels);
+
+
+/*	// Fetch adjacent regions
+
+	string adjfile = "data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".adj";
+
+	cout << "Reading " << adjfile << endl;
+
+	ifstream adjfilein;
+	adjfilein.open(adjfile.c_str(),ios::in);
+
+	if(!adjfilein) {
+		cerr << "Can't open data file!" << endl;
+		return 2;
+	}
+
+	int *adj = new int[num_pixels*num_labels];
+
+	for(int i=0;i<num_labels*num_labels;i++){
+		int temp;
+		adjfilein >> temp;	
+		adj[i] = temp;
+	}
+
+	adjfilein.close();
+*/
+	int *adj = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".adj",num_labels*num_labels);
+
+
+	try {
+		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
+		gc->setDataCost(data);
+//		gc->setSmoothCostVH(smooth,V,H);
+//
+		ForSmoothFn toFn;
+		toFn.data = data;
+		toFn.adj = adj;
+		toFn.num_labels = num_labels;
+
+		gc->setSmoothCost(&smoothFn,&toFn);
+
+		printf("\nBefore optimization energy is %d",gc->compute_energy());
+//		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+		printf("\nAfter optimization energy is %d",gc->compute_energy());
+
+		delete gc;
+	}
+	catch (GCException e) {
+		e.Report();
+	}
 
 	// smoothness and data costs are set up using functions
 //	GridGraph_DfnSfn(width,height,num_pixels,num_labels);
@@ -216,6 +345,9 @@ int main(int argc, char **argv)
 	namedWindow("image",CV_WINDOW_AUTOSIZE);
 	imshow("image",imga1);
 	waitKey(0);
+
+	delete [] data;
+	delete [] adj;
 
 	return 0;
 }
