@@ -184,16 +184,8 @@ int main(int argc, char **argv)
 	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
 
 
-//	IplImage* imga1=0,imga2=0,imga3=0,imga4=0,imgb1=0,imgb2=0,imgb3=0,imgb4=0; 
-//	IplImage* imga1 = 0;
-//	IplImage* seedimg = 0;
-
 	Mat imga1 = imread(filea1,0);
 	Mat seedimg = imread(seedfile,0);
-
-//	CvMat stub, *seed;
-//	seed = cvGetMat(seedimg, &stub, 0, 0);
-//	cout << cvGetReal2D(seed,47,47) << endl;
 
 	int width = imga1.size().width; 
 	int height = imga1.size().height;
@@ -205,12 +197,13 @@ int main(int argc, char **argv)
 
 	int num_labels = 0;
 
-	// Why there's no good max in opencv, I don't know
+	// Why there's no good, unary max in opencv, I don't know
 	for(int i=0;i<width;i++) for(int j=0;j<height;j++)
 		num_labels = max( int(seedimg.at<unsigned char>(i,j)) , num_labels);
 
 	cout << "Number of labels: " <<  num_labels << endl;
 
+	int *data = new int[num_pixels*num_labels];
 
 
 	// smoothness and data costs are set up using functions
