@@ -5,14 +5,15 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
- #include <fstream>
+#include <fstream>
 #include "GCoptimization.h"
 // OpenCV
 #include <cv.h>
 #include <cvaux.h>
 #include <highgui.h>
 
-#define INF 3162
+// #define INF 3162
+#define INF 1000000
 
 using namespace std;
 using namespace cv;
@@ -21,7 +22,7 @@ int ind2subx(int ind, int w) {
 	return ind % w;
 }
 
-int ind2suby(int ind, int w, int x) {
+int ind2suby(int ind, int x, int w) {
 	return (ind - x) / w;
 }
 
@@ -38,21 +39,29 @@ struct ForSmoothFn {
 
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
 
-	
-
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
 	int *data = extra->data;
 	int *adj = extra->adj;
 	Mat img = extra->img;
 
-	if(l1 == l2) return 0;
+	if(l1 == l2) { return 0; }
 
-	if(!adj[sub2ind(l1,l2,num_labels)]) return INF; 
+	if(!adj[sub2ind(l1,l2,num_labels)]) { return INF; }
 
-	cout << "Adj" << endl;
-	
+	int s1x = ind2subx(s1,num_labels);
+	int s1y = ind2suby(s1,s1x,num_labels);
+	int s2x = ind2subx(s2,num_labels);
+	int s2y = ind2suby(s2,s2x,num_labels);
 
+	int s1i = int(img.at<unsigned char>(s1x,s1y));
+	int s2i = int(img.at<unsigned char>(s2x,s2y));
+
+	if(abs(s1i-s2i) < 10) { return 10; }
+
+//	cout << int(1.0/double(abs(s1i-s2i)+1) * INF) << endl;
+
+	return int(1.0/double(abs(s1i-s2i)+1) * INF);
 }
 
 struct ForDataFn{
@@ -214,6 +223,12 @@ int* loadRaw(string filename, int size) {
 	
 }
 
+void display(string handle, Mat img) {
+	namedWindow(handle,CV_WINDOW_AUTOSIZE);
+	imshow(handle,img);
+	waitKey(0);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char **argv) {
@@ -250,16 +265,9 @@ int main(int argc, char **argv) {
 
 	cout << "Image size: " << width  << "x" << height << endl;
 
-
-//	int num_labels = 0;
-
-	// Why there's no good, unary max in opencv, I don't know
-//	for(int i=0;i<width;i++) for(int j=0;j<height;j++)
-//		num_labels = max( int(seedimg.at<unsigned char>(i,j)) , num_labels);
-
 	double templabels = 0;
 
-	// So there is
+	// Why this is fixed to doubles, I'll never know
 	minMaxLoc(seedimg,NULL,&templabels,NULL,NULL);
 
 	int num_labels = int(templabels)+1;
@@ -267,32 +275,32 @@ int main(int argc, char **argv) {
 	cout << "Number of labels: " <<  num_labels << endl;
 
 	int *adj = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".adj",num_labels*num_labels);
-
-/*	for(int i=0; i<num_labels*num_labels; i++)
-		if(adj[i] > 0) 
-			cout << adj[i] << " : " << i << endl;
-
-	cout << adj[sub2ind(18,1,num_labels+1)] << endl;
-	cout << adj[sub2ind(1,19,num_labels+1)] << endl;
-*/
 	int *data = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data",num_pixels*num_labels);
 
 	try {
+		cout << "Initializing Grid Graph" << endl;
+		
+		// Setup grid-based graph
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
+
+		// Use input data cost
 		gc->setDataCost(data);
-//		gc->setSmoothCostVH(smooth,V,H);
-//
+
+		// Setup data to pass to the smooth function
 		ForSmoothFn toFn;
 		toFn.data = data;
 		toFn.adj = adj;
 		toFn.num_labels = num_labels;
 		toFn.img = imga1;
 
+		// Send the smooth function pointer
 		gc->setSmoothCost(&smoothFn,&toFn);
 
-		printf("\nBefore optimization energy is %d",gc->compute_energy());
+		cout << "Computing Expansion" << endl;
+		
+		cout << "Before optimization energy is " << gc->compute_energy() << endl;
 		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
-		printf("\nAfter optimization energy is %d",gc->compute_energy());
+		cout << "After optimization energy is " << gc->compute_energy() << endl;
 
 		delete gc;
 	}
@@ -300,17 +308,11 @@ int main(int argc, char **argv) {
 		e.Report();
 	}
 
-	// smoothness and data costs are set up using functions
-//	GridGraph_DfnSfn(width,height,num_pixels,num_labels);
-	
-	// smoothness and data costs are set up using arrays. 
-	// spatially varying terms are present
-//	GridGraph_DArraySArraySpatVarying(width,height,num_pixels,num_labels);
-
-	namedWindow("image",CV_WINDOW_AUTOSIZE);
+/*	namedWindow("image",CV_WINDOW_AUTOSIZE);
 	imshow("image",imga1);
 	waitKey(0);
-
+*/
+	display("image",imga1);
 	delete [] data;
 	delete [] adj;
 
