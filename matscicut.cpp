@@ -12,23 +12,47 @@
 #include <cvaux.h>
 #include <highgui.h>
 
+#define INF 3162
+
 using namespace std;
 using namespace cv;
+
+int ind2subx(int ind, int w) {
+	return ind % w;
+}
+
+int ind2suby(int ind, int w, int x) {
+	return (ind - x) / w;
+}
+
+int sub2ind(int x, int y, int w) {
+	return x+(y*w);
+}
 
 struct ForSmoothFn {
 	int num_labels;
 	int *data;
 	int *adj;
+	Mat img;
 };
 
-
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
+
+	
+
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
 	int *data = extra->data;
 	int *adj = extra->adj;
+	Mat img = extra->img;
 
-	return(0);
+	if(l1 == l2) return 0;
+
+	if(!adj[sub2ind(l1,l2,num_labels)]) return INF; 
+
+	cout << "Adj" << endl;
+	
+
 }
 
 struct ForDataFn{
@@ -165,18 +189,6 @@ std::string ZeroPadNumber(int num,int pad) {
 	return ss.str();
 }
 
-int ind2subx(int ind, int w) {
-	return ind % w;
-}
-
-int ind2suby(int ind, int w, int x) {
-	return (ind - x) / w;
-}
-
-int sub2ind(int x, int y, int w) {
-	return x+(y*w);
-}
-
 int* loadRaw(string filename, int size) {
 	cout << "Reading " << filename << endl;
 
@@ -250,68 +262,20 @@ int main(int argc, char **argv) {
 	// So there is
 	minMaxLoc(seedimg,NULL,&templabels,NULL,NULL);
 
-	int num_labels = int(templabels);
+	int num_labels = int(templabels)+1;
 
 	cout << "Number of labels: " <<  num_labels << endl;
 
-	// Time to fetch the data matrix, since I don't compute it here
-
-/*	string datafile = "data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data";
-
-	cout << "Reading " << datafile << endl;
-
-	ifstream datafilein;
-	datafilein.open(datafile.c_str(),ios::in);
-
-	if(!datafilein) {
-		cerr << "Can't open data file!" << endl;
-		return 2;
-	}
-
-	int *data = new int[num_pixels*num_labels];
-
-//	int count = 0;
-	for(int i=0;i<num_pixels*num_labels;i++){
-//	while(!datafilein.eof()) {
-		int temp;
-		datafilein >> temp;	
-//		data[count] = temp;
-		data[i] = temp;
-//		count++;
-//	}
-	}
-
-	datafilein.close();
-*/
-	int *data = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data",num_pixels*num_labels);
-
-
-/*	// Fetch adjacent regions
-
-	string adjfile = "data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".adj";
-
-	cout << "Reading " << adjfile << endl;
-
-	ifstream adjfilein;
-	adjfilein.open(adjfile.c_str(),ios::in);
-
-	if(!adjfilein) {
-		cerr << "Can't open data file!" << endl;
-		return 2;
-	}
-
-	int *adj = new int[num_pixels*num_labels];
-
-	for(int i=0;i<num_labels*num_labels;i++){
-		int temp;
-		adjfilein >> temp;	
-		adj[i] = temp;
-	}
-
-	adjfilein.close();
-*/
 	int *adj = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".adj",num_labels*num_labels);
 
+/*	for(int i=0; i<num_labels*num_labels; i++)
+		if(adj[i] > 0) 
+			cout << adj[i] << " : " << i << endl;
+
+	cout << adj[sub2ind(18,1,num_labels+1)] << endl;
+	cout << adj[sub2ind(1,19,num_labels+1)] << endl;
+*/
+	int *data = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data",num_pixels*num_labels);
 
 	try {
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
@@ -322,11 +286,12 @@ int main(int argc, char **argv) {
 		toFn.data = data;
 		toFn.adj = adj;
 		toFn.num_labels = num_labels;
+		toFn.img = imga1;
 
 		gc->setSmoothCost(&smoothFn,&toFn);
 
 		printf("\nBefore optimization energy is %d",gc->compute_energy());
-//		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
 		printf("\nAfter optimization energy is %d",gc->compute_energy());
 
 		delete gc;

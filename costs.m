@@ -1,4 +1,4 @@
-function costs(imgnum)
+function labelsadj = costs(imgnum)
 
 %% Boilerplate
 
@@ -77,7 +77,7 @@ for i = 1:numlabels
 	end
 end
 
-dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.adj' ],labelsadj);
+dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.adj' ],labelsadj,'delimiter',' ');
 
 return;
 
