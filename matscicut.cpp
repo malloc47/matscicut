@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <cmath>
 #include <string.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 // #include <fstream>
 #include "GCoptimization.h"
-#include <Magick++.h>
+// OpenCV
+#include <cv.h>
+#include <cvaux.h>
+#include <highgui.h>
 
 using namespace std;
+using namespace cv;
 
 struct ForDataFn{
 	int numLab;
@@ -175,40 +179,50 @@ int main(int argc, char **argv)
 	string fileb2="data/new/raw/5000_Series/5000_image" + ZeroPadNumber(framenum+1,4) + ".tif";
 	string fileb3="data/new/raw/6000_Series/6000_image" + ZeroPadNumber(framenum+1,4) + ".tif";
 	string fileb4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum+1,4) + ".tif";
+	string seedfile="data/new/ground/image" + ZeroPadNumber(framenum,4)+".pgm";
 
-	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl; 
+	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
 
-	Magick::Image imga1, imga2, imga3, imga4, imgb1, imgb2, imgb3, imgb4;
 
-	try {
-		imga1.read(filea1.c_str());
-		imga2.read(filea2.c_str());
-		imga3.read(filea3.c_str());
-		imga4.read(filea4.c_str());
-		imgb1.read(fileb1.c_str());
-		imgb2.read(fileb2.c_str());
-		imgb3.read(fileb3.c_str());
-		imgb4.read(fileb4.c_str());
-	} catch (Magick::ErrorBlob &e) {
-		cerr << "ERROR: Could not open file" << endl;
-		return 2;
-	}
+//	IplImage* imga1=0,imga2=0,imga3=0,imga4=0,imgb1=0,imgb2=0,imgb3=0,imgb4=0; 
+//	IplImage* imga1 = 0;
+//	IplImage* seedimg = 0;
 
-	cout << "Image size: " << imga1.columns() << "x" << imga1.rows() << endl;
-	
-	int width = int(imga1.columns());
-	int height = int(imga1.rows());
+	Mat imga1 = imread(filea1,0);
+	Mat seedimg = imread(seedfile,0);
+
+//	CvMat stub, *seed;
+//	seed = cvGetMat(seedimg, &stub, 0, 0);
+//	cout << cvGetReal2D(seed,47,47) << endl;
+
+	int width = imga1.size().width; 
+	int height = imga1.size().height;
 	int num_pixels = width*height;
-	int num_labels = 7;
+	
+
+	cout << "Image size: " << width  << "x" << height << endl;
+
+
+	int num_labels = 0;
+
+	// Why there's no good max in opencv, I don't know
+	for(int i=0;i<width;i++) for(int j=0;j<height;j++)
+		num_labels = max( int(seedimg.at<unsigned char>(i,j)) , num_labels);
+
+	cout << "Number of labels: " <<  num_labels << endl;
+
+
 
 	// smoothness and data costs are set up using functions
-	GridGraph_DfnSfn(width,height,num_pixels,num_labels);
+//	GridGraph_DfnSfn(width,height,num_pixels,num_labels);
 	
 	// smoothness and data costs are set up using arrays. 
 	// spatially varying terms are present
-	GridGraph_DArraySArraySpatVarying(width,height,num_pixels,num_labels);
+//	GridGraph_DArraySArraySpatVarying(width,height,num_pixels,num_labels);
 
-	//printf("\n  Finished %d (%d) clock per sec %d",clock()/CLOCKS_PER_SEC,clock(),CLOCKS_PER_SEC);
+	namedWindow("image",CV_WINDOW_AUTOSIZE);
+	imshow("image",imga1);
+	waitKey(0);
 
 	return 0;
 }

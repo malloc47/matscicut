@@ -1,5 +1,7 @@
 CXX = g++
-CCFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
+#CCFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
+CCFLAGS = -I /usr/include/opencv -L /usr/local/lib -lm -lcv -lhighgui -lcvaux -lcxcore
+
 
 all: gco 
 
