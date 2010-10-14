@@ -6,9 +6,9 @@ tic;
 
 % addpath(genpath('../../programs/gco/'));
 
-%GCO_MAX_ENERGYTERM = 10000000;
-GCO_MAX_ENERGYTERM = 3162;
-DILATE_AMOUNT=5;
+GCO_MAX_ENERGYTERM = 10000000;
+%GCO_MAX_ENERGYTERM = 3162;
+DILATE_AMOUNT=0;
 
 disp('Reading Images');
 
@@ -55,7 +55,7 @@ end
 
 whos
 
-% dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.data' ],data);
+dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.data' ],data);
 
 %% Smooth Cost
 
