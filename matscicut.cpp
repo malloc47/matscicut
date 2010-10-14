@@ -198,6 +198,20 @@ std::string ZeroPadNumber(int num,int pad) {
 	return ss.str();
 }
 
+void writeRaw(string filename, int* data, int size) {
+	cout << "Writing " << filename << endl;
+
+	ofstream rawfileout;
+	rawfileout.open (filename.c_str());
+
+	for(int i=0;i<size;i++) {
+		rawfileout << data[i] << " ";
+	}
+
+	rawfileout.close();
+}
+
+
 int* loadRaw(string filename, int size) {
 	cout << "Reading " << filename << endl;
 
@@ -276,6 +290,7 @@ int main(int argc, char **argv) {
 
 	int *adj = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".adj",num_labels*num_labels);
 	int *data = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data",num_pixels*num_labels);
+	int *result = new int[num_pixels];   // stores result of optimization
 
 	try {
 		cout << "Initializing Grid Graph" << endl;
@@ -299,8 +314,14 @@ int main(int argc, char **argv) {
 		cout << "Computing Expansion" << endl;
 		
 		cout << "Before optimization energy is " << gc->compute_energy() << endl;
-		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+//		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
 		cout << "After optimization energy is " << gc->compute_energy() << endl;
+
+		int *result = new int[num_pixels];   // stores result of optimization
+
+		for ( int  i = 0; i < num_pixels; i++ ) {
+			result[i] = gc->whatLabel(i);
+		}
 
 		delete gc;
 	}
@@ -308,13 +329,12 @@ int main(int argc, char **argv) {
 		e.Report();
 	}
 
-/*	namedWindow("image",CV_WINDOW_AUTOSIZE);
-	imshow("image",imga1);
-	waitKey(0);
-*/
+	writeRaw("image"+ZeroPadNumber(framenum,4)+".labels",result,num_pixels);
+
 	display("image",imga1);
 	delete [] data;
 	delete [] adj;
+	delete [] result;
 
 	return 0;
 }
