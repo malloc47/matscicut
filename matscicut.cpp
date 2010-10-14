@@ -270,6 +270,7 @@ int main(int argc, char **argv) {
 
 
 	Mat imga1 = imread(filea1,0);
+	Mat imgb1 = imread(fileb1,0);
 	Mat seedimg = imread(seedfile,0);
 
 	int width = imga1.size().width; 
@@ -298,6 +299,12 @@ int main(int argc, char **argv) {
 		// Setup grid-based graph
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
 
+		for(int i=0;i<width;i++) {
+			for(int j=0;j<width;j++) {
+				gc->setLabel(sub2ind(i,j,width),int(seedimg.at<unsigned char>(i,j)));
+			}
+		}
+
 		// Use input data cost
 		gc->setDataCost(data);
 
@@ -306,7 +313,7 @@ int main(int argc, char **argv) {
 		toFn.data = data;
 		toFn.adj = adj;
 		toFn.num_labels = num_labels;
-		toFn.img = imga1;
+		toFn.img = imgb1;
 
 		// Send the smooth function pointer
 		gc->setSmoothCost(&smoothFn,&toFn);
@@ -314,22 +321,23 @@ int main(int argc, char **argv) {
 		cout << "Computing Expansion" << endl;
 		
 		cout << "Before optimization energy is " << gc->compute_energy() << endl;
-//		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
 		cout << "After optimization energy is " << gc->compute_energy() << endl;
 
 		int *result = new int[num_pixels];   // stores result of optimization
 
 		for ( int  i = 0; i < num_pixels; i++ ) {
 			result[i] = gc->whatLabel(i);
+			cout << result[i] << endl;
 		}
+
+		writeRaw("image"+ZeroPadNumber(framenum,4)+".labels",result,num_pixels);
 
 		delete gc;
 	}
 	catch (GCException e) {
 		e.Report();
 	}
-
-	writeRaw("image"+ZeroPadNumber(framenum,4)+".labels",result,num_pixels);
 
 	display("image",imga1);
 	delete [] data;
