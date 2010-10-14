@@ -77,121 +77,6 @@ int dataFn(int p, int l, void *data) {
 	return( myData->data[p*numLab+l] );
 }
 
-
-
-////////////////////////////////////////////////////////////////////////////////
-// in this version, set data and smoothness terms using arrays
-// grid neighborhood structure is assumed
-//
-void GridGraph_DfnSfn(int width,int height,int num_pixels,int num_labels) {
-
-	int *result = new int[num_pixels];   // stores result of optimization
-
-	// first set up the array for data costs
-	int *data = new int[num_pixels*num_labels];
-	for ( int i = 0; i < num_pixels; i++ )
-		for (int l = 0; l < num_labels; l++ )
-			if (i < 25 ){
-				if(  l == 0 ) data[i*num_labels+l] = 0;
-				else data[i*num_labels+l] = 10;
-			}
-			else {
-				if(  l == 5 ) data[i*num_labels+l] = 0;
-				else data[i*num_labels+l] = 10;
-			}
-
-
-	try{
-		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
-
-		// set up the needed data to pass to function for the data costs
-		ForDataFn toFn;
-		toFn.data = data;
-		toFn.numLab = num_labels;
-
-		gc->setDataCost(&dataFn,&toFn);
-
-		// smoothness comes from function pointer
-//		gc->setSmoothCost(&smoothFn);
-
-		printf("\nBefore optimization energy is %d",gc->compute_energy());
-		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
-		printf("\nAfter optimization energy is %d",gc->compute_energy());
-
-		for ( int  i = 0; i < num_pixels; i++ )
-			result[i] = gc->whatLabel(i);
-
-		delete gc;
-	}
-	catch (GCException e){
-		e.Report();
-	}
-
-	delete [] result;
-	delete [] data;
-
-}
-////////////////////////////////////////////////////////////////////////////////
-// Uses spatially varying smoothness terms. That is 
-// V(p1,p2,l1,l2) = w_{p1,p2}*[min((l1-l2)*(l1-l2),4)], with 
-// w_{p1,p2} = p1+p2 if |p1-p2| == 1 and w_{p1,p2} = p1*p2 if |p1-p2| is not 1
-void GridGraph_DArraySArraySpatVarying(int width,int height,int num_pixels,int num_labels) {
-	int *result = new int[num_pixels];   // stores result of optimization
-
-	// first set up the array for data costs
-	int *data = new int[num_pixels*num_labels];
-	for ( int i = 0; i < num_pixels; i++ )
-		for (int l = 0; l < num_labels; l++ )
-			if (i < 25 ){
-				if(  l == 0 ) data[i*num_labels+l] = 0;
-				else data[i*num_labels+l] = 10;
-			}
-			else {
-				if(  l == 5 ) data[i*num_labels+l] = 0;
-				else data[i*num_labels+l] = 10;
-			}
-	// next set up the array for smooth costs
-	int *smooth = new int[num_labels*num_labels];
-	for ( int l1 = 0; l1 < num_labels; l1++ )
-		for (int l2 = 0; l2 < num_labels; l2++ )
-			smooth[l1+l2*num_labels] = (l1-l2)*(l1-l2) <= 4  ? (l1-l2)*(l1-l2):4;
-
-	// next set up spatially varying arrays V and H
-
-	int *V = new int[num_pixels];
-	int *H = new int[num_pixels];
-
-	
-	for ( int i = 0; i < num_pixels; i++ ){
-		H[i] = i+(i+1)%3;
-		V[i] = i*(i+width)%7;
-	}
-
-
-	try{
-		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
-		gc->setDataCost(data);
-		gc->setSmoothCostVH(smooth,V,H);
-		printf("\nBefore optimization energy is %d",gc->compute_energy());
-		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
-		printf("\nAfter optimization energy is %d",gc->compute_energy());
-
-		for ( int  i = 0; i < num_pixels; i++ )
-			result[i] = gc->whatLabel(i);
-
-		delete gc;
-	}
-	catch (GCException e){
-		e.Report();
-	}
-
-	delete [] result;
-	delete [] smooth;
-	delete [] data;
-
-
-}
-
 std::string ZeroPadNumber(int num,int pad) {
 	std::ostringstream ss;
 	ss << std::setw(pad) << std::setfill('0') << num;
@@ -321,14 +206,13 @@ int main(int argc, char **argv) {
 		cout << "Computing Expansion" << endl;
 		
 		cout << "Before optimization energy is " << gc->compute_energy() << endl;
-		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+//		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
 		cout << "After optimization energy is " << gc->compute_energy() << endl;
 
 		int *result = new int[num_pixels];   // stores result of optimization
 
 		for ( int  i = 0; i < num_pixels; i++ ) {
 			result[i] = gc->whatLabel(i);
-			cout << result[i] << endl;
 		}
 
 		writeRaw("image"+ZeroPadNumber(framenum,4)+".labels",result,num_pixels);
@@ -339,7 +223,7 @@ int main(int argc, char **argv) {
 		e.Report();
 	}
 
-	display("image",imga1);
+	display("image",imgb1);
 	delete [] data;
 	delete [] adj;
 	delete [] result;
