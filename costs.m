@@ -8,7 +8,7 @@ tic;
 
 GCO_MAX_ENERGYTERM = 10000000;
 %GCO_MAX_ENERGYTERM = 3162;
-DILATE_AMOUNT=0;
+DILATE_AMOUNT=10;
 
 disp('Reading Images');
 
@@ -39,10 +39,21 @@ data = int32(ones(numlabels*pixels,1).*GCO_MAX_ENERGYTERM);
 
 disp('Computing data costs');
 
-for l = 1:numlabels
+unique(imglabels)
+
+total = 0;
+max_reg = 0;
+
+composite_layers = imglabels.*0;
+
+for l = 1:numlabels+1
 %    disp(int2str(l));
     dilation = logical(imglabels == l); % Get region
-    dilation = imdilate(dilation,strel('disk',DILATE_AMOUNT)); % Dilate
+%    dilation = imdilate(dilation,strel('disk',DILATE_AMOUNT)); % Dilate
+	composite_layers = composite_layers | dilation;
+	total = total + sum(sum(dilation));
+	max_reg = max(max_reg,max(max(bwlabel(dilation))));
+	imwrite(dilation,['labels/label' sprintf('%04d',l-1) '.png'],'png');
 	for i = 1:imgsize(1)
 		for j = 1:imgsize(2)
 			if dilation(i,j) == 1
@@ -54,8 +65,11 @@ for l = 1:numlabels
 end
 
 whos
+total
+max_reg
+sum(sum(composite_layers))
 
-dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.data' ],data);
+%dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.data' ],data);
 
 %% Smooth Cost
 
@@ -77,7 +91,7 @@ for i = 1:numlabels
 	end
 end
 
-dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.adj' ],labelsadj,'delimiter',' ');
+% dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.adj' ],labelsadj,'delimiter',' ');
 
 return;
 

@@ -2,7 +2,7 @@ function displayResult(imgnum)
 
 series = 1;
 
-img = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
+img = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum+1) '.tif']);
 
 labels_raw = dlmread(['image' sprintf('%04d',imgnum) '.labels']);
 
@@ -17,7 +17,9 @@ end
 
 % labels = reshape(labels,size(img));
 
-figure; imshow(overlay(img,label2rgb(labels,'jet','w','shuffle'),0.5));
+% figure; imshow(overlay(img,label2rgb(labels,'jet','w','shuffle'),0.5));
+
+imwrite(overlay(img,label2rgb(labels,'jet','w','shuffle'),0.5),'output.png','png');
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
 

@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 #include <fstream>
+#include <vector>
 #include "GCoptimization.h"
 // OpenCV
 #include <cv.h>
@@ -14,9 +15,10 @@
 
 // #define INF 3162
 #define INF 10000000
+#define DILATE_AMOUNT 20 
 
-using namespace std;
 using namespace cv;
+using namespace std;
 
 int ind2subx(int ind, int w) {
 	return ind % w;
@@ -62,7 +64,7 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
 
 	if(abs(s1i-s2i) < 10) { return 10; }
 
-	return int(1.0/double(abs(s1i-s2i)+1) * INF);
+	return int((1.0/double(abs(s1i-s2i)+1)) * INF);
 }
 
 std::string ZeroPadNumber(int num,int pad) {
@@ -141,6 +143,7 @@ Mat regionsAdj(Mat regions, int num_regions) {
 			int r1 = int(regions.at<unsigned char>(x,y));
 			int r2 = int(regions.at<unsigned char>(x,y+1));
 			if( r1 != r2 ) {
+				adj.at<unsigned char>(r1,r2) = 1;
 				adj.at<unsigned char>(r2,r1) = 1;
 			}
 		}
@@ -150,6 +153,7 @@ Mat regionsAdj(Mat regions, int num_regions) {
 			int r1 = int(regions.at<unsigned char>(x,y));
 			int r2 = int(regions.at<unsigned char>(x-1,y));
 			if( r1 != r2 ) {
+				adj.at<unsigned char>(r1,r2) = 1;
 				adj.at<unsigned char>(r2,r1) = 1;
 			}
 		}
@@ -159,12 +163,22 @@ Mat regionsAdj(Mat regions, int num_regions) {
 			int r1 = int(regions.at<unsigned char>(x,y));
 			int r2 = int(regions.at<unsigned char>(x,y-1));
 			if( r1 != r2 ) {
+				adj.at<unsigned char>(r1,r2) = 1;
 				adj.at<unsigned char>(r2,r1) = 1;
 			}
 		}
 	}
 
 	return adj;
+}
+
+void printstats (Mat img) {
+
+	double mat_min = -1;
+	double mat_max = -1;
+	minMaxLoc(img,&mat_min,&mat_max,NULL,NULL);
+	cout << "Min: " << mat_min << endl;
+	cout << "Max: " << mat_max << endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -196,6 +210,8 @@ int main(int argc, char **argv) {
 	Mat imgb1 = imread(fileb1,0);
 	Mat seedimg = imread(seedfile,0);
 
+	printstats(seedimg);
+
 	int width = imga1.size().width; 
 	int height = imga1.size().height;
 	int num_pixels = width*height;
@@ -211,37 +227,69 @@ int main(int argc, char **argv) {
 
 	cout << "Number of labels: " <<  num_labels << endl;
 
-//	int *adj = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".adj",num_labels*num_labels);
-//	int *data = loadRaw("data/new/intermediate/image" + ZeroPadNumber(framenum,4)+".data",num_pixels*num_labels);
 	int *data = new int[num_pixels*num_labels];
 	int *result = new int[num_pixels];   // stores result of optimization
 
 	Mat adj = regionsAdj(seedimg,num_labels);
 
 	for(int l=0;l<num_labels;l++) {
+		Mat layer = seedimg.clone();
+		Mat dilation = seedimg.clone();
+		Mat lut(256,1,CV_8U);
+		for(int i=0;i<256;i++) lut.at<unsigned char>(i,1) = i==l ? 255 : 0; 
+		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
+		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
+
+
+//		string labelfile = "labels/label" + ZeroPadNumber(l,4) + ".png";	
+
+//		Mat dilation = imread(labelfile,0);
+
 		for(int x=0;x<width;x++) {
 			for(int y=0;y<height;y++) {
-				data[ ( x+y*width ) * num_labels + l ] = (int(seedimg.at<unsigned char>(x,y)) == l ? 0 : INF);
+				data[ ( x+y*width ) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
 			}
 		}
 	}
 
-	for(int i=0;i<num_pixels*num_labels;i++)
+/*	for(int i=0;i<num_pixels*num_labels;i++)
 		if(data[i] != 0 && data[i] != INF)
 			cout << data[i] << endl; 
-
+*/
 	try {
 		cout << "Initializing Grid Graph" << endl;
 		
 		// Setup grid-based graph
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
 
-/*		for(int i=0;i<width;i++) {
-			for(int j=0;j<width;j++) {
-				gc->setLabel(sub2ind(i,j,width),int(seedimg.at<unsigned char>(i,j)));
+		for(int x=0;x<width;x++) {
+			for(int y=0;y<width;y++) {
+				gc->setLabel(sub2ind(x,y,width),int(seedimg.at<unsigned char>(x,y))-1);
 			}
 		}
+
+/*		for(int l=0;l<num_labels;l++) {
+/*		Mat layer = seedimg.clone();
+		Mat dilation = seedimg.clone();
+		Mat lut(256,1,CV_8U);
+		for(int i=0;i<256;i++) lut.at<unsigned char>(i,1) = i==l ? 1 : 0; 
+		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
+		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
+
+//			string labelfile = "labels/label" + ZeroPadNumber(l,4) + ".png";
+
+//			Mat dilation = imread(labelfile,0);
+
+			for(int x=0;x<width;x++) {
+				for(int y=0;y<height;y++) {
+					gc->setDataCost(x+y*width,l,(int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF));
+//					data[ ( x+y*width ) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
+				}
+			}
+		}
+
 */
+
 		// Use input data cost
 		gc->setDataCost(data);
 
@@ -257,10 +305,15 @@ int main(int argc, char **argv) {
 
 		cout << "Computing Expansion" << endl;
 		
-		cout << "Before optimization energy is " << gc->compute_energy() << endl;
-		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
-//		gc->swap(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
-		cout << "After optimization energy is " << gc->compute_energy() << endl;
+		cout << "Before optimization total energy is  " << gc->compute_energy() << endl;
+		cout << "Before optimization data energy is   " << gc->giveDataEnergy() << endl;
+		cout << "Before optimization smooth energy is " << gc->giveSmoothEnergy() << endl;
+
+//		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+		gc->swap(2);
+		cout << "After optimization total energy is  " << gc->compute_energy() << endl;
+		cout << "After optimization data energy is   " << gc->giveDataEnergy() << endl;
+		cout << "After optimization smooth energy is " << gc->giveSmoothEnergy() << endl;
 
 		int *result = new int[num_pixels];   // stores result of optimization
 
@@ -278,7 +331,6 @@ int main(int argc, char **argv) {
 
 	display("image",imgb1);
 	delete [] data;
-//	delete [] adj;
 	delete [] result;
 
 	return 0;
