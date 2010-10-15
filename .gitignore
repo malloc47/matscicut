@@ -2,6 +2,7 @@
 *.png
 *.xcf
 *.mat
+.*
 data
 *.o
 matscicut

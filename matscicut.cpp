@@ -15,7 +15,8 @@
 
 // #define INF 3162
 #define INF 10000000
-#define DILATE_AMOUNT 20 
+#define DILATE_AMOUNT 10 
+#define N 255
 
 using namespace cv;
 using namespace std;
@@ -41,8 +42,6 @@ struct ForSmoothFn {
 
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
 
-	return 0;
-
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
 	int *data = extra->data;
@@ -62,9 +61,9 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
 	int s1i = int(img.at<unsigned char>(s1x,s1y));
 	int s2i = int(img.at<unsigned char>(s2x,s2y));
 
-	if(abs(s1i-s2i) < 10) { return 10; }
+	int diff = abs(s1i-s2i) < 10 ? 10 : abs(s1i-s2i);
 
-	return int((1.0/double(abs(s1i-s2i)+1)) * INF);
+	return int((1.0/double(diff+1)) * N);
 }
 
 std::string ZeroPadNumber(int num,int pad) {
@@ -169,6 +168,18 @@ Mat regionsAdj(Mat regions, int num_regions) {
 		}
 	}
 
+/*	ofstream rawfileout;
+	rawfileout.open ("rawadj.adj");
+
+	for(int x=0;x<num_regions;x++) { 
+		for(int y=0;y<num_regions;y++)
+			rawfileout << int(adj.at<unsigned char>(x,y)) << " ";
+		rawfileout << endl;
+	}
+
+	rawfileout.close();
+*/
+
 	return adj;
 }
 
@@ -210,6 +221,7 @@ int main(int argc, char **argv) {
 	Mat imgb1 = imread(fileb1,0);
 	Mat seedimg = imread(seedfile,0);
 
+	seedimg -= 1;
 	printstats(seedimg);
 
 	int width = imga1.size().width; 
@@ -232,12 +244,24 @@ int main(int argc, char **argv) {
 
 	Mat adj = regionsAdj(seedimg,num_labels);
 
+	cout << "Computing data term" << flush;
+
 	for(int l=0;l<num_labels;l++) {
+//		cout << l << endl;
 		Mat layer = seedimg.clone();
 		Mat dilation = seedimg.clone();
 		Mat lut(256,1,CV_8U);
-		for(int i=0;i<256;i++) lut.at<unsigned char>(i,1) = i==l ? 255 : 0; 
+		for(int i=0;i<256;i++) lut.at<unsigned char>(i,0) = i==l ? 255 : 0; 
 		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
+		cout << "." << flush;
+
+/*		int summation = 0;
+
+for(int x=0;x<width;x++) for(int y=0;y<height;y++) summation = summation + (layer.at<unsigned char>(x,y) == 255 ? 1 : 0);
+
+		cout << "Sum: " << summation << endl;
+*/
+
 		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
 
 
@@ -252,43 +276,20 @@ int main(int argc, char **argv) {
 		}
 	}
 
-/*	for(int i=0;i<num_pixels*num_labels;i++)
-		if(data[i] != 0 && data[i] != INF)
-			cout << data[i] << endl; 
-*/
+	cout << endl;
+
 	try {
 		cout << "Initializing Grid Graph" << endl;
 		
 		// Setup grid-based graph
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
 
+		// Initialize labels
 		for(int x=0;x<width;x++) {
 			for(int y=0;y<width;y++) {
-				gc->setLabel(sub2ind(x,y,width),int(seedimg.at<unsigned char>(x,y))-1);
+				gc->setLabel(sub2ind(x,y,width),int(seedimg.at<unsigned char>(x,y)));
 			}
 		}
-
-/*		for(int l=0;l<num_labels;l++) {
-/*		Mat layer = seedimg.clone();
-		Mat dilation = seedimg.clone();
-		Mat lut(256,1,CV_8U);
-		for(int i=0;i<256;i++) lut.at<unsigned char>(i,1) = i==l ? 1 : 0; 
-		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
-		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
-
-//			string labelfile = "labels/label" + ZeroPadNumber(l,4) + ".png";
-
-//			Mat dilation = imread(labelfile,0);
-
-			for(int x=0;x<width;x++) {
-				for(int y=0;y<height;y++) {
-					gc->setDataCost(x+y*width,l,(int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF));
-//					data[ ( x+y*width ) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
-				}
-			}
-		}
-
-*/
 
 		// Use input data cost
 		gc->setDataCost(data);
@@ -304,24 +305,23 @@ int main(int argc, char **argv) {
 		gc->setSmoothCost(&smoothFn,&toFn);
 
 		cout << "Computing Expansion" << endl;
-		
-		cout << "Before optimization total energy is  " << gc->compute_energy() << endl;
-		cout << "Before optimization data energy is   " << gc->giveDataEnergy() << endl;
-		cout << "Before optimization smooth energy is " << gc->giveSmoothEnergy() << endl;
+	
+		for(int iter=0; iter<10; iter++) {
+			cout << "I: " << iter << ", " << flush;
 
-//		gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
-		gc->swap(2);
-		cout << "After optimization total energy is  " << gc->compute_energy() << endl;
-		cout << "After optimization data energy is   " << gc->giveDataEnergy() << endl;
-		cout << "After optimization smooth energy is " << gc->giveSmoothEnergy() << endl;
+			cout << "T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
-		int *result = new int[num_pixels];   // stores result of optimization
+			gc->swap(1);
 
-		for ( int  i = 0; i < num_pixels; i++ ) {
-			result[i] = gc->whatLabel(i);
+			int *result = new int[num_pixels];   // stores result of optimization
+
+			for ( int  i = 0; i < num_pixels; i++ ) {
+				result[i] = gc->whatLabel(i);
+			}
+
+			writeRaw("image"+ZeroPadNumber(framenum,4)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
+
 		}
-
-		writeRaw("image"+ZeroPadNumber(framenum,4)+".labels",result,num_pixels);
 
 		delete gc;
 	}
@@ -329,7 +329,7 @@ int main(int argc, char **argv) {
 		e.Report();
 	}
 
-	display("image",imgb1);
+//	display("image",imgb1);
 	delete [] data;
 	delete [] result;
 

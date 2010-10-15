@@ -122,6 +122,25 @@ function adj = regionadj(labels)
 		end
 	end
 
+	for i = 2:size(labels,1)
+		for j = 1:size(labels,2)
+			if(labels(i,j)~=labels(i-1,j))
+				adj(labels(i,j)+1,labels(i-1,j)+1) = 1;
+				adj(labels(i-1,j)+1,labels(i,j)+1) = 1;
+			end
+		end
+	end
+
+	for j = 2:size(labels,2)
+		for i = 1:size(labels,1)
+			if(labels(i,j)~=labels(i,j-1))
+				adj(labels(i,j)+1,labels(i,j-1)+1) = 1;
+				adj(labels(i,j-1)+1,labels(i,j)+1) = 1;
+			end
+		end
+	end
+
+
 end
 
 function final_overlay = overlay(img1,img2,alpha)
