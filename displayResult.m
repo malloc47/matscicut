@@ -8,7 +8,6 @@ end
 img = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
 
 labels_raw = dlmread(['image' sprintf('%04d',imgnum) '-' sprintf('%02d',iter) '.labels']);
-%labels_prev = dlmread(['image' sprintf('%04d',imgnum) '-' sprintf('%02d',iter) '.labels']);
 
 length(unique(labels_raw))
 
@@ -28,6 +27,12 @@ load labelmap;
 imwrite(overlay(img,label2rgb(labels,labelcolors,'w'),0.5),['output/image' sprintf('%04d',imgnum) '-' sprintf('%02d',iter) '.png'],'png');
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
+
+if(iter==0)
+	img_prev = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum-1) '.tif']);
+	imwrite(overlay(img_prev,label2rgb(labels,labelcolors,'w'),0.5),['output/image' sprintf('%04d',imgnum-1) '-s.png'],'png');
+end
+
 
 end
 

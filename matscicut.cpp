@@ -18,6 +18,7 @@
 #define DILATE_AMOUNT 10 
 #define N 255
 #define LTHRESH 10
+#define FNAMELEN 4
 
 using namespace cv;
 using namespace std;/*}}}*/
@@ -195,15 +196,15 @@ int main(int argc, char **argv) {/*{{{*/
 
 	int framenum = atoi(argv[1]);
 
-	string filea1="data/new/raw/4000_Series/4000_image" + ZeroPadNumber(framenum,4) + ".tif";
-	string filea2="data/new/raw/5000_Series/5000_image" + ZeroPadNumber(framenum,4) + ".tif";
-	string filea3="data/new/raw/6000_Series/6000_image" + ZeroPadNumber(framenum,4) + ".tif";
-	string filea4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum,4) + ".tif";
-	string fileb1="data/new/raw/4000_Series/4000_image" + ZeroPadNumber(framenum+1,4) + ".tif";
-	string fileb2="data/new/raw/5000_Series/5000_image" + ZeroPadNumber(framenum+1,4) + ".tif";
-	string fileb3="data/new/raw/6000_Series/6000_image" + ZeroPadNumber(framenum+1,4) + ".tif";
-	string fileb4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum+1,4) + ".tif";
-	string seedfile="data/new/ground/image" + ZeroPadNumber(framenum,4)+".pgm";
+	string filea1="data/new/raw/4000_Series/4000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
+	string filea2="data/new/raw/5000_Series/5000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
+	string filea3="data/new/raw/6000_Series/6000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
+	string filea4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
+	string fileb1="data/new/raw/4000_Series/4000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
+	string fileb2="data/new/raw/5000_Series/5000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
+	string fileb3="data/new/raw/6000_Series/6000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
+	string fileb4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
+	string seedfile="data/new/ground/image" + ZeroPadNumber(framenum,FNAMELEN)+".pgm";
 
 	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
 
@@ -287,29 +288,29 @@ int main(int argc, char **argv) {/*{{{*/
 		// Send the smooth function pointer
 		gc->setSmoothCost(&smoothFn,&toFn);
 
-//		int *result = new int[num_pixels];   // stores result of optimization
-
+		// Load current labeling into result
+		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
+		
 		// Write out seed
-//		writeRaw("image"+ZeroPadNumber(framenum+1,4)+"-"+ZeroPadNumber(0,2)+ ".labels",result,num_pixels);
+		writeRaw("image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(0,2)+ ".labels",result,num_pixels);
 
 		cout << "Computing Alpha-Beta Expansion" << endl;
 	
-		for(int iter=1; iter<=iterations; iter++) {
+		cout << "I: 0, T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
-			cout << "I: " << iter << ", T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		// Loop for each iteration
+		for(int iter=1; iter<=iterations; iter++) {
 
 			gc->swap(1);
 
-			int *result = new int[num_pixels];   // stores result of optimization
-
 			for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-			writeRaw("image"+ZeroPadNumber(framenum+1,4)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
+			writeRaw("image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
 
-			delete [] result;
+			cout << "I: " << iter << ", T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+
 		}
 
-		cout << "I: F, T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 		delete gc;
 	}
 	catch (GCException e) {
@@ -319,6 +320,7 @@ int main(int argc, char **argv) {/*{{{*/
 	//	display("image",imgb1);
 	delete [] data;
 	delete [] sites;
+	delete [] result;
 
 	return 0;
 }/*}}}*/
