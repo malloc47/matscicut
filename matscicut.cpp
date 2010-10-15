@@ -36,18 +36,18 @@ int sub2ind(int x, int y, int w) {/*{{{*/
 
 struct ForSmoothFn {/*{{{*/
 	int num_labels;
-	int *data;
 	Mat adj;
 	Mat img;
+	int *sites;
 };/*}}}*/
 
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
-	int *data = extra->data;
 	Mat adj = extra->adj;
 	Mat img = extra->img;
+	int *sites = extra->sites;
 
 	if(l1 == l2) { return 0; }
 
@@ -58,8 +58,10 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	int s2x = ind2subx(s2,num_labels);
 	int s2y = ind2suby(s2,s2x,num_labels);
 
-	int s1i = int(img.at<unsigned char>(s1x,s1y));
-	int s2i = int(img.at<unsigned char>(s2x,s2y));
+//	int s1i = int(img.at<unsigned char>(s1x,s1y));
+//	int s2i = int(img.at<unsigned char>(s2x,s2y));
+	int s1i = sites[s1];
+	int s2i = sites[s2];
 
 	return int((1.0/double((abs(s1i-s2i) < LTHRESH ? LTHRESH : abs(s1i-s2i))+1)) * N);
 }/*}}}*/
@@ -235,7 +237,6 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "Computing data term" << flush;
 
 	for(int l=0;l<num_labels;l++) {
-	//		cout << l << endl;
 		Mat layer = seedimg.clone();
 		Mat dilation = seedimg.clone();
 		Mat lut(256,1,CV_8U);
@@ -245,14 +246,19 @@ int main(int argc, char **argv) {/*{{{*/
 
 		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
 
-		for(int x=0;x<width;x++) {
-			for(int y=0;y<height;y++) {
+		for(int x=0;x<width;x++) for(int y=0;y<height;y++) 
 				data[ ( x+y*width ) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
-			}
-		}
 	}
 
 	cout << endl;
+
+
+	cout << "Computing sites" << endl;
+
+	int *sites = new int[num_pixels];
+
+	for(int x=0;x<width;x++) for(int y=0;y<height;y++) 
+		sites[sub2ind(x,y,width)] = int( imgb1.at<unsigned char>(x,y) );
 
 	try {
 		cout << "Initializing Grid Graph" << endl;
@@ -272,33 +278,38 @@ int main(int argc, char **argv) {/*{{{*/
 
 		// Setup data to pass to the smooth function
 		ForSmoothFn toFn;
-		toFn.data = data;
 		toFn.adj = adj;
 		toFn.num_labels = num_labels;
 		toFn.img = imgb1;
+		toFn.sites = sites;
+
 
 		// Send the smooth function pointer
 		gc->setSmoothCost(&smoothFn,&toFn);
 
-		cout << "Computing Expansion" << endl;
+//		int *result = new int[num_pixels];   // stores result of optimization
+
+		// Write out seed
+//		writeRaw("image"+ZeroPadNumber(framenum+1,4)+"-"+ZeroPadNumber(0,2)+ ".labels",result,num_pixels);
+
+		cout << "Computing Alpha-Beta Expansion" << endl;
 	
 		for(int iter=1; iter<=iterations; iter++) {
-			cout << "I: " << iter << ", " << flush;
 
-			cout << "T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+			cout << "I: " << iter << ", T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 			gc->swap(1);
 
 			int *result = new int[num_pixels];   // stores result of optimization
 
-			for ( int  i = 0; i < num_pixels; i++ ) {
-				result[i] = gc->whatLabel(i);
-			}
+			for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-			writeRaw("image"+ZeroPadNumber(framenum,4)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
+			writeRaw("image"+ZeroPadNumber(framenum+1,4)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
 
+			delete [] result;
 		}
 
+		cout << "I: F, T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 		delete gc;
 	}
 	catch (GCException e) {
@@ -307,7 +318,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 	//	display("image",imgb1);
 	delete [] data;
-	delete [] result;
+	delete [] sites;
 
 	return 0;
 }/*}}}*/
