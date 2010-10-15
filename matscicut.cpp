@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdio.h>/*{{{*/
 #include <stdlib.h>
 #include <cmath>
 #include <string.h>
@@ -17,30 +17,31 @@
 #define INF 10000000
 #define DILATE_AMOUNT 10 
 #define N 255
+#define LTHRESH 10
 
 using namespace cv;
-using namespace std;
+using namespace std;/*}}}*/
 
-int ind2subx(int ind, int w) {
+int ind2subx(int ind, int w) {/*{{{*/
 	return ind % w;
-}
+}/*}}}*/
 
-int ind2suby(int ind, int x, int w) {
+int ind2suby(int ind, int x, int w) {/*{{{*/
 	return (ind - x) / w;
-}
+}/*}}}*/
 
-int sub2ind(int x, int y, int w) {
+int sub2ind(int x, int y, int w) {/*{{{*/
 	return x+(y*w);
-}
+}/*}}}*/
 
-struct ForSmoothFn {
+struct ForSmoothFn {/*{{{*/
 	int num_labels;
 	int *data;
 	Mat adj;
 	Mat img;
-};
+};/*}}}*/
 
-int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
+int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
@@ -50,7 +51,6 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
 
 	if(l1 == l2) { return 0; }
 
-//	if(!adj[sub2ind(l1,l2,num_labels)]) { return INF; }
 	if(!int(adj.at<unsigned char>(l1,l2))) { return INF; }
 
 	int s1x = ind2subx(s1,num_labels);
@@ -61,18 +61,16 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {
 	int s1i = int(img.at<unsigned char>(s1x,s1y));
 	int s2i = int(img.at<unsigned char>(s2x,s2y));
 
-	int diff = abs(s1i-s2i) < 10 ? 10 : abs(s1i-s2i);
+	return int((1.0/double((abs(s1i-s2i) < LTHRESH ? LTHRESH : abs(s1i-s2i))+1)) * N);
+}/*}}}*/
 
-	return int((1.0/double(diff+1)) * N);
-}
-
-std::string ZeroPadNumber(int num,int pad) {
+std::string ZeroPadNumber(int num,int pad) {/*{{{*/
 	std::ostringstream ss;
 	ss << std::setw(pad) << std::setfill('0') << num;
 	return ss.str();
-}
+}/*}}}*/
 
-void writeRaw(string filename, int* data, int size) {
+void writeRaw(string filename, int* data, int size) {/*{{{*/
 	cout << "Writing " << filename << endl;
 
 	ofstream rawfileout;
@@ -88,10 +86,9 @@ void writeRaw(string filename, int* data, int size) {
 	}
 
 	rawfileout.close();
-}
+}/*}}}*/
 
-
-int* loadRaw(string filename, int size) {
+int* loadRaw(string filename, int size) {/*{{{*/
 	cout << "Reading " << filename << endl;
 
 	ifstream rawfilein;
@@ -114,16 +111,15 @@ int* loadRaw(string filename, int size) {
 
 	return raw;
 	
-}
+}/*}}}*/
 
-void display(string handle, Mat img) {
+void display(string handle, Mat img) {/*{{{*/
 	namedWindow(handle,CV_WINDOW_AUTOSIZE);
 	imshow(handle,img);
 	waitKey(0);
-}
+}/*}}}*/
 
-Mat regionsAdj(Mat regions, int num_regions) {
-	
+Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	Mat adj = Mat::zeros(num_regions,num_regions,CV_8U);
 
 	for(int x=0;x<regions.size().width-1;x++) {
@@ -168,38 +164,30 @@ Mat regionsAdj(Mat regions, int num_regions) {
 		}
 	}
 
-/*	ofstream rawfileout;
-	rawfileout.open ("rawadj.adj");
-
-	for(int x=0;x<num_regions;x++) { 
-		for(int y=0;y<num_regions;y++)
-			rawfileout << int(adj.at<unsigned char>(x,y)) << " ";
-		rawfileout << endl;
-	}
-
-	rawfileout.close();
-*/
 
 	return adj;
-}
+}/*}}}*/
 
-void printstats (Mat img) {
-
+void printstats (Mat img) {/*{{{*/
 	double mat_min = -1;
 	double mat_max = -1;
 	minMaxLoc(img,&mat_min,&mat_max,NULL,NULL);
 	cout << "Min: " << mat_min << endl;
 	cout << "Max: " << mat_max << endl;
-}
+}/*}}}*/
 
-////////////////////////////////////////////////////////////////////////////////
-
-int main(int argc, char **argv) {
+int main(int argc, char **argv) {/*{{{*/
+	int iterations;
 
 	if (argc < 2) {
 		cerr << "No argument" << std::endl;
 		return 2;
 	}
+
+	if (argc < 3) 
+		iterations = 1;
+	else
+		iterations = atoi(argv[2]);
 
 	// Read in basic files and information
 
@@ -221,8 +209,8 @@ int main(int argc, char **argv) {
 	Mat imgb1 = imread(fileb1,0);
 	Mat seedimg = imread(seedfile,0);
 
+	// Shift from MATLAB's 1:N to 0:N-1
 	seedimg -= 1;
-	printstats(seedimg);
 
 	int width = imga1.size().width; 
 	int height = imga1.size().height;
@@ -247,7 +235,7 @@ int main(int argc, char **argv) {
 	cout << "Computing data term" << flush;
 
 	for(int l=0;l<num_labels;l++) {
-//		cout << l << endl;
+	//		cout << l << endl;
 		Mat layer = seedimg.clone();
 		Mat dilation = seedimg.clone();
 		Mat lut(256,1,CV_8U);
@@ -255,19 +243,7 @@ int main(int argc, char **argv) {
 		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
 		cout << "." << flush;
 
-/*		int summation = 0;
-
-for(int x=0;x<width;x++) for(int y=0;y<height;y++) summation = summation + (layer.at<unsigned char>(x,y) == 255 ? 1 : 0);
-
-		cout << "Sum: " << summation << endl;
-*/
-
 		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
-
-
-//		string labelfile = "labels/label" + ZeroPadNumber(l,4) + ".png";	
-
-//		Mat dilation = imread(labelfile,0);
 
 		for(int x=0;x<width;x++) {
 			for(int y=0;y<height;y++) {
@@ -306,7 +282,7 @@ for(int x=0;x<width;x++) for(int y=0;y<height;y++) summation = summation + (laye
 
 		cout << "Computing Expansion" << endl;
 	
-		for(int iter=0; iter<10; iter++) {
+		for(int iter=1; iter<=iterations; iter++) {
 			cout << "I: " << iter << ", " << flush;
 
 			cout << "T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
@@ -329,10 +305,9 @@ for(int x=0;x<width;x++) for(int y=0;y<height;y++) summation = summation + (laye
 		e.Report();
 	}
 
-//	display("image",imgb1);
+	//	display("image",imgb1);
 	delete [] data;
 	delete [] result;
 
 	return 0;
-}
-
+}/*}}}*/
