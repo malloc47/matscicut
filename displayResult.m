@@ -7,7 +7,7 @@ end
 
 img = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
 
-labels_raw = dlmread(['image' sprintf('%04d',imgnum) '-' sprintf('%02d',iter) '.labels']);
+labels_raw = dlmread(['data/new/intermediate/image' sprintf('%04d',imgnum) '-' sprintf('%02d',iter) '.labels']);
 
 length(unique(labels_raw))
 

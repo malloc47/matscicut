@@ -292,7 +292,7 @@ int main(int argc, char **argv) {/*{{{*/
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 		
 		// Write out seed
-		writeRaw("image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(0,2)+ ".labels",result,num_pixels);
+		writeRaw("data/new/intermediate/image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(0,2)+ ".labels",result,num_pixels);
 
 		cout << "Computing Alpha-Beta Expansion" << endl;
 	
@@ -305,7 +305,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 			for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-			writeRaw("image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
+			writeRaw("data/new/intermediate/image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
 
 			cout << "I: " << iter << ", T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
