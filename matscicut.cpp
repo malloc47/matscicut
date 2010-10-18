@@ -38,7 +38,6 @@ int sub2ind(int x, int y, int w) {/*{{{*/
 struct ForSmoothFn {/*{{{*/
 	int num_labels;
 	Mat adj;
-	Mat img;
 	int *sites;
 };/*}}}*/
 
@@ -47,7 +46,6 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
 	Mat adj = extra->adj;
-	Mat img = extra->img;
 	int *sites = extra->sites;
 
 	if(l1 == l2) { return 0; }
@@ -59,8 +57,6 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	int s2x = ind2subx(s2,num_labels);
 	int s2y = ind2suby(s2,s2x,num_labels);
 
-//	int s1i = int(img.at<unsigned char>(s1x,s1y));
-//	int s2i = int(img.at<unsigned char>(s2x,s2y));
 	int s1i = sites[s1];
 	int s2i = sites[s2];
 
@@ -171,6 +167,33 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	return adj;
 }/*}}}*/
 
+int * dataTerm(Mat seedimg, int num_labels, int num_pixels) {/*{{{*/
+
+	cout << "Computing data term" << flush;
+
+	int *data = new int[num_pixels*num_labels];
+
+	for(int l=0;l<num_labels;l++) {
+		Mat layer = seedimg.clone();
+		Mat dilation = seedimg.clone();
+		Mat lut(256,1,CV_8U);
+		for(int i=0;i<256;i++) lut.at<unsigned char>(i,0) = i==l ? 255 : 0; 
+		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
+		cout << "." << flush;
+
+		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
+
+		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
+				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
+	}
+
+	cout << endl;
+
+
+	return data;
+
+}/*}}}*/
+
 void printstats (Mat img) {/*{{{*/
 	double mat_min = -1;
 	double mat_max = -1;
@@ -206,7 +229,7 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
 	string seedfile="data/new/ground/image" + ZeroPadNumber(framenum,FNAMELEN)+".pgm";
 
-	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
+//	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
 
 	Mat imga1 = imread(filea1,0);
 	Mat imgb1 = imread(fileb1,0);
@@ -281,7 +304,6 @@ int main(int argc, char **argv) {/*{{{*/
 		ForSmoothFn toFn;
 		toFn.adj = adj;
 		toFn.num_labels = num_labels;
-		toFn.img = imgb1;
 		toFn.sites = sites;
 
 
