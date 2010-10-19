@@ -52,9 +52,6 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	if(!int(adj.at<unsigned char>(l1,l2))) { return INF; }
 
-	int s1i = sites[s1];
-	int s2i = sites[s2];
-
 	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 }/*}}}*/
 
