@@ -211,6 +211,13 @@ int * dataTerm(Mat seedimg) {/*{{{*/
 
 }/*}}}*/
 
+int * graphCut(int* data, int* sites, Mat seedimg) {/*{{{*/
+
+	int *result = new int[seedimg.size().width*seedimg.size().height];
+
+	return result;
+}/*}}}*/
+
 int main(int argc, char **argv) {/*{{{*/
 	int iterations;
 
@@ -271,12 +278,6 @@ int main(int argc, char **argv) {/*{{{*/
 	int *data = dataTerm(seedimg);
 
 	cout << "Computing sites" << endl;
-/*
-	int *sites = new int[num_pixels];
-
-	for(int x=0;x<width;x++) for(int y=0;y<height;y++) 
-		sites[sub2ind(x,y,width)] = int( imgb1.at<unsigned char>(x,y) );
-*/
 
 	int *sites = toLinearIndex(imgb1);
 
