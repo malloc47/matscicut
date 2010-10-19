@@ -52,11 +52,6 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	if(!int(adj.at<unsigned char>(l1,l2))) { return INF; }
 
-	int s1x = ind2subx(s1,num_labels);
-	int s1y = ind2suby(s1,s1x,num_labels);
-	int s2x = ind2subx(s2,num_labels);
-	int s2y = ind2suby(s2,s2x,num_labels);
-
 	int s1i = sites[s1];
 	int s2i = sites[s2];
 
@@ -175,22 +170,24 @@ void printstats (Mat img) {/*{{{*/
 	cout << "Max: " << mat_max << endl;
 }/*}}}*/
 
-int mat_max(Mat matrix) {
+int mat_max(Mat matrix) {/*{{{*/
 	double templabels = 0;
 	minMaxLoc(matrix,NULL,&templabels,NULL,NULL);
 	return int(templabels);
-}
+}/*}}}*/
+
+int * toLinearIndex(Mat matrix) {/*{{{*/
+	int *linear = new int[matrix.size().width * matrix.size().height];
+	for(int x=0;x<matrix.size().width;x++) for(int y=0;y<matrix.size().height;y++) 
+		linear[sub2ind(x,y,matrix.size().width)] = int( matrix.at<unsigned char>(x,y) );
+	return linear;
+}/*}}}*/
 
 int * dataTerm(Mat seedimg) {/*{{{*/
-
-	cout << "Computing data term" << flush;
 
 	int num_pixels = seedimg.size().width*seedimg.size().height;
 
 	int num_labels = mat_max(seedimg)+1;
-
-	cout << endl  << "Num pixels " << num_pixels << endl;
-	cout << "Num labels " << num_labels << endl;
 
 	int *data = new int[num_pixels*num_labels];
 
@@ -271,31 +268,17 @@ int main(int argc, char **argv) {/*{{{*/
 
 	cout << "Computing data term" << flush;
 
-/*	int *data = new int[num_pixels*num_labels];
-	for(int l=0;l<num_labels;l++) {
-		Mat layer = seedimg.clone();
-		Mat dilation = seedimg.clone();
-		Mat lut(256,1,CV_8U);
-		for(int i=0;i<256;i++) lut.at<unsigned char>(i,0) = i==l ? 255 : 0; 
-		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
-		cout << "." << flush;
-
-		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
-
-		for(int x=0;x<width;x++) for(int y=0;y<height;y++) 
-				data[ ( x+y*width ) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
-	}
-
-	cout << endl;
-*/
 	int *data = dataTerm(seedimg);
 
 	cout << "Computing sites" << endl;
-
+/*
 	int *sites = new int[num_pixels];
 
 	for(int x=0;x<width;x++) for(int y=0;y<height;y++) 
 		sites[sub2ind(x,y,width)] = int( imgb1.at<unsigned char>(x,y) );
+*/
+
+	int *sites = toLinearIndex(imgb1);
 
 	try {
 		cout << "Initializing Grid Graph" << endl;
