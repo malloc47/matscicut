@@ -55,7 +55,7 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	int s1i = sites[s1];
 	int s2i = sites[s2];
 
-	return int((1.0/double((abs(s1i-s2i) < LTHRESH ? LTHRESH : abs(s1i-s2i))+1)) * N);
+	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 }/*}}}*/
 
 std::string ZeroPadNumber(int num,int pad) {/*{{{*/
