@@ -21,7 +21,12 @@
 #define FNAMELEN 4
 
 using namespace cv;
-using namespace std;/*}}}*/
+using namespace std;
+
+const string datapath="data/new/raw/";
+const string outputpath="output/";
+
+/*}}}*/
 
 int ind2subx(int ind, int w) {/*{{{*/
 	return ind % w;
@@ -55,7 +60,7 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 }/*}}}*/
 
-std::string ZeroPadNumber(int num,int pad) {/*{{{*/
+string zpnum(int num,int pad) {/*{{{*/
 	std::ostringstream ss;
 	ss << std::setw(pad) << std::setfill('0') << num;
 	return ss.str();
@@ -96,6 +101,31 @@ int* loadRaw(string filename, int size) {/*{{{*/
 		int temp;
 		rawfilein >> temp;	
 		raw[i] = temp;
+	}
+
+	rawfilein.close();
+
+	return raw;
+	
+}/*}}}*/
+
+Mat loadMat(string filename, int width, int height) {/*{{{*/
+	cout << "Reading " << filename << endl;
+
+	ifstream rawfilein;
+	rawfilein.open(filename.c_str(),ios::in);
+
+	Mat raw(width,height,CV_32S);
+
+	if(!rawfilein) {
+		cerr << "Can't open file: " << filename << endl;
+		return raw;
+	}
+
+	for(int x=0;x<width;x++) for(int y=0;y<height;y++) {
+		int temp;
+		rawfilein >> temp;
+		raw.at<int>(x,y)=temp;
 	}
 
 	rawfilein.close();
@@ -216,37 +246,35 @@ int * graphCut(int* data, int* sites, Mat seedimg) {/*{{{*/
 }/*}}}*/
 
 int main(int argc, char **argv) {/*{{{*/
-	int iterations;
 
 	if (argc < 2) {
 		cerr << "No argument" << std::endl;
 		return 2;
 	}
 
-	if (argc < 3) 
-		iterations = 1;
-	else
-		iterations = atoi(argv[2]);
+	int iterations = 0;
 
 	// Read in basic files and information
 
 	int framenum = atoi(argv[1]);
 
-	string filea1="data/new/raw/4000_Series/4000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
-	string filea2="data/new/raw/5000_Series/5000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
-	string filea3="data/new/raw/6000_Series/6000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
-	string filea4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum,FNAMELEN) + ".tif";
-	string fileb1="data/new/raw/4000_Series/4000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
-	string fileb2="data/new/raw/5000_Series/5000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
-	string fileb3="data/new/raw/6000_Series/6000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
-	string fileb4="data/new/raw/7000_Series/7000_image" + ZeroPadNumber(framenum+1,FNAMELEN) + ".tif";
-	string seedfile="data/new/ground/image" + ZeroPadNumber(framenum,FNAMELEN)+".pgm";
+	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string filea4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string fileb1=datapath + "4000_Series/4000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
+	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
+	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
+	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
+	string seedfile=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".pgm";
+	string seedfile2=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".labels";
 
-//	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
+	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
 
 	Mat imga1 = imread(filea1,0);
 	Mat imgb1 = imread(fileb1,0);
-	Mat seedimg = imread(seedfile,0);
+
+	Mat seedimg = imread(seedfile,0); 
 
 	// Shift from MATLAB's 1:N to 0:N-1
 	seedimg -= 1;
@@ -254,6 +282,12 @@ int main(int argc, char **argv) {/*{{{*/
 	int width = imga1.size().width; 
 	int height = imga1.size().height;
 	int num_pixels = width*height;
+
+	Mat seedimg2 = loadMat(seedfile2,width,height);
+
+	for(int x=0;x<width;x++) for(int y=0;y<height;y++)
+		if(int(seedimg.at<unsigned char>(x,y)) != seedimg2.at<int>(x,y))
+		cout << int(seedimg.at<unsigned char>(x,y)) << "!=" << seedimg2.at<int>(x,y) << endl;
 
 	cout << "Image size: " << width  << "x" << height << endl;
 
@@ -308,7 +342,7 @@ int main(int argc, char **argv) {/*{{{*/
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 		
 		// Write out seed
-		writeRaw("data/new/intermediate/image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(0,2)+ ".labels",result,num_pixels);
+//		writeRaw(outputpath+"labels/"+zpnum(framenum+1,FNAMELEN)+"-"+zpnum(0,2)+ ".labels",result,num_pixels);
 
 		cout << "Computing Alpha-Beta Expansion" << endl;
 	
@@ -321,7 +355,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 			for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-			writeRaw("data/new/intermediate/image"+ZeroPadNumber(framenum+1,FNAMELEN)+"-"+ZeroPadNumber(iter,2)+ ".labels",result,num_pixels);
+			writeRaw("data/new/intermediate/image"+zpnum(framenum+1,FNAMELEN)+"-"+zpnum(iter,2)+ ".labels",result,num_pixels);
 
 			cout << "I: " << iter << ", T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 

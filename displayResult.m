@@ -1,13 +1,13 @@
-function displayResult(imgnum,iter)
-
+function displayResult(imgnum)
+	
 series = 1;
-if nargin < 2
-	iter = 1;
-end
 
-img = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
+datapath = 'data/new/raw/';
+outputpath = 'output/';
 
-labels_raw = dlmread(['data/new/intermediate/image' sprintf('%04d',imgnum) '-' sprintf('%02d',iter) '.labels']);
+img = imread([datapath num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
+
+labels_raw = dlmread([outputpath 'labels/' sprintf('%04d',imgnum) '.labels']);
 
 length(unique(labels_raw))
 
@@ -24,14 +24,14 @@ end
 
 load labelmap;
 
-imwrite(overlay(img,label2rgb(labels,labelcolors,'w'),0.5),['output/image' sprintf('%04d',imgnum) '-' sprintf('%02d',iter) '.png'],'png');
+imwrite(overlay(img,label2rgb(labels,labelcolors,'w'),0.5),[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
 
-if(iter==0)
-	img_prev = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum-1) '.tif']);
-	imwrite(overlay(img_prev,label2rgb(labels,labelcolors,'w'),0.5),['output/image' sprintf('%04d',imgnum-1) '-s.png'],'png');
-end
+%if(iter==0)
+	%img_prev = imread(['data/new/raw/' num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum-1) '.tif']);
+	%imwrite(overlay(img_prev,label2rgb(labels,labelcolors,'w'),0.5),['output/image' sprintf('%04d',imgnum-1) '-s.png'],'png');
+%end
 
 
 end

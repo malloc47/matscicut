@@ -10,18 +10,20 @@ GCO_MAX_ENERGYTERM = 10000000;
 %GCO_MAX_ENERGYTERM = 3162;
 DILATE_AMOUNT=10;
 
+datapath = 'data/new/raw/'
+
 disp('Reading Images');
 
 for i = 1:4
-    img(:,:,i) = imread(['data/new/raw/' num2str(i+3) '000_Series/' num2str(i+3) '000_image' sprintf('%04d',imgnum) '.tif']);
+    img(:,:,i) = imread([datapath num2str(i+3) '000_Series/' num2str(i+3) '000_image' sprintf('%04d',imgnum) '.tif']);
 end
 
 % imgseed = imread(['data/new/ground/image' sprintf('%04d',imgnum) '.pbm']);
 
-load(['data/new/ground/image' sprintf('%04d',imgnum) '.mat']);
+load([datapath 'image' sprintf('%04d',imgnum) '.mat']);
 
 for i = 1:4
-    imgn(:,:,i) = imread(['data/new/raw/' num2str(i+3) '000_Series/' num2str(i+3) '000_image' sprintf('%04d',imgnum+1) '.tif']);
+    imgn(:,:,i) = imread([datapath num2str(i+3) '000_Series/' num2str(i+3) '000_image' sprintf('%04d',imgnum+1) '.tif']);
 end
 
 imgsize = size(img(:,:,1));
@@ -31,69 +33,70 @@ numlabels = max(max(imglabels));
 disp(['Number of labels: ' int2str(max(max(imglabels)))]);
 
 % data_cost = int32(ones(numlabels,pixels).*GCO_MAX_ENERGYTERM);
-smooth_cost = int32(ones(numlabels,numlabels)) .* int32((GCO_MAX_ENERGYTERM));
+%smooth_cost = int32(ones(numlabels,numlabels)) .* int32((GCO_MAX_ENERGYTERM));
 
-data = int32(ones(numlabels*pixels,1).*GCO_MAX_ENERGYTERM);
+%data = int32(ones(numlabels*pixels,1).*GCO_MAX_ENERGYTERM);
 
 %% Data Cost
 
-disp('Computing data costs');
+%disp('Computing data costs');
 
-unique(imglabels)
+%unique(imglabels)
 
-total = 0;
-max_reg = 0;
+%total = 0;
+%max_reg = 0;
 
-composite_layers = imglabels.*0;
+%composite_layers = imglabels.*0;
 
-for l = 1:numlabels+1
-%    disp(int2str(l));
-    dilation = logical(imglabels == l); % Get region
-%    dilation = imdilate(dilation,strel('disk',DILATE_AMOUNT)); % Dilate
-	composite_layers = composite_layers | dilation;
-	total = total + sum(sum(dilation));
-	max_reg = max(max_reg,max(max(bwlabel(dilation))));
-	imwrite(dilation,['labels/label' sprintf('%04d',l-1) '.png'],'png');
-	for i = 1:imgsize(1)
-		for j = 1:imgsize(2)
-			if dilation(i,j) == 1
-				data( ((j-1)+(i-1)*imgsize(2))*numlabels + (l-1) +1 ) = 1;
-			end
-		end
-	end
+%for l = 1:numlabels+1
+%%    disp(int2str(l));
+    %dilation = logical(imglabels == l); % Get region
+%%    dilation = imdilate(dilation,strel('disk',DILATE_AMOUNT)); % Dilate
+	%composite_layers = composite_layers | dilation;
+	%total = total + sum(sum(dilation));
+	%max_reg = max(max_reg,max(max(bwlabel(dilation))));
+	%%imwrite(dilation,['labels/label' sprintf('%04d',l-1) '.png'],'png');
+	%for i = 1:imgsize(1)
+		%for j = 1:imgsize(2)
+			%if dilation(i,j) == 1
+				%data( ((j-1)+(i-1)*imgsize(2))*numlabels + (l-1) +1 ) = 1;
+			%end
+		%end
+	%end
 
-end
+%end
 
-whos
-total
-max_reg
-sum(sum(composite_layers))
+%whos
+%total
+%max_reg
+%sum(sum(composite_layers))
+
 
 %dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.data' ],data);
 
 %% Smooth Cost
 
-disp('Computing smoothness costs');
+%disp('Computing smoothness costs');
 
-labelsadj = regionadj(imglabels); 
+%labelsadj = regionadj(imglabels); 
 
-c = 10;
+%c = 10;
 
-for i = 1:numlabels
-	for j = 1:numlabels
-		if i==j % Same label
-			smooth_cost(i,j)=0;	
-			smooth_cost(j,i)=0;	
-		elseif labelsadj(i,j) == 1 % Labels are adjacent
-			smooth_cost(i,j)=c;	
-			smooth_cost(j,i)=c;		
-		end % Don't do anything else since it is already inited to Inf
-	end
-end
+%for i = 1:numlabels
+	%for j = 1:numlabels
+		%if i==j % Same label
+			%smooth_cost(i,j)=0;	
+			%smooth_cost(j,i)=0;	
+		%elseif labelsadj(i,j) == 1 % Labels are adjacent
+			%smooth_cost(i,j)=c;	
+			%smooth_cost(j,i)=c;		
+		%end % Don't do anything else since it is already inited to Inf
+	%end
+%end
 
-% dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.adj' ],labelsadj,'delimiter',' ');
+%% dlmwrite(['data/new/intermediate/image' sprintf('%04d',imgnum) '.adj' ],labelsadj,'delimiter',' ');
 
-return;
+%return;
 
 disp(toc);
 
