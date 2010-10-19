@@ -167,9 +167,30 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	return adj;
 }/*}}}*/
 
-int * dataTerm(Mat seedimg, int num_labels, int num_pixels) {/*{{{*/
+void printstats (Mat img) {/*{{{*/
+	double mat_min = -1;
+	double mat_max = -1;
+	minMaxLoc(img,&mat_min,&mat_max,NULL,NULL);
+	cout << "Min: " << mat_min << endl;
+	cout << "Max: " << mat_max << endl;
+}/*}}}*/
+
+int mat_max(Mat matrix) {
+	double templabels = 0;
+	minMaxLoc(matrix,NULL,&templabels,NULL,NULL);
+	return int(templabels);
+}
+
+int * dataTerm(Mat seedimg) {/*{{{*/
 
 	cout << "Computing data term" << flush;
+
+	int num_pixels = seedimg.size().width*seedimg.size().height;
+
+	int num_labels = mat_max(seedimg)+1;
+
+	cout << endl  << "Num pixels " << num_pixels << endl;
+	cout << "Num labels " << num_labels << endl;
 
 	int *data = new int[num_pixels*num_labels];
 
@@ -189,17 +210,8 @@ int * dataTerm(Mat seedimg, int num_labels, int num_pixels) {/*{{{*/
 
 	cout << endl;
 
-
 	return data;
 
-}/*}}}*/
-
-void printstats (Mat img) {/*{{{*/
-	double mat_min = -1;
-	double mat_max = -1;
-	minMaxLoc(img,&mat_min,&mat_max,NULL,NULL);
-	cout << "Min: " << mat_min << endl;
-	cout << "Max: " << mat_max << endl;
 }/*}}}*/
 
 int main(int argc, char **argv) {/*{{{*/
@@ -253,13 +265,13 @@ int main(int argc, char **argv) {/*{{{*/
 
 	cout << "Number of labels: " <<  num_labels << endl;
 
-	int *data = new int[num_pixels*num_labels];
 	int *result = new int[num_pixels];   // stores result of optimization
 
 	Mat adj = regionsAdj(seedimg,num_labels);
 
 	cout << "Computing data term" << flush;
 
+/*	int *data = new int[num_pixels*num_labels];
 	for(int l=0;l<num_labels;l++) {
 		Mat layer = seedimg.clone();
 		Mat dilation = seedimg.clone();
@@ -275,7 +287,8 @@ int main(int argc, char **argv) {/*{{{*/
 	}
 
 	cout << endl;
-
+*/
+	int *data = dataTerm(seedimg);
 
 	cout << "Computing sites" << endl;
 
