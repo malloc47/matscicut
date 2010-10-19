@@ -145,42 +145,42 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 
 	for(int x=0;x<regions.size().width-1;x++) {
 		for(int y=0;y<regions.size().height;y++) {
-			int r1 = int(regions.at<unsigned char>(x,y));
-			int r2 = int(regions.at<unsigned char>(x+1,y));
+			int r1 = regions.at<int>(x,y);
+			int r2 = regions.at<int>(x+1,y);
 			if( r1 != r2 ) {
-				adj.at<unsigned char>(r1,r2) = 1;
-				adj.at<unsigned char>(r2,r1) = 1;
+				adj.at<int>(r1,r2) = 1;
+				adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
 
 	for(int x=0;x<regions.size().width;x++) {
 		for(int y=0;y<regions.size().height-1;y++) {
-			int r1 = int(regions.at<unsigned char>(x,y));
-			int r2 = int(regions.at<unsigned char>(x,y+1));
+			int r1 = regions.at<int>(x,y);
+			int r2 = regions.at<int>(x,y+1);
 			if( r1 != r2 ) {
-				adj.at<unsigned char>(r1,r2) = 1;
-				adj.at<unsigned char>(r2,r1) = 1;
+				adj.at<int>(r1,r2) = 1;
+				adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
 	for(int x=1;x<regions.size().width;x++) {
 		for(int y=0;y<regions.size().height;y++) {
-			int r1 = int(regions.at<unsigned char>(x,y));
-			int r2 = int(regions.at<unsigned char>(x-1,y));
+			int r1 = regions.at<int>(x,y);
+			int r2 = regions.at<int>(x-1,y);
 			if( r1 != r2 ) {
-				adj.at<unsigned char>(r1,r2) = 1;
-				adj.at<unsigned char>(r2,r1) = 1;
+				adj.at<int>(r1,r2) = 1;
+				adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
 	for(int x=0;x<regions.size().width;x++) {
 		for(int y=1;y<regions.size().height;y++) {
-			int r1 = int(regions.at<unsigned char>(x,y));
-			int r2 = int(regions.at<unsigned char>(x,y-1));
+			int r1 = regions.at<int>(x,y);
+			int r2 = regions.at<int>(x,y-1);
 			if( r1 != r2 ) {
-				adj.at<unsigned char>(r1,r2) = 1;
-				adj.at<unsigned char>(r2,r1) = 1;
+				adj.at<int>(r1,r2) = 1;
+				adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
@@ -210,6 +210,14 @@ int * toLinearIndex(Mat matrix) {/*{{{*/
 	return linear;
 }/*}}}*/
 
+Mat selectRegion(Mat seedimg, int region) {/*{{{*/
+//	Mat layer = seedimg.clone();
+	Mat layer(seedimg.size(),CV_8U);
+	for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
+		layer.at<unsigned char>(x,y) = (seedimg.at<int>(x,y) == region ? 1 : 0);
+	return layer;
+}/*}}}*/
+
 int * dataTerm(Mat seedimg) {/*{{{*/
 
 	int num_pixels = seedimg.size().width*seedimg.size().height;
@@ -219,17 +227,18 @@ int * dataTerm(Mat seedimg) {/*{{{*/
 	int *data = new int[num_pixels*num_labels];
 
 	for(int l=0;l<num_labels;l++) {
-		Mat layer = seedimg.clone();
 		Mat dilation = seedimg.clone();
-		Mat lut(256,1,CV_8U);
+		/*Mat lut(256,1,CV_8U);
 		for(int i=0;i<256;i++) lut.at<unsigned char>(i,0) = i==l ? 255 : 0; 
-		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region
+		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region*/
+		Mat layer = selectRegion(seedimg,l); 
+
 		cout << "." << flush;
 
 		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
 
 		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
-				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
+				data[ ( x+y*seedimg.size().width) * num_labels + l ] = int((dilation.at<unsigned char>(x,y)) >= 0 ? 0 : INF);
 	}
 
 	cout << endl;
@@ -266,37 +275,37 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
 	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
 	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
-	string seedfile=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".pgm";
-	string seedfile2=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".labels";
+	string seedfile2=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".pgm";
+	string seedfile=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".labels";
 
 	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
 
 	Mat imga1 = imread(filea1,0);
 	Mat imgb1 = imread(fileb1,0);
 
-	Mat seedimg = imread(seedfile,0); 
+	Mat seedimg2 = imread(seedfile2,0); 
 
 	// Shift from MATLAB's 1:N to 0:N-1
-	seedimg -= 1;
+	seedimg2 -= 1;
 
 	int width = imga1.size().width; 
 	int height = imga1.size().height;
 	int num_pixels = width*height;
 
-	Mat seedimg2 = loadMat(seedfile2,width,height);
+	Mat seedimg = loadMat(seedfile,width,height);
 
 	for(int x=0;x<width;x++) for(int y=0;y<height;y++)
-		if(int(seedimg.at<unsigned char>(x,y)) != seedimg2.at<int>(x,y))
-		cout << int(seedimg.at<unsigned char>(x,y)) << "!=" << seedimg2.at<int>(x,y) << endl;
+		if(seedimg.at<int>(x,y) != int(seedimg2.at<unsigned char>(x,y)))
+		cout << int(seedimg2.at<unsigned char>(x,y)) << "!=" << seedimg.at<int>(x,y) << endl;
 
 	cout << "Image size: " << width  << "x" << height << endl;
 
-	double templabels = 0;
+	/*double templabels = 0;
 
 	// Why this is fixed to doubles, I'll never know
-	minMaxLoc(seedimg,NULL,&templabels,NULL,NULL);
+	minMaxLoc(seedimg,NULL,&templabels,NULL,NULL);*/
 
-	int num_labels = int(templabels)+1;
+	int num_labels = mat_max(seedimg)+1;
 
 	cout << "Number of labels: " <<  num_labels << endl;
 
@@ -321,7 +330,7 @@ int main(int argc, char **argv) {/*{{{*/
 		// Initialize labels
 		for(int x=0;x<width;x++) {
 			for(int y=0;y<width;y++) {
-				gc->setLabel(sub2ind(x,y,width),int(seedimg.at<unsigned char>(x,y)));
+				gc->setLabel(sub2ind(x,y,width),seedimg.at<int>(x,y));
 			}
 		}
 
