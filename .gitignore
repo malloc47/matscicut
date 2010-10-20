@@ -2,7 +2,9 @@
 *.png
 *.xcf
 *.mat
+*.old
 .*
-data
 *.o
+data
+output
 matscicut
