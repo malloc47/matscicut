@@ -7,7 +7,7 @@ outputpath = 'output/';
 
 img = imread([datapath num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
 
-labels_raw = dlmread([outputpath 'labels/' sprintf('%04d',imgnum) '.labels']);
+labels_raw = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels']);
 
 length(unique(labels_raw))
 
@@ -22,9 +22,9 @@ end
 
 % figure; imshow(overlay(img,label2rgb(labels,'jet','w','shuffle'),0.5));
 
-load labelmap;
+%load labelmap;
 
-imwrite(overlay(img,label2rgb(labels,labelcolors,'w'),0.5),[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
+imwrite(overlay(img,label2rgb(labels,'jet','w'),0.5),[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
 

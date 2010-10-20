@@ -55,12 +55,12 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	if(l1 == l2) { return 0; }
 
-	if(!int(adj.at<unsigned char>(l1,l2))) { return INF; }
+	if(!adj.at<int>(l1,l2)) { return INF; }
 
 	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 }/*}}}*/
 
-string zpnum(int num,int pad) {/*{{{*/
+std::string zpnum(int num,int pad) {/*{{{*/
 	std::ostringstream ss;
 	ss << std::setw(pad) << std::setfill('0') << num;
 	return ss.str();
@@ -141,7 +141,12 @@ void display(string handle, Mat img) {/*{{{*/
 }/*}}}*/
 
 Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
-	Mat adj = Mat::zeros(num_regions,num_regions,CV_8U);
+	//Mat adj = Mat::zeros(num_regions,num_regions,CV_8U);
+	Mat adj(num_regions,num_regions,CV_32S);
+
+	// Initialize to zero
+	for(int i=0;i<num_regions;i++) for(int j=0;j<num_regions;j++)
+		adj.at<int>(i,j)=0;
 
 	for(int x=0;x<regions.size().width-1;x++) {
 		for(int y=0;y<regions.size().height;y++) {
@@ -211,10 +216,9 @@ int * toLinearIndex(Mat matrix) {/*{{{*/
 }/*}}}*/
 
 Mat selectRegion(Mat seedimg, int region) {/*{{{*/
-//	Mat layer = seedimg.clone();
-	Mat layer(seedimg.size(),CV_8U);
+	Mat layer(seedimg.size(),CV_8U); // Must use CV_8U for dilation
 	for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
-		layer.at<unsigned char>(x,y) = (seedimg.at<int>(x,y) == region ? 1 : 0);
+		layer.at<unsigned char>(x,y) = (seedimg.at<int>(x,y) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
 
@@ -227,18 +231,14 @@ int * dataTerm(Mat seedimg) {/*{{{*/
 	int *data = new int[num_pixels*num_labels];
 
 	for(int l=0;l<num_labels;l++) {
-		Mat dilation = seedimg.clone();
-		/*Mat lut(256,1,CV_8U);
-		for(int i=0;i<256;i++) lut.at<unsigned char>(i,0) = i==l ? 255 : 0; 
-		LUT(seedimg,lut,layer); // Lookup table trick to zero out all but desired region*/
-		Mat layer = selectRegion(seedimg,l); 
-
+		Mat layer = selectRegion(seedimg,l);
+		Mat dilation = layer.clone();
 		cout << "." << flush;
 
 		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
 
 		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
-				data[ ( x+y*seedimg.size().width) * num_labels + l ] = int((dilation.at<unsigned char>(x,y)) >= 0 ? 0 : INF);
+				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
 	}
 
 	cout << endl;
@@ -261,8 +261,6 @@ int main(int argc, char **argv) {/*{{{*/
 		return 2;
 	}
 
-	int iterations = 0;
-
 	// Read in basic files and information
 
 	int framenum = atoi(argv[1]);
@@ -275,35 +273,18 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
 	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
 	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
-	string seedfile2=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".pgm";
+
 	string seedfile=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".labels";
 
-	cout << "Loading:" << endl << filea1 << endl << filea2 << endl << filea3 << endl << filea4 << endl << fileb1 << endl << fileb2 << endl << fileb3 << endl << fileb4 << endl << seedfile << endl; 
-
-	Mat imga1 = imread(filea1,0);
 	Mat imgb1 = imread(fileb1,0);
 
-	Mat seedimg2 = imread(seedfile2,0); 
-
-	// Shift from MATLAB's 1:N to 0:N-1
-	seedimg2 -= 1;
-
-	int width = imga1.size().width; 
-	int height = imga1.size().height;
+	int width = imgb1.size().width; 
+	int height = imgb1.size().height;
 	int num_pixels = width*height;
 
 	Mat seedimg = loadMat(seedfile,width,height);
 
-	for(int x=0;x<width;x++) for(int y=0;y<height;y++)
-		if(seedimg.at<int>(x,y) != int(seedimg2.at<unsigned char>(x,y)))
-		cout << int(seedimg2.at<unsigned char>(x,y)) << "!=" << seedimg.at<int>(x,y) << endl;
-
 	cout << "Image size: " << width  << "x" << height << endl;
-
-	/*double templabels = 0;
-
-	// Why this is fixed to doubles, I'll never know
-	minMaxLoc(seedimg,NULL,&templabels,NULL,NULL);*/
 
 	int num_labels = mat_max(seedimg)+1;
 
@@ -343,32 +324,25 @@ int main(int argc, char **argv) {/*{{{*/
 		toFn.num_labels = num_labels;
 		toFn.sites = sites;
 
-
 		// Send the smooth function pointer
 		gc->setSmoothCost(&smoothFn,&toFn);
 
-		// Load current labeling into result
+		// Initialize labeling to previous slice 
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
-		
-		// Write out seed
-//		writeRaw(outputpath+"labels/"+zpnum(framenum+1,FNAMELEN)+"-"+zpnum(0,2)+ ".labels",result,num_pixels);
 
 		cout << "Computing Alpha-Beta Expansion" << endl;
 	
-		cout << "I: 0, T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		cout << "T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
-		// Loop for each iteration
-		for(int iter=1; iter<=iterations; iter++) {
+		gc->swap(1);
 
-			gc->swap(1);
+		// Retrieve labeling
+		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-			for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
+		writeRaw(outputpath+"labels/image"+zpnum(framenum+1,FNAMELEN)+".labels",result,num_pixels);
 
-			writeRaw("data/new/intermediate/image"+zpnum(framenum+1,FNAMELEN)+"-"+zpnum(iter,2)+ ".labels",result,num_pixels);
+		cout << "T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
-			cout << "I: " << iter << ", T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
-
-		}
 
 		delete gc;
 	}
@@ -376,7 +350,6 @@ int main(int argc, char **argv) {/*{{{*/
 		e.Report();
 	}
 
-	//	display("image",imgb1);
 	delete [] data;
 	delete [] sites;
 	delete [] result;
