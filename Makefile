@@ -5,12 +5,15 @@ CCFLAGS = -I /usr/include/opencv -L /usr/local/lib -lm `pkg-config --cflags --li
 
 all: gco 
 
-gco: matscicut.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o
-	${CXX} ${CCFLAGS} -o matscicut GCoptimization.o maxflow.o graph.o LinkedBlockList.o matscicut.o
+gco: matscicut.o matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o
+	${CXX} ${CCFLAGS} -o matscicut matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o matscicut.o
 
-matscicut.o: matscicut.cpp
-	${CXX} ${CCFLAGS} -c matscicut.cpp
+matscicut.o: matscicut.cpp matscicut.h matutil.o
+	${CXX} ${CCFLAGS} -c matscicut.cpp matutil.o
 
+matutil.o: matutil.cpp matutil.h
+	${CXX} ${CCFLAGS} -c matutil.cpp
+	
 GCOptimization.o: GCoptimization.cpp GCoptimization.h LinkedBlockList.h energy.h graph.cpp maxflow.cpp
 	${CXX} ${CCFLAGS} -c GCOptimization.cpp
 
