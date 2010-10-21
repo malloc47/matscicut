@@ -251,21 +251,76 @@ int * dataTerm(Mat seedimg) {/*{{{*/
 		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
 				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
 	}
-
-	cout << endl;
+	cout << "\b" << flush;
+	cout << "Done" << endl;
 
 	return data;
 
 }/*}}}*/
 
-int * graphCut(int* data, int* sites, Mat seedimg) {/*{{{*/
+int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
-	int *result = new int[seedimg.size().width*seedimg.size().height];
+	//int *result = new int[seedimg.size().width*seedimg.size().height];
+
+	int num_labels = mat_max(seedimg)+1;
+	int num_pixels = seedimg.size().width*seedimg.size().height;
+
+	int *result = new int[num_pixels];
+
+	try {
+		cout << "@grid graph" << endl;
+		
+		// Setup grid-based graph
+		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(seedimg.size().width,seedimg.size().height,num_labels);
+
+		// Initialize labels
+		for(int x=0;x<seedimg.size().width;x++) {
+			for(int y=0;y<seedimg.size().height;y++) {
+				gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(x,y));
+			}
+		}
+
+		// Use input data cost
+		gc->setDataCost(data);
+
+		// Setup data to pass to the smooth function
+		ForSmoothFn toFn;
+		toFn.adj = adj;
+		toFn.num_labels = num_labels;
+		toFn.sites = sites;
+
+		// Send the smooth function pointer
+		gc->setSmoothCost(&smoothFn,&toFn);
+
+		// Initialize labeling to previous slice 
+		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
+
+		cout << "@alpha-beta expansion" << endl;
+	
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+
+		gc->swap(1);
+
+		// Retrieve labeling
+		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
+
+		//writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
+
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+
+
+		delete gc;
+	}
+	catch (GCException e) {
+		e.Report();
+	}
 
 	return result;
 }/*}}}*/
 
-int main(int argc, char **argv) {/*{{{*/
+int main(int argc, char **argv) {
+
+	// Read in cmd line args
 
     int cmdargs;
     static struct option long_options[] = {
@@ -276,7 +331,6 @@ int main(int argc, char **argv) {/*{{{*/
     int option_index = 0;
     while ((cmdargs = getopt_long(argc, argv, "d:h",
                  long_options, &option_index)) != -1) {
-        int this_option_optind = optind ? optind : 1;
         switch (cmdargs) {
         case 'd':
 			dilate_amount = atoi(optarg);
@@ -292,17 +346,16 @@ int main(int argc, char **argv) {/*{{{*/
         case '?':
 			exit(0);
             break;
-        /*default:
-            printf ("?? getopt returned character code 0%o ??\n", cmdargs);*/
         }
     }
 
 	int framenum = 1;
-
     if (optind < argc) {
         while (optind < argc)
 			framenum = atoi(argv[optind++]);
     }
+
+	// Sanity checks on input
 
 	if(framenum < 1) {
 		cout << ":frame must be > 0" << endl;
@@ -317,10 +370,6 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "input" << endl;
 	cout << "-frame: \t" << framenum << endl;
 	cout << "-dilate: \t" << dilate_amount << endl;
-
-	// Read in basic files and information
-
-	//int framenum = atoi(argv[1]);
 
 	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
@@ -353,8 +402,6 @@ int main(int argc, char **argv) {/*{{{*/
 
 	cout << "-labels: \t" <<  num_labels << endl;
 
-	int *result = new int[num_pixels];   // stores result of optimization
-
 	Mat adj = regionsAdj(seedimg,num_labels);
 
 	cout << "processing" << endl;
@@ -365,57 +412,13 @@ int main(int argc, char **argv) {/*{{{*/
 
 	int *sites = toLinearIndex(imgb1);
 
-	try {
-		cout << "@initializing grid graph" << endl;
-		
-		// Setup grid-based graph
-		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
+	int *result = graphCut(data,sites,seedimg,adj);
 
-		// Initialize labels
-		for(int x=0;x<width;x++) {
-			for(int y=0;y<width;y++) {
-				gc->setLabel(sub2ind(x,y,width),seedimg.at<int>(x,y));
-			}
-		}
-
-		// Use input data cost
-		gc->setDataCost(data);
-
-		// Setup data to pass to the smooth function
-		ForSmoothFn toFn;
-		toFn.adj = adj;
-		toFn.num_labels = num_labels;
-		toFn.sites = sites;
-
-		// Send the smooth function pointer
-		gc->setSmoothCost(&smoothFn,&toFn);
-
-		// Initialize labeling to previous slice 
-		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
-
-		cout << "@alpha-beta expansion" << endl;
-	
-		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
-
-		gc->swap(1);
-
-		// Retrieve labeling
-		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
-
-		writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
-
-		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
-
-
-		delete gc;
-	}
-	catch (GCException e) {
-		e.Report();
-	}
+	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
 
 	delete [] data;
 	delete [] sites;
 	delete [] result;
 
 	return 0;
-}/*}}}*/
+}
