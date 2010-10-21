@@ -99,7 +99,7 @@ int * dataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 	return data;
 
 }/*}}}*/
-int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
+int * globalGraphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	//int *result = new int[seedimg.size().width*seedimg.size().height];
 
@@ -211,6 +211,8 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "-frame: \t" << framenum << endl;
 	cout << "-dilate: \t" << dilate_amount << endl;
 
+	// Read files
+
 	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
@@ -232,19 +234,22 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "-image size: \t" << width  << "x" << height << endl;
 
 	Mat seedimg = loadMat(seedfile,width,height);
+
 	int num_labels = mat_max(seedimg)+1;
 	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 	cout << "-labels: \t" <<  num_labels << endl;
 
+	cout << "processing" << endl;
+
+	cout << "@adjacency" << endl;
 	Mat adj = regionsAdj(seedimg,num_labels);
 
-	cout << "processing" << endl;
 	int *data = dataTerm(seedimg,dilate_amount);
 
 	cout << "@sites" << endl;
 	int *sites = toLinear(imgb1);
 
-	int *result = graphCut(data,sites,seedimg,adj);
+	int *result = globalGraphCut(data,sites,seedimg,adj);
 	Mat new_seed = toMat(result,width,height);
 
 	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);

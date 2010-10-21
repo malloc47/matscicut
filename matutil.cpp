@@ -113,6 +113,7 @@ int * toLinear(Mat matrix) {/*{{{*/
 Mat toMat(int* data,int width,int height) {/*{{{*/
 	Mat output(width,height,CV_32S);
 	int c=0;
+	// Watch the ordering
 	for(int y=0;y<height;y++) for(int x=0;x<width;x++)
 		output.at<int>(x,y) = data[c++];
 	return output;
