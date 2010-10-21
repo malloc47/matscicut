@@ -145,8 +145,6 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 		// Retrieve labeling
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-		//writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
-
 		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 
@@ -257,10 +255,6 @@ int main(int argc, char **argv) {/*{{{*/
 	int *result = graphCut(data,sites,seedimg,adj);
 
 	Mat new_seed = toMat(result,width,height);
-
-	for(int x=0;x<width;x++) for(int y=0;y<height;y++)
-		if(new_seed.at<int>(x,y) != seedimg.at<int>(x,y))
-			cout << new_seed.at<int>(x,y) << "=!=" << seedimg.at<int>(x,y) << endl;
 
 	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
 
