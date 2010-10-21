@@ -20,7 +20,7 @@ end
 
 % imgseed = imread(['data/new/ground/image' sprintf('%04d',imgnum) '.pbm']);
 
-load([datapath 'image' sprintf('%04d',imgnum) '.mat']);
+load(['data/new/ground/' 'image' sprintf('%04d',imgnum) '.mat']);
 
 for i = 1:4
     imgn(:,:,i) = imread([datapath num2str(i+3) '000_Series/' num2str(i+3) '000_image' sprintf('%04d',imgnum+1) '.tif']);

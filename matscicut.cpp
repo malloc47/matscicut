@@ -12,13 +12,17 @@
 #include <cv.h>
 #include <cvaux.h>
 #include <highgui.h>
+#include <getopt.h> // getopt_long
+//#include <unistd.h> // getopt
 
 // #define INF 3162
 #define INF 10000000
-#define DILATE_AMOUNT 10 
+//#define DILATE_AMOUNT 10 
 #define N 255
 #define LTHRESH 10
 #define FNAMELEN 4
+
+int dilate_amount = 10;
 
 using namespace cv;
 using namespace std;
@@ -67,14 +71,14 @@ std::string zpnum(int num,int pad) {/*{{{*/
 }/*}}}*/
 
 void writeRaw(string filename, int* data, int size) {/*{{{*/
-	cout << "Writing " << filename << endl;
+	cout << ">writing \t" << filename << endl;
 
 	ofstream rawfileout;
 	rawfileout.open (filename.c_str());
 
 	if(!rawfileout) {
-		cerr << "Can't open file: " << filename << endl;
-		return;
+		cerr << ":can't open file: " << filename << endl;
+		exit(1);
 	}
 
 	for(int i=0;i<size;i++) {
@@ -85,14 +89,14 @@ void writeRaw(string filename, int* data, int size) {/*{{{*/
 }/*}}}*/
 
 int* loadRaw(string filename, int size) {/*{{{*/
-	cout << "Reading " << filename << endl;
+	cout << "<reading \t" << filename << endl;
 
 	ifstream rawfilein;
 	rawfilein.open(filename.c_str(),ios::in);
 
 	if(!rawfilein) {
-		cerr << "Can't open file: " << filename << endl;
-		return 0;
+		cerr << ":can't open file: " << filename << endl;
+		exit(1);
 	}
 
 	int *raw = new int[size];
@@ -110,7 +114,8 @@ int* loadRaw(string filename, int size) {/*{{{*/
 }/*}}}*/
 
 Mat loadMat(string filename, int width, int height) {/*{{{*/
-	cout << "Reading " << filename << endl;
+	cout << "<reading \t" << filename << endl;
+
 
 	ifstream rawfilein;
 	rawfilein.open(filename.c_str(),ios::in);
@@ -118,8 +123,8 @@ Mat loadMat(string filename, int width, int height) {/*{{{*/
 	Mat raw(width,height,CV_32S);
 
 	if(!rawfilein) {
-		cerr << "Can't open file: " << filename << endl;
-		return raw;
+		cerr << ":can't open file: " << filename << endl;
+		exit(1);
 	}
 
 	for(int x=0;x<width;x++) for(int y=0;y<height;y++) {
@@ -190,7 +195,6 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 		}
 	}
 
-
 	return adj;
 }/*}}}*/
 
@@ -224,18 +228,25 @@ Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 
 int * dataTerm(Mat seedimg) {/*{{{*/
 
-	int num_pixels = seedimg.size().width*seedimg.size().height;
+	cout << "@data term" << flush;
 
+	char bar[4] = {'\\', '|', '/','-'};
+
+	// Could probably do better than recomputing these
+	int num_pixels = seedimg.size().width*seedimg.size().height;
 	int num_labels = mat_max(seedimg)+1;
 
 	int *data = new int[num_pixels*num_labels];
 
+	cout << "\t\\" << flush;
+
 	for(int l=0;l<num_labels;l++) {
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
-		cout << "." << flush;
+		cout << "\b" << flush;
+		cout << bar[l%4] << flush;
 
-		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(DILATE_AMOUNT,DILATE_AMOUNT)));
+		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
 
 		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
 				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
@@ -256,54 +267,106 @@ int * graphCut(int* data, int* sites, Mat seedimg) {/*{{{*/
 
 int main(int argc, char **argv) {/*{{{*/
 
-	if (argc < 2) {
-		cerr << "No argument" << std::endl;
-		return 2;
+    int cmdargs;
+    static struct option long_options[] = {
+        {"dilate", 1, 0, 'd'},
+        {"help", 0, 0, 'h'},
+        {NULL, 0, NULL, 0}
+    };
+    int option_index = 0;
+    while ((cmdargs = getopt_long(argc, argv, "d:h",
+                 long_options, &option_index)) != -1) {
+        int this_option_optind = optind ? optind : 1;
+        switch (cmdargs) {
+        case 'd':
+			dilate_amount = atoi(optarg);
+            break;
+		case 'h':
+			cout << "Usage: matscicut [OPTION] framenumber\n"
+					"Label propagation for material science image segmentation\n\n"
+					"Options\n"
+				    "  -d, --dilate\t global dilation amount\n"
+					" (-h) --help\t show this help (-h works with no other options\n";
+			exit(0);
+			break;
+        case '?':
+			exit(0);
+            break;
+        /*default:
+            printf ("?? getopt returned character code 0%o ??\n", cmdargs);*/
+        }
+    }
+
+	int framenum = 1;
+
+    if (optind < argc) {
+        while (optind < argc)
+			framenum = atoi(argv[optind++]);
+    }
+
+	if(framenum < 1) {
+		cout << ":frame must be > 0" << endl;
+		exit(1);
 	}
+
+	if(dilate_amount < 1) {
+		cout << ":dilate must be > 0" << endl;
+		exit(1);
+	}
+
+	cout << "input" << endl;
+	cout << "-frame: \t" << framenum << endl;
+	cout << "-dilate: \t" << dilate_amount << endl;
 
 	// Read in basic files and information
 
-	int framenum = atoi(argv[1]);
+	//int framenum = atoi(argv[1]);
 
-	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string filea4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string fileb1=datapath + "4000_Series/4000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
-	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
-	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
-	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum+1,FNAMELEN) + ".tif";
+	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
+	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
+	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
+	string filea4=datapath + "7000_Series/7000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
+	string fileb1=datapath + "4000_Series/4000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 
-	string seedfile=outputpath + "labels/image" + zpnum(framenum,FNAMELEN)+".labels";
+	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";
 
+	cout << "<reading \t" << fileb1 << endl;
 	Mat imgb1 = imread(fileb1,0);
 
 	int width = imgb1.size().width; 
 	int height = imgb1.size().height;
 	int num_pixels = width*height;
 
-	Mat seedimg = loadMat(seedfile,width,height);
+	cout << "-image size: \t" << width  << "x" << height << endl;
 
-	cout << "Image size: " << width  << "x" << height << endl;
+	Mat seedimg = loadMat(seedfile,width,height);
 
 	int num_labels = mat_max(seedimg)+1;
 
-	cout << "Number of labels: " <<  num_labels << endl;
+	if(num_labels < 2) {
+		cout << "Must have > 1 label" << endl;
+		exit(1);
+	}
+
+	cout << "-labels: \t" <<  num_labels << endl;
 
 	int *result = new int[num_pixels];   // stores result of optimization
 
 	Mat adj = regionsAdj(seedimg,num_labels);
 
-	cout << "Computing data term" << flush;
+	cout << "processing" << endl;
 
 	int *data = dataTerm(seedimg);
 
-	cout << "Computing sites" << endl;
+	cout << "@sites" << endl;
 
 	int *sites = toLinearIndex(imgb1);
 
 	try {
-		cout << "Initializing Grid Graph" << endl;
+		cout << "@initializing grid graph" << endl;
 		
 		// Setup grid-based graph
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(width,height,num_labels);
@@ -330,18 +393,18 @@ int main(int argc, char **argv) {/*{{{*/
 		// Initialize labeling to previous slice 
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-		cout << "Computing Alpha-Beta Expansion" << endl;
+		cout << "@alpha-beta expansion" << endl;
 	
-		cout << "T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 		gc->swap(1);
 
 		// Retrieve labeling
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-		writeRaw(outputpath+"labels/image"+zpnum(framenum+1,FNAMELEN)+".labels",result,num_pixels);
+		writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
 
-		cout << "T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 
 		delete gc;
