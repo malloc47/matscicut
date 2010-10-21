@@ -1,22 +1,4 @@
 #include "matutil.h"
-
-/*#include <stdio.h>
-#include <stdlib.h>
-#include <cmath>
-#include <string.h>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
-#include <vector>*/
-
-/*#include <cv.h>
-#include <cvaux.h>
-#include <highgui.h>*/
-
-using namespace cv;
-using namespace std;
-
 int ind2subx(int ind, int w) {/*{{{*/
 	return ind % w;
 }/*}}}*/
@@ -119,4 +101,12 @@ int * toLinearIndex(Mat matrix) {/*{{{*/
 	for(int x=0;x<matrix.size().width;x++) for(int y=0;y<matrix.size().height;y++) 
 		linear[sub2ind(x,y,matrix.size().width)] = int( matrix.at<unsigned char>(x,y) );
 	return linear;
+}/*}}}*/
+Mat toMat(int* data,int width,int height) {/*{{{*/
+	Mat output(width,height,CV_32S);
+	int c=0;
+	for(int y=0;y<width;y++) for(int x=0;x<height;x++)
+		output.at<int>(x,y) = data[c++];
+	cout << width << "x" << height << endl;
+	return output;
 }/*}}}*/

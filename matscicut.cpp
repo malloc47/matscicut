@@ -1,46 +1,5 @@
-/*{{{*/
-#include "matutil.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <cmath>
-#include <string.h>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
-#include <vector>
-#include "GCoptimization.h"
-// OpenCV
-#include <cv.h>
-#include <cvaux.h>
-#include <highgui.h>
-#include <getopt.h> // getopt_long
-//#include <unistd.h> // getopt
-
-// #define INF 3162
-#define INF 10000000
-//#define DILATE_AMOUNT 10 
-#define N 255
-#define LTHRESH 10
-#define FNAMELEN 4
-
-int dilate_amount = 10;
-
-using namespace cv;
-using namespace std;
-
-const string datapath="data/new/raw/";
-const string outputpath="output/";
-
-/*}}}*/
-
-struct ForSmoothFn {/*{{{*/
-	int num_labels;
-	Mat adj;
-	int *sites;
-};/*}}}*/
+#include "matscicut.h"
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
-
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
 	Mat adj = extra->adj;
@@ -53,7 +12,6 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 }/*}}}*/
 Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
-	//Mat adj = Mat::zeros(num_regions,num_regions,CV_8U);
 	Mat adj(num_regions,num_regions,CV_32S);
 
 	// Initialize to zero
@@ -110,7 +68,7 @@ Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 		layer.at<unsigned char>(x,y) = (seedimg.at<int>(x,y) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
-int * dataTerm(Mat seedimg) {/*{{{*/
+int * dataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
 
@@ -202,6 +160,8 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 }/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
 
+	int dilate_amount = 10;
+
 	// Read in cmd line args
 
     int cmdargs;
@@ -288,13 +248,19 @@ int main(int argc, char **argv) {/*{{{*/
 
 	cout << "processing" << endl;
 
-	int *data = dataTerm(seedimg);
+	int *data = dataTerm(seedimg,dilate_amount);
 
 	cout << "@sites" << endl;
 
 	int *sites = toLinearIndex(imgb1);
 
 	int *result = graphCut(data,sites,seedimg,adj);
+
+	Mat new_seed = toMat(result,width,height);
+
+	for(int x=0;x<width;x++) for(int y=0;y<height;y++)
+		if(new_seed.at<int>(x,y) != seedimg.at<int>(x,y))
+			cout << new_seed.at<int>(x,y) << "=!=" << seedimg.at<int>(x,y) << endl;
 
 	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
 
