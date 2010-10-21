@@ -1,4 +1,6 @@
-#include <stdio.h>/*{{{*/
+/*{{{*/
+#include "matutil.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <cmath>
 #include <string.h>
@@ -32,24 +34,11 @@ const string outputpath="output/";
 
 /*}}}*/
 
-int ind2subx(int ind, int w) {/*{{{*/
-	return ind % w;
-}/*}}}*/
-
-int ind2suby(int ind, int x, int w) {/*{{{*/
-	return (ind - x) / w;
-}/*}}}*/
-
-int sub2ind(int x, int y, int w) {/*{{{*/
-	return x+(y*w);
-}/*}}}*/
-
 struct ForSmoothFn {/*{{{*/
 	int num_labels;
 	Mat adj;
 	int *sites;
 };/*}}}*/
-
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
@@ -63,88 +52,6 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 }/*}}}*/
-
-std::string zpnum(int num,int pad) {/*{{{*/
-	std::ostringstream ss;
-	ss << std::setw(pad) << std::setfill('0') << num;
-	return ss.str();
-}/*}}}*/
-
-void writeRaw(string filename, int* data, int size) {/*{{{*/
-	cout << ">writing \t" << filename << endl;
-
-	ofstream rawfileout;
-	rawfileout.open (filename.c_str());
-
-	if(!rawfileout) {
-		cerr << ":can't open file: " << filename << endl;
-		exit(1);
-	}
-
-	for(int i=0;i<size;i++) {
-		rawfileout << data[i] << " ";
-	}
-
-	rawfileout.close();
-}/*}}}*/
-
-int* loadRaw(string filename, int size) {/*{{{*/
-	cout << "<reading \t" << filename << endl;
-
-	ifstream rawfilein;
-	rawfilein.open(filename.c_str(),ios::in);
-
-	if(!rawfilein) {
-		cerr << ":can't open file: " << filename << endl;
-		exit(1);
-	}
-
-	int *raw = new int[size];
-
-	for(int i=0;i<size;i++){
-		int temp;
-		rawfilein >> temp;	
-		raw[i] = temp;
-	}
-
-	rawfilein.close();
-
-	return raw;
-	
-}/*}}}*/
-
-Mat loadMat(string filename, int width, int height) {/*{{{*/
-	cout << "<reading \t" << filename << endl;
-
-
-	ifstream rawfilein;
-	rawfilein.open(filename.c_str(),ios::in);
-
-	Mat raw(width,height,CV_32S);
-
-	if(!rawfilein) {
-		cerr << ":can't open file: " << filename << endl;
-		exit(1);
-	}
-
-	for(int x=0;x<width;x++) for(int y=0;y<height;y++) {
-		int temp;
-		rawfilein >> temp;
-		raw.at<int>(x,y)=temp;
-	}
-
-	rawfilein.close();
-
-	return raw;
-	
-}/*}}}*/
-
-void display(string handle, Mat img) {/*{{{*/
-	namedWindow(handle,CV_WINDOW_AUTOSIZE);
-	imshow(handle,img);
-	waitKey(0);
-}/*}}}*/
-
 Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	//Mat adj = Mat::zeros(num_regions,num_regions,CV_8U);
 	Mat adj(num_regions,num_regions,CV_32S);
@@ -197,35 +104,12 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 
 	return adj;
 }/*}}}*/
-
-void printstats (Mat img) {/*{{{*/
-	double mat_min = -1;
-	double mat_max = -1;
-	minMaxLoc(img,&mat_min,&mat_max,NULL,NULL);
-	cout << "Min: " << mat_min << endl;
-	cout << "Max: " << mat_max << endl;
-}/*}}}*/
-
-int mat_max(Mat matrix) {/*{{{*/
-	double templabels = 0;
-	minMaxLoc(matrix,NULL,&templabels,NULL,NULL);
-	return int(templabels);
-}/*}}}*/
-
-int * toLinearIndex(Mat matrix) {/*{{{*/
-	int *linear = new int[matrix.size().width * matrix.size().height];
-	for(int x=0;x<matrix.size().width;x++) for(int y=0;y<matrix.size().height;y++) 
-		linear[sub2ind(x,y,matrix.size().width)] = int( matrix.at<unsigned char>(x,y) );
-	return linear;
-}/*}}}*/
-
 Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 	Mat layer(seedimg.size(),CV_8U); // Must use CV_8U for dilation
 	for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
 		layer.at<unsigned char>(x,y) = (seedimg.at<int>(x,y) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
-
 int * dataTerm(Mat seedimg) {/*{{{*/
 
 	cout << "@data term" << flush;
@@ -257,7 +141,6 @@ int * dataTerm(Mat seedimg) {/*{{{*/
 	return data;
 
 }/*}}}*/
-
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	//int *result = new int[seedimg.size().width*seedimg.size().height];
@@ -317,8 +200,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	return result;
 }/*}}}*/
-
-int main(int argc, char **argv) {
+int main(int argc, char **argv) {/*{{{*/
 
 	// Read in cmd line args
 
@@ -421,4 +303,4 @@ int main(int argc, char **argv) {
 	delete [] result;
 
 	return 0;
-}
+}/*}}}*/
