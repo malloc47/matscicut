@@ -254,6 +254,14 @@ int main(int argc, char **argv) {/*{{{*/
 
 	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
 
+	Mat composite = overlay(new_seed,imgb1,0.5);
+	Mat composite2 = overlay(seedimg,imgb1,0.5);
+
+	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
+
+	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
+	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);
+
 	delete [] data;
 	delete [] sites;
 	delete [] result;

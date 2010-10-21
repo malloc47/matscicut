@@ -1,24 +1,32 @@
 function displayResult(imgnum)
-	
+
+disp('Start');
+
 series = 1;
 
 datapath = 'data/new/raw/';
 outputpath = 'output/';
 
+disp('Reading images');
+
 img = imread([datapath num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
 
-labels_raw = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels']);
+disp('Reading labels');
 
-length(unique(labels_raw))
+labels_raw = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
-labels = uint32(img.*0);
+%length(unique(labels_raw))
 
-for i = 1:length(labels_raw)
-    [x,y] = convertind(i-1,size(labels,2));
-    labels(x+1,y+1) = labels_raw(i);
-end
+%labels = uint32(img.*0);
 
-% labels = reshape(labels,size(img));
+%for i = 1:length(labels_raw)
+    %[x,y] = convertind(i-1,size(labels,2));
+    %labels(x+1,y+1) = labels_raw(i);
+%end
+
+disp('Reshaping');
+
+labels = reshape(labels,size(img));
 
 % figure; imshow(overlay(img,label2rgb(labels,'jet','w','shuffle'),0.5));
 

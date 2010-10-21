@@ -27,3 +27,4 @@ void printstats (Mat img);
 int mat_max(Mat matrix);
 int * toLinear(Mat matrix);
 Mat toMat(int* data,int width,int height);
+Mat overlay(Mat img1, Mat img2,float alpha);
