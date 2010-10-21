@@ -232,28 +232,19 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "-image size: \t" << width  << "x" << height << endl;
 
 	Mat seedimg = loadMat(seedfile,width,height);
-
 	int num_labels = mat_max(seedimg)+1;
-
-	if(num_labels < 2) {
-		cout << "Must have > 1 label" << endl;
-		exit(1);
-	}
-
+	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 	cout << "-labels: \t" <<  num_labels << endl;
 
 	Mat adj = regionsAdj(seedimg,num_labels);
 
 	cout << "processing" << endl;
-
 	int *data = dataTerm(seedimg,dilate_amount);
 
 	cout << "@sites" << endl;
-
-	int *sites = toLinearIndex(imgb1);
+	int *sites = toLinear(imgb1);
 
 	int *result = graphCut(data,sites,seedimg,adj);
-
 	Mat new_seed = toMat(result,width,height);
 
 	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);

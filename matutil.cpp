@@ -96,17 +96,24 @@ int mat_max(Mat matrix) {/*{{{*/
 	minMaxLoc(matrix,NULL,&templabels,NULL,NULL);
 	return int(templabels);
 }/*}}}*/
-int * toLinearIndex(Mat matrix) {/*{{{*/
+int * toLinear(Mat matrix) {/*{{{*/
 	int *linear = new int[matrix.size().width * matrix.size().height];
 	for(int x=0;x<matrix.size().width;x++) for(int y=0;y<matrix.size().height;y++) 
-		linear[sub2ind(x,y,matrix.size().width)] = int( matrix.at<unsigned char>(x,y) );
+		switch(matrix.type()) {
+			case CV_8U:
+				linear[sub2ind(x,y,matrix.size().width)] = int( matrix.at<unsigned char>(x,y) );
+				break;
+			case CV_32S:
+				linear[sub2ind(x,y,matrix.size().width)] = matrix.at<int>(x,y);
+				break;
+
+		}
 	return linear;
 }/*}}}*/
 Mat toMat(int* data,int width,int height) {/*{{{*/
 	Mat output(width,height,CV_32S);
 	int c=0;
-	for(int y=0;y<width;y++) for(int x=0;x<height;x++)
+	for(int y=0;y<height;y++) for(int x=0;x<width;x++)
 		output.at<int>(x,y) = data[c++];
-	cout << width << "x" << height << endl;
 	return output;
 }/*}}}*/

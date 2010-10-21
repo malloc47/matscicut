@@ -9,7 +9,7 @@ gco: matscicut.o matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o
 	${CXX} ${CCFLAGS} -o matscicut matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o matscicut.o
 
 matscicut.o: matscicut.cpp matscicut.h matutil.o
-	${CXX} ${CCFLAGS} -c matscicut.cpp matutil.o
+	${CXX} ${CCFLAGS} -c matscicut.cpp
 
 matutil.o: matutil.cpp matutil.h
 	${CXX} ${CCFLAGS} -c matutil.cpp

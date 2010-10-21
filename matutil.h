@@ -25,5 +25,5 @@ int* loadRaw(string filename, int size);
 void display(string handle, Mat img);
 void printstats (Mat img);
 int mat_max(Mat matrix);
-int * toLinearIndex(Mat matrix);
+int * toLinear(Mat matrix);
 Mat toMat(int* data,int width,int height);
