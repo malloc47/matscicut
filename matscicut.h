@@ -24,5 +24,6 @@ struct ForSmoothFn {/*{{{*/
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData);
 Mat regionsAdj(Mat regions, int num_regions);
 Mat selectRegion(Mat seedimg, int region);
-int * dataTerm(Mat seedimg,int dilate_amount);
-int * globalGraphCut(int* data, int* sites, Mat seedimg, Mat adj);
+int * globalDataTerm(Mat seedimg,int dilate_amount);
+int * graphCut(int* data, int* sites, Mat seedimg, Mat adj);
+Mat globalGraphCut(Mat img, Mat seedimg);

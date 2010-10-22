@@ -68,7 +68,7 @@ Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 		layer.at<unsigned char>(x,y) = (seedimg.at<int>(x,y) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
-int * dataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
+int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
 
@@ -99,9 +99,7 @@ int * dataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 	return data;
 
 }/*}}}*/
-int * globalGraphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
-
-	//int *result = new int[seedimg.size().width*seedimg.size().height];
+int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	int num_labels = mat_max(seedimg)+1;
 	int num_pixels = seedimg.size().width*seedimg.size().height;
@@ -115,11 +113,8 @@ int * globalGraphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(seedimg.size().width,seedimg.size().height,num_labels);
 
 		// Initialize labels
-		for(int x=0;x<seedimg.size().width;x++) {
-			for(int y=0;y<seedimg.size().height;y++) {
-				gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(x,y));
-			}
-		}
+		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++)
+			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(x,y));
 
 		// Use input data cost
 		gc->setDataCost(data);
@@ -155,6 +150,34 @@ int * globalGraphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 	}
 
 	return result;
+}/*}}}*/
+Mat globalGraphCut(Mat img, Mat seedimg) {/*{{{*/
+
+	/*int width = img.size().width; 
+	int height = img.size().height;
+	int num_pixels = width*height;
+
+	cout << "-image size: \t" << width  << "x" << height << endl;
+
+	Mat seedimg = loadMat(seedfile,width,height);
+
+	int num_labels = mat_max(seedimg)+1;
+	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
+	cout << "-labels: \t" <<  num_labels << endl;
+
+	cout << "processing" << endl;
+
+	cout << "@adjacency" << endl;
+	Mat adj = regionsAdj(seedimg,num_labels);
+
+	int *data = globalDataTerm(seedimg,dilate_amount);
+
+	cout << "@sites" << endl;
+	int *sites = toLinear(imgb1);
+
+	int *result = graphCut(data,sites,seedimg,adj);
+	Mat new_seed = toMat(result,width,height);*/
+
 }/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
 
@@ -244,12 +267,12 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "@adjacency" << endl;
 	Mat adj = regionsAdj(seedimg,num_labels);
 
-	int *data = dataTerm(seedimg,dilate_amount);
+	int *data = globalDataTerm(seedimg,dilate_amount);
 
 	cout << "@sites" << endl;
 	int *sites = toLinear(imgb1);
 
-	int *result = globalGraphCut(data,sites,seedimg,adj);
+	int *result = graphCut(data,sites,seedimg,adj);
 	Mat new_seed = toMat(result,width,height);
 
 	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
