@@ -176,15 +176,19 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	int *result = graphCut(data,sites,seedimg,adj);
 	Mat new_seed = toMat(result,width,height);
 
+	writeRaw(outputpath+"labels/image"+zpnum(1,FNAMELEN)+".labels",result,num_pixels);
+
+	delete [] data;
+	delete [] sites;
+	delete [] result;
+
 	return new_seed;
 
 }/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
 
+	// Read in cmd line args/*{{{*/
 	int dilate_amount = 10;
-
-	// Read in cmd line args
-
     int cmdargs;
     static struct option long_options[] = {
         {"dilate", 1, 0, 'd'},
@@ -216,10 +220,9 @@ int main(int argc, char **argv) {/*{{{*/
     if (optind < argc) {
         while (optind < argc)
 			framenum = atoi(argv[optind++]);
-    }
+    }/*}}}*/
 
-	// Sanity checks on input
-
+	// Sanity checks on input/*{{{*/
 	if(framenum < 1) {
 		cout << ":frame must be > 0" << endl;
 		exit(1);
@@ -232,11 +235,10 @@ int main(int argc, char **argv) {/*{{{*/
 
 	cout << "input" << endl;
 	cout << "-frame: \t" << framenum << endl;
-	cout << "-dilate: \t" << dilate_amount << endl;
+	cout << "-dilate: \t" << dilate_amount << endl;/*}}}*/
 
-	// Read files
-
-	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
+	// Read files/*{{{*/
+	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";/*{{{*/
 	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea4=datapath + "7000_Series/7000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
@@ -244,38 +246,16 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
+	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";/*}}}*/
 
-	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";
-
-	cout << "<reading \t" << fileb1 << endl;
 	Mat imgb1 = imread(fileb1,0);
+	Mat seedimg = loadMat(seedfile,imgb1.size().width,imgb1.size().height);
+/*}}}*/
 
-	int width = imgb1.size().width; 
-	int height = imgb1.size().height;
-	int num_pixels = width*height;
+	Mat new_seed = globalGraphCut(imgb1,seedimg,dilate_amount);
 
-	cout << "-image size: \t" << width  << "x" << height << endl;
-
-	Mat seedimg = loadMat(seedfile,width,height);
-
-	int num_labels = mat_max(seedimg)+1;
-	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
-	cout << "-labels: \t" <<  num_labels << endl;
-
-	cout << "processing" << endl;
-
-	cout << "@adjacency" << endl;
-	Mat adj = regionsAdj(seedimg,num_labels);
-
-	int *data = globalDataTerm(seedimg,dilate_amount);
-
-	cout << "@sites" << endl;
-	int *sites = toLinear(imgb1);
-
-	int *result = graphCut(data,sites,seedimg,adj);
-	Mat new_seed = toMat(result,width,height);
-
-	writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
+	// Output/*{{{*/
+	//writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
 
 	Mat composite = overlay(new_seed,imgb1,0.5);
 	Mat composite2 = overlay(seedimg,imgb1,0.5);
@@ -285,9 +265,5 @@ int main(int argc, char **argv) {/*{{{*/
 	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
 	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);
 
-	delete [] data;
-	delete [] sites;
-	delete [] result;
-
-	return 0;
+	return 0;/*}}}*/
 }/*}}}*/
