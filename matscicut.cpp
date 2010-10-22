@@ -262,8 +262,8 @@ int main(int argc, char **argv) {/*{{{*/
 
 	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
-	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
-	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);
+	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
+	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);
 
 	return 0;/*}}}*/
 }/*}}}*/
