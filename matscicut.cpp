@@ -189,6 +189,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 	// Read in cmd line args/*{{{*/
 	int dilate_amount = 10;
+	int framenum = 1;
     int cmdargs;
     static struct option long_options[] = {
         {"dilate", 1, 0, 'd'},
@@ -216,7 +217,6 @@ int main(int argc, char **argv) {/*{{{*/
         }
     }
 
-	int framenum = 1;
     if (optind < argc) {
         while (optind < argc)
 			framenum = atoi(argv[optind++]);
@@ -248,17 +248,18 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";/*}}}*/
 
-	Mat imgb1 = imread(fileb1,0);
-	Mat seedimg = loadMat(seedfile,imgb1.size().width,imgb1.size().height);
+	Mat img = imread(fileb1,0);
+	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
+
 /*}}}*/
 
-	Mat new_seed = globalGraphCut(imgb1,seedimg,dilate_amount);
+	Mat new_seed = globalGraphCut(img,seedimg,dilate_amount);
 
 	// Output/*{{{*/
 	//writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
 
-	Mat composite = overlay(new_seed,imgb1,0.5);
-	Mat composite2 = overlay(seedimg,imgb1,0.5);
+	Mat composite = overlay(new_seed,img,0.5);
+	Mat composite2 = overlay(seedimg,img,0.5);
 
 	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
