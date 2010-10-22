@@ -151,21 +151,19 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	return result;
 }/*}}}*/
-Mat globalGraphCut(Mat img, Mat seedimg) {/*{{{*/
+Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 
-	/*int width = img.size().width; 
+	int width = img.size().width; 
 	int height = img.size().height;
 	int num_pixels = width*height;
 
 	cout << "-image size: \t" << width  << "x" << height << endl;
 
-	Mat seedimg = loadMat(seedfile,width,height);
-
 	int num_labels = mat_max(seedimg)+1;
 	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 	cout << "-labels: \t" <<  num_labels << endl;
 
-	cout << "processing" << endl;
+	cout << "preprocessing" << endl;
 
 	cout << "@adjacency" << endl;
 	Mat adj = regionsAdj(seedimg,num_labels);
@@ -173,10 +171,12 @@ Mat globalGraphCut(Mat img, Mat seedimg) {/*{{{*/
 	int *data = globalDataTerm(seedimg,dilate_amount);
 
 	cout << "@sites" << endl;
-	int *sites = toLinear(imgb1);
+	int *sites = toLinear(img);
 
 	int *result = graphCut(data,sites,seedimg,adj);
-	Mat new_seed = toMat(result,width,height);*/
+	Mat new_seed = toMat(result,width,height);
+
+	return new_seed;
 
 }/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
