@@ -15,17 +15,17 @@ Mat loadMat(string filename, int width, int height) {/*{{{*/
 	ifstream rawfilein;
 	rawfilein.open(filename.c_str(),ios::in);
 
-	Mat raw(width,height,CV_32S);
+	Mat raw(height,width,CV_32S);
 
 	if(!rawfilein) {
 		cerr << ":can't open file: " << filename << endl;
 		exit(1);
 	}
 
-	for(int x=0;x<width;x++) for(int y=0;y<height;y++) {
+	for(int y=0;y<height;y++) for(int x=0;x<width;x++) {
 		int temp;
 		rawfilein >> temp;
-		raw.at<int>(x,y)=temp;
+		raw.at<int>(y,x)=temp;
 	}
 
 	rawfilein.close();
@@ -45,7 +45,7 @@ void writeMat(string filename, Mat data) {/*{{{*/
 	}
 
 	for(int x=0;x<data.size().width;x++) for(int y=0;y<data.size().height;y++) {
-		rawfileout << data.at<int>(x,y) << " ";
+		rawfileout << data.at<int>(y,x) << " ";
 	}
 
 	rawfileout.close();
@@ -114,29 +114,31 @@ int mat_max(Mat matrix) {/*{{{*/
 	return int(templabels);
 }/*}}}*/
 int * toLinear(Mat matrix) {/*{{{*/
+	cout << matrix.size().width << "," << matrix.size().height << endl;
 	int *linear = new int[matrix.size().width * matrix.size().height];
-	for(int x=0;x<matrix.size().width;x++) for(int y=0;y<matrix.size().height;y++) 
+	for(int y=0;y<matrix.size().height;y++) for(int x=0;x<matrix.size().width;x++) 
 		switch(matrix.type()) {
 			case CV_8U:
-				linear[sub2ind(x,y,matrix.size().width)] = int( matrix.at<unsigned char>(x,y) );
+				linear[sub2ind(x,y,matrix.size().width)] = int( matrix.at<unsigned char>(y,x) );
 				break;
 			case CV_32S:
-				linear[sub2ind(x,y,matrix.size().width)] = matrix.at<int>(x,y);
+				linear[sub2ind(x,y,matrix.size().width)] = matrix.at<int>(y,x);
 				break;
 
 		}
+
 	return linear;
 }/*}}}*/
 Mat toMat(int* data,int width,int height) {/*{{{*/
-	Mat output(width,height,CV_32S);
+	Mat output(height,width,CV_32S);
 	int c=0;
 	// Watch the ordering
 	for(int y=0;y<height;y++) for(int x=0;x<width;x++)
-		output.at<int>(x,y) = data[c++];
+		output.at<int>(y,x) = data[c++];
 	return output;
 }/*}}}*/
 Mat overlay(Mat img1, Mat img2,float alpha) {/*{{{*/
-	Mat composite(img1.size().width,img1.size().height,CV_8UC3,Scalar(0));
+	Mat composite(img1.size().height,img1.size().width,CV_8UC3,Scalar(0));
 
 	int colormap[64][3] = {{0,0,143},/*{{{*/
 		{0,0,159},
@@ -205,10 +207,10 @@ Mat overlay(Mat img1, Mat img2,float alpha) {/*{{{*/
 
 	Mat_<Vec3b>& img = (Mat_<Vec3b>&)composite;
 
-	for(int x=0;x<img1.size().width;x++) for(int y=0;y<img1.size().height;y++) {
-		img(x,y)[1] = int(alpha * colormap[img1.at<int>(x,y) % 64][1]) + int((1-alpha) * int(img2.at<unsigned char>(x,y))); 
-		img(x,y)[2] = int(alpha * colormap[img1.at<int>(x,y) % 64][2]) + int((1-alpha) * int(img2.at<unsigned char>(x,y))); 
-		img(x,y)[3] = int(alpha * colormap[img1.at<int>(x,y) % 64][3]) + int((1-alpha) * int(img2.at<unsigned char>(x,y))); 
+	for(int y=0;y<img1.size().height;y++) for(int x=0;x<img1.size().width;x++) {
+		img(y,x)[1] = int(alpha * colormap[img1.at<int>(y,x) % 64][1]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
+		img(y,x)[2] = int(alpha * colormap[img1.at<int>(y,x) % 64][2]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
+		img(y,x)[3] = int(alpha * colormap[img1.at<int>(y,x) % 64][3]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
 	}
 
 	return composite;
@@ -222,12 +224,12 @@ bool cmpMat(Mat a, Mat b) {/*{{{*/
 	
 	if(a.type() == CV_32S)
 		for(int x=0;x<a.size().width;x++) for(int y=0;y<a.size().height;y++)
-			if( a.at<int>(x,y) != b.at<int>(x,y) )
+			if( a.at<int>(y,x) != b.at<int>(y,x) )
 				return false;
 
 	if(a.type() == CV_8U)
 		for(int x=0;x<a.size().width;x++) for(int y=0;y<a.size().height;y++)
-			if( int(a.at<unsigned char>(x,y)) != int(b.at<unsigned char>(x,y)) )
+			if( int(a.at<unsigned char>(y,x)) != int(b.at<unsigned char>(y,x)) )
 				return false;
 
 	if(a.type() != CV_32S && a.type() != CV_8U) {

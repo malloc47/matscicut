@@ -12,8 +12,10 @@
 using namespace cv;
 using namespace std;
 
-const string datapath="data/new/raw/";
-const string outputpath="output/";
+const string datapath="data/old/scaled/";
+//const string datapath="data/new/raw/";
+const string outputpath="output2/";
+//const string outputpath="output/"
 
 struct ForSmoothFn {/*{{{*/
 	int num_labels;

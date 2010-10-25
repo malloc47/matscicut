@@ -20,8 +20,8 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 
 	for(int x=0;x<regions.size().width-1;x++) {
 		for(int y=0;y<regions.size().height;y++) {
-			int r1 = regions.at<int>(x,y);
-			int r2 = regions.at<int>(x+1,y);
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y,x+1);
 			if( r1 != r2 ) {
 				adj.at<int>(r1,r2) = 1;
 				adj.at<int>(r2,r1) = 1;
@@ -31,8 +31,8 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 
 	for(int x=0;x<regions.size().width;x++) {
 		for(int y=0;y<regions.size().height-1;y++) {
-			int r1 = regions.at<int>(x,y);
-			int r2 = regions.at<int>(x,y+1);
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y+1,x);
 			if( r1 != r2 ) {
 				adj.at<int>(r1,r2) = 1;
 				adj.at<int>(r2,r1) = 1;
@@ -41,8 +41,8 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	}
 	for(int x=1;x<regions.size().width;x++) {
 		for(int y=0;y<regions.size().height;y++) {
-			int r1 = regions.at<int>(x,y);
-			int r2 = regions.at<int>(x-1,y);
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y,x-1);
 			if( r1 != r2 ) {
 				adj.at<int>(r1,r2) = 1;
 				adj.at<int>(r2,r1) = 1;
@@ -51,8 +51,8 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	}
 	for(int x=0;x<regions.size().width;x++) {
 		for(int y=1;y<regions.size().height;y++) {
-			int r1 = regions.at<int>(x,y);
-			int r2 = regions.at<int>(x,y-1);
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y-1,x);
 			if( r1 != r2 ) {
 				adj.at<int>(r1,r2) = 1;
 				adj.at<int>(r2,r1) = 1;
@@ -64,8 +64,8 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 }/*}}}*/
 Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 	Mat layer(seedimg.size(),CV_8U); // Must use CV_8U for dilation
-	for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
-		layer.at<unsigned char>(x,y) = (seedimg.at<int>(x,y) == region ? 255 : 0);
+	for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
+		layer.at<unsigned char>(y,x) = (seedimg.at<int>(y,x) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
 int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
@@ -92,8 +92,8 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 		if(dilate_amount > 0)
 			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
 
-		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
-				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
+		for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
+				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(y,x)) == 255 ? 0 : INF);
 	}
 	cout << "\b" << flush;
 	cout << "Done" << endl;
@@ -116,7 +116,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 		// Initialize labels
 		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++)
-			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(x,y));
+			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(y,x));
 
 		// Use input data cost
 		gc->setDataCost(data);
@@ -166,7 +166,7 @@ int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 		// Initialize labels
 		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++)
-			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(x,y));
+			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(y,x));
 
 		// Use input data cost
 		gc->setDataCost(data);
@@ -261,7 +261,7 @@ Mat localGraphCut(Mat img_orig, Mat seedimg_orig, int ptx, int pty, int boxsize)
 int main(int argc, char **argv) {/*{{{*/
 
 	// Read in cmd line args/*{{{*/
-	int dilate_amount = 10;
+	int dilate_amount = 20;
 	int framenum = 1;
     int cmdargs;
     static struct option long_options[] = {
@@ -311,7 +311,7 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "-dilate: \t" << dilate_amount << endl;/*}}}*/
 
 	// Read files/*{{{*/
-	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";/*{{{*/
+	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea4=datapath + "7000_Series/7000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
@@ -319,9 +319,13 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";/*}}}*/
+	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";
 
-	Mat img = imread(fileb1,0);
+	string filenew=datapath + "stfl" + zpnum(framenum-1,2) + "alss1.tif";
+
+	Mat img = imread(filenew,0);
+	//Mat img = imread(fileb1,0);
+	
 	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
 
 /*}}}*/
@@ -341,5 +345,5 @@ int main(int argc, char **argv) {/*{{{*/
 	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
 	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
 
-	return 0;/*}}}*/
-}/*}}}*/
+	return 0;//*}}}*/
+}
