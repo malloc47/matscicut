@@ -219,10 +219,21 @@ bool cmpMat(Mat a, Mat b) {/*{{{*/
 		cout << "Comparing matrices of different sizes." << endl;
 		return false;
 	}
+	
+	if(a.type() == CV_32S)
+		for(int x=0;x<a.size().width;x++) for(int y=0;y<a.size().height;y++)
+			if( a.at<int>(x,y) != b.at<int>(x,y) )
+				return false;
 
-	for(int x=0;x<a.size().width;x++) for(int y=0;y<a.size().height;y++)
-		if( a.at<int>(x,y) != b.at<int>(x,y) )
-			return false;
+	if(a.type() == CV_8U)
+		for(int x=0;x<a.size().width;x++) for(int y=0;y<a.size().height;y++)
+			if( int(a.at<unsigned char>(x,y)) != int(b.at<unsigned char>(x,y)) )
+				return false;
+
+	if(a.type() != CV_32S && a.type() != CV_8U) {
+		cout << "Bad type" << endl;
+		return false;
+	}
 
 	return true;
 

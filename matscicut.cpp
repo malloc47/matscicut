@@ -88,7 +88,9 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 		cout << "\b" << flush;
 		cout << bar[l%4] << flush;
 
-		dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		// Don't boother if no dilation
+		if(dilate_amount > 0)
+			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
 
 		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++) 
 				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(x,y)) == 255 ? 0 : INF);
@@ -152,7 +154,6 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 	return result;
 }/*}}}*/
 Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
-
 	int width = img.size().width; 
 	int height = img.size().height;
 	int num_pixels = width*height;
@@ -184,6 +185,39 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 
 	return new_seed;
 
+}/*}}}*/
+Mat localGraphCut(Mat img_orig, Mat seedimg_orig, int ptx, int pty, int boxsize) {/*{{{*/
+	cout << "@subregion \t" << ptx << "," << pty << endl;
+
+	int x0 = max(0,ptx-boxsize), x1 = min(img_orig.size().width,ptx+boxsize);
+	int y0 = max(0,pty-boxsize), y1 = min(img_orig.size().height,pty+boxsize);
+
+	// Note that this is row,col rather than x,y
+	Mat img = img_orig(Range(y0,y1),Range(x0,x1));	
+	Mat seedimg = seedimg_orig(Range(y0,y1),Range(x0,x1));	
+
+	int width = img.size().width; 
+	int height = img.size().height;
+	int num_pixels = width*height;
+
+	int num_labels = mat_max(seedimg)+1;
+	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
+
+	Mat adj = regionsAdj(seedimg,num_labels);
+	
+	int *data = globalDataTerm(seedimg,0);
+
+	int *sites = toLinear(img);
+
+	int *result = graphCut(data,sites,seedimg,adj);
+
+	Mat new_seed = toMat(result,width,height);
+
+	delete [] data;
+	delete [] sites;
+	delete [] result;
+
+	return new_seed;
 }/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
 
@@ -253,18 +287,20 @@ int main(int argc, char **argv) {/*{{{*/
 
 /*}}}*/
 
+	Mat test = localGraphCut(img,seedimg,300,300,20);
+
 	Mat new_seed = globalGraphCut(img,seedimg,dilate_amount);
 
 	// Output/*{{{*/
 	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
-	Mat composite = overlay(new_seed,img,0.5);
+	/*Mat composite = overlay(new_seed,img,0.5);
 	Mat composite2 = overlay(seedimg,img,0.5);
 
-	//cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
+	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
-	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
-	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);
+	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
+	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
 
 	return 0;/*}}}*/
 }/*}}}*/
