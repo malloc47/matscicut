@@ -21,6 +21,8 @@ disp('Reading labels');
 
 labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
+disp('Reshaping');
+
 %labels_raw = labels_raw(:);
 
 %length(unique(labels_raw))
@@ -31,8 +33,6 @@ labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' 
 	%[y,x] = convertind(i-1,size(labels,2));
 	%labels(x+1,y+1) = labels_raw(i);
 %end
-
-%disp('Reshaping');
 
 labels = reshape(labels,size(img));
 % labels = readSeg(['evaluation/groundtruth/' sprintf('%04d',imgnum) '.seg']);
@@ -61,9 +61,9 @@ output(:,:,1) = outputr;
 output(:,:,2) = outputg;
 output(:,:,3) = outputb;
 
-figure; imshow(output);
+%figure; imshow(output);
 
-%imwrite(output,[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
+imwrite(output,[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
 

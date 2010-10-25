@@ -9,8 +9,8 @@ int sub2ind(int x, int y, int w) {/*{{{*/
 	return x+(y*w);
 }/*}}}*/
 Mat loadMat(string filename, int width, int height) {/*{{{*/
+	// Read from MATLAB's dlmwrite
 	cout << "<readingMat \t" << filename << endl;
-
 
 	ifstream rawfilein;
 	rawfilein.open(filename.c_str(),ios::in);
@@ -34,6 +34,7 @@ Mat loadMat(string filename, int width, int height) {/*{{{*/
 	
 }/*}}}*/
 void writeMat(string filename, Mat data) {/*{{{*/
+	// Can be read by dlmread in MATLAB
 	cout << ">writingMat \t" << filename << endl;
 
 	ofstream rawfileout;
@@ -44,8 +45,14 @@ void writeMat(string filename, Mat data) {/*{{{*/
 		exit(1);
 	}
 
-	for(int x=0;x<data.size().width;x++) for(int y=0;y<data.size().height;y++) {
-		rawfileout << data.at<int>(y,x) << " ";
+	for(int y=0;y<data.size().height;y++) {
+		for(int x=0;x<data.size().width;x++) {
+			rawfileout << data.at<int>(y,x);
+			if(x<data.size().width-1)
+				rawfileout << " ";
+		}
+		if(y<data.size().height-1)
+			rawfileout << endl;
 	}
 
 	rawfileout.close();
