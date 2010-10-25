@@ -11,18 +11,23 @@ disp('Reading images');
 
 img = imread([datapath num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
 
+ground = readSeg(['evaluation/groundtruth/' sprintf('%04d',imgnum) '.seg']);
+groundbmp = seg2bmap(ground);
+
 disp('Reading labels');
 
 labels_raw = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
-%length(unique(labels_raw))
+labels_raw = labels_raw(:);
 
-%labels = uint32(img.*0);
+length(unique(labels_raw))
 
-%for i = 1:length(labels_raw)
-    %[x,y] = convertind(i-1,size(labels,2));
-    %labels(x+1,y+1) = labels_raw(i);
-%end
+labels = uint32(img.*0);
+
+for i = 1:length(labels_raw)
+	[y,x] = convertind(i-1,size(labels,2));
+	labels(x+1,y+1) = labels_raw(i);
+end
 
 disp('Reshaping');
 
@@ -32,7 +37,26 @@ labels = reshape(labels,size(img));
 
 %load labelmap;
 
-imwrite(overlay(img,label2rgb(labels,'jet','w'),0.5),[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
+%imwrite(overlay(img,label2rgb(labels,'jet','w','shuffle'),0.5),[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
+
+output = label2rgb(labels,'jet','w','shuffle');
+
+outputr = output(:,:,1);
+outputg = output(:,:,2);
+outputb = output(:,:,3);
+
+outputr(groundbmp) = 255;
+outputg(groundbmp) = 255;
+outputb(groundbmp) = 255;
+
+output(:,:,1) = outputr;
+output(:,:,2) = outputg;
+output(:,:,3) = outputb;
+
+figure; imshow(output);
+
+
+%imwrite( ,[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
 

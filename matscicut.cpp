@@ -153,6 +153,45 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	return result;
 }/*}}}*/
+int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
+
+	int num_labels = mat_max(seedimg)+1;
+	int num_pixels = seedimg.size().width*seedimg.size().height;
+	int energy = 0;
+
+	try {
+		
+		// Setup grid-based graph
+		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(seedimg.size().width,seedimg.size().height,num_labels);
+
+		// Initialize labels
+		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++)
+			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(x,y));
+
+		// Use input data cost
+		gc->setDataCost(data);
+
+		// Setup data to pass to the smooth function
+		ForSmoothFn toFn;
+		toFn.adj = adj;
+		toFn.num_labels = num_labels;
+		toFn.sites = sites;
+
+		// Send the smooth function pointer
+		gc->setSmoothCost(&smoothFn,&toFn);
+
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+
+		energy = gc->giveSmoothEnergy(); 
+
+		delete gc;
+	}
+	catch (GCException e) {
+		e.Report();
+	}
+
+	return energy;
+}/*}}}*/
 Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	int width = img.size().width; 
 	int height = img.size().height;
@@ -287,7 +326,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 /*}}}*/
 
-	Mat test = localGraphCut(img,seedimg,300,300,20);
+	//Mat test = localGraphCut(img,seedimg,300,300,20);
 
 	Mat new_seed = globalGraphCut(img,seedimg,dilate_amount);
 
