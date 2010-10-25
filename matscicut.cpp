@@ -176,7 +176,7 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	int *result = graphCut(data,sites,seedimg,adj);
 	Mat new_seed = toMat(result,width,height);
 
-	writeRaw(outputpath+"labels/image"+zpnum(1,FNAMELEN)+".labels",result,num_pixels);
+	//writeRaw(outputpath+"labels/image"+zpnum(1,FNAMELEN)+".labels",result,num_pixels);
 
 	delete [] data;
 	delete [] sites;
@@ -256,12 +256,12 @@ int main(int argc, char **argv) {/*{{{*/
 	Mat new_seed = globalGraphCut(img,seedimg,dilate_amount);
 
 	// Output/*{{{*/
-	//writeRaw(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",result,num_pixels);
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
 	Mat composite = overlay(new_seed,img,0.5);
 	Mat composite2 = overlay(seedimg,img,0.5);
 
-	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
+	//cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
 	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
 	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);

@@ -9,7 +9,7 @@ int sub2ind(int x, int y, int w) {/*{{{*/
 	return x+(y*w);
 }/*}}}*/
 Mat loadMat(string filename, int width, int height) {/*{{{*/
-	cout << "<reading \t" << filename << endl;
+	cout << "<readingMat \t" << filename << endl;
 
 
 	ifstream rawfilein;
@@ -33,13 +33,30 @@ Mat loadMat(string filename, int width, int height) {/*{{{*/
 	return raw;
 	
 }/*}}}*/
+void writeMat(string filename, Mat data) {/*{{{*/
+	cout << ">writingMat \t" << filename << endl;
+
+	ofstream rawfileout;
+	rawfileout.open (filename.c_str());
+
+	if(!rawfileout) {
+		cerr << ":can't open file: " << filename << endl;
+		exit(1);
+	}
+
+	for(int x=0;x<data.size().width;x++) for(int y=0;y<data.size().height;y++) {
+		rawfileout << data.at<int>(x,y) << " ";
+	}
+
+	rawfileout.close();
+}/*}}}*/
 std::string zpnum(int num,int pad) {/*{{{*/
 	std::ostringstream ss;
 	ss << std::setw(pad) << std::setfill('0') << num;
 	return ss.str();
 }/*}}}*/
 void writeRaw(string filename, int* data, int size) {/*{{{*/
-	cout << ">writing \t" << filename << endl;
+	cout << ">writingRaw \t" << filename << endl;
 
 	ofstream rawfileout;
 	rawfileout.open (filename.c_str());
@@ -56,7 +73,7 @@ void writeRaw(string filename, int* data, int size) {/*{{{*/
 	rawfileout.close();
 }/*}}}*/
 int* loadRaw(string filename, int size) {/*{{{*/
-	cout << "<reading \t" << filename << endl;
+	cout << "<readingRaw \t" << filename << endl;
 
 	ifstream rawfilein;
 	rawfilein.open(filename.c_str(),ios::in);
@@ -195,5 +212,19 @@ Mat overlay(Mat img1, Mat img2,float alpha) {/*{{{*/
 	}
 
 	return composite;
+
+}/*}}}*/
+bool cmpMat(Mat a, Mat b) {/*{{{*/
+	if(a.size().width != b.size().width || a.size().height != b.size().height) {
+		cout << "Comparing matrices of different sizes." << endl;
+		return false;
+	}
+
+	for(int x=0;x<a.size().width;x++) for(int y=0;y<a.size().height;y++)
+		if( a.at<int>(x,y) != b.at<int>(x,y) )
+			return false;
+
+	return true;
+
 
 }/*}}}*/
