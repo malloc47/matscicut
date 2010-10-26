@@ -9,7 +9,8 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	if(!adj.at<int>(l1,l2)) { return INF; }
 
-	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
+	//return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
+	return int( 1/(double(sites[s1]+sites[s2])/2) * N );
 }/*}}}*/
 Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	Mat adj(num_regions,num_regions,CV_32S);
