@@ -8,9 +8,12 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	if(l1 == l2) { return 0; }
 
 	if(!adj.at<int>(l1,l2)) { return INF; }
-
+	
 	//return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
-	return int( 1/(double(sites[s1]+sites[s2])/2) * N );
+	//return int( 1/(double(sites[s1]+sites[s2])/2) * N );
+	//return int( N - int(double(sites[s1]+sites[s2])/2));
+	return int( 1/(max(double(sites[s1]),double(sites[s2]))+1) * N );
+	//return int( 1/(min(double(sites[s1]),double(sites[s2]))+1) * N );
 }/*}}}*/
 Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	Mat adj(num_regions,num_regions,CV_32S);
@@ -89,9 +92,13 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 		cout << "\b" << flush;
 		cout << bar[l%4] << flush;
 
-		// Don't boother if no dilation
+		//display("tmp",dilation);
+
+		// Don't bother if no dilation
 		if(dilate_amount > 0)
 			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+
+		//display("tmp",dilation);
 
 		for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
 				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(y,x)) == 255 ? 0 : INF);
@@ -139,6 +146,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 		gc->swap(1);
+		//gc->expansion(1);
 
 		// Retrieve labeling
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
@@ -312,7 +320,7 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "-dilate: \t" << dilate_amount << endl;/*}}}*/
 
 	// Read files/*{{{*/
-	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
+	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";/*{{{*/
 	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
 	string filea4=datapath + "7000_Series/7000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
@@ -322,9 +330,14 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";
 
-	string filenew=datapath + "stfl" + zpnum(framenum-1,2) + "alss1.tif";
+	string filenew=datapath + "stfl" + zpnum(framenum,2) + "alss1.tif";
+	string filemap=outputpath + "maps/image" + zpnum(framenum,4) + ".tif";/*}}}*/
 
 	Mat img = imread(filenew,0);
+	Mat map = imread(filemap,0);
+
+	Mat imgblend = combine(img,map);
+
 	//Mat img = imread(fileb1,0);
 	
 	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
@@ -333,7 +346,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 	//Mat test = localGraphCut(img,seedimg,300,300,20);
 
-	Mat new_seed = globalGraphCut(img,seedimg,dilate_amount);
+	Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
 
 	// Output/*{{{*/
 	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);

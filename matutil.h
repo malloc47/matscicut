@@ -30,3 +30,4 @@ int * toLinear(Mat matrix);
 Mat toMat(int* data,int width,int height);
 Mat overlay(Mat img1, Mat img2,float alpha);
 bool cmpMat(Mat a, Mat b);
+Mat combine(Mat a, Mat b, float blend = 0.5);

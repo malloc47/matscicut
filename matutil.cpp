@@ -248,3 +248,13 @@ bool cmpMat(Mat a, Mat b) {/*{{{*/
 
 
 }/*}}}*/
+Mat combine(Mat a, Mat b, float blend) {/*{{{*/
+
+	Mat c = a.clone();
+	
+	for(int y=0;y<a.size().height;y++) for(int x=0;x<a.size().width;x++)
+		c.at<unsigned char>(y,x) = int( blend*float(a.at<unsigned char>(y,x)) + (1-blend)*float(b.at<unsigned char>(y,x)) );
+
+	return c;
+
+}/*}}}*/

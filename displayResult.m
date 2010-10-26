@@ -1,15 +1,15 @@
-function displayResult(imgnum)
+function displayResult(imgnums)
 
-disp('Start');
+for imgnum = imgnums
 
 series = 1;
+
+disp(imgnum);
 
 %datapath = 'data/new/raw/';
 datapath = 'data/old/scaled/';
 %outputpath = 'output/';
 outputpath = 'output2/';
-
-disp('Reading images');
 
 %img = imread([datapath num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
 img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
@@ -17,11 +17,7 @@ img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
 % ground = readSeg(['evaluation/groundtruth/' sprintf('%04d',imgnum) '.seg']);
 % groundbmp = seg2bmap(ground);
 
-disp('Reading labels');
-
 labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-
-disp('Reshaping');
 
 %labels_raw = labels_raw(:);
 
@@ -61,7 +57,7 @@ output(:,:,1) = outputr;
 output(:,:,2) = outputg;
 output(:,:,3) = outputb;
 
-%figure; imshow(output);
+% figure; imshow(output);
 
 imwrite(output,[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
 
@@ -72,6 +68,7 @@ imwrite(output,[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png')
 	%imwrite(overlay(img_prev,label2rgb(labels,labelcolors,'w'),0.5),['output/image' sprintf('%04d',imgnum-1) '-s.png'],'png');
 %end
 
+end
 
 end
 
