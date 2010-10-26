@@ -5,6 +5,7 @@
 *.old
 .*
 *.o
+*~
 data
 output
 matscicut
