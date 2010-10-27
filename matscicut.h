@@ -10,6 +10,7 @@
 #define FNAMELEN 4
 
 #define FORxy(a,b) for(int y=0;y<(a);y++) for(int x=0;x<(b);x++)
+#define FORxyM(m) for(int y=0;y<(m).size().height;y++) for(int x=0;x<(m).size().width;x++)
 
 using namespace cv;
 using namespace std;

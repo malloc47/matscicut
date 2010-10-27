@@ -81,11 +81,36 @@ vector<int> regionSizes(Mat regions) {/*{{{*/
 
 	vector<int> sizes(num_regions,0);
 
-	FORxy(regions.size().height,regions.size().width)
+	FORxyM(regions)
 		sizes.at(regions.at<int>(y,x)) = sizes.at(regions.at<int>(y,x))+1;
 
 	return sizes;
 
+}/*}}}*/
+/*vector< vector<int> >*/ void junctionRegions(Mat regions) {/*{{{*/
+
+	int numJunctions = 0;
+
+	for(int y=0;y<regions.size().height-1;y++) for(int x=0;x<regions.size().width-1;x++) {
+		vector<int> win(4,0);
+		vector<int>::iterator it;
+
+		win[0] = regions.at<int>(y,x);
+		win[1] = regions.at<int>(y,x+1);
+		win[2] = regions.at<int>(y+1,x);
+		win[3] = regions.at<int>(y+1,x+1);
+
+		it = unique(win.begin(),win.end());
+		win.resize(it-win.begin());
+
+		if(win.size() == 3)
+			numJunctions++;
+	}
+
+	cout << numJunctions << endl;
+		
+
+		
 }/*}}}*/
 Rect getWindow(vector<int> labels, Mat regions) {/*{{{*/
 	// Get bounding window around multiple labels
@@ -96,7 +121,7 @@ Rect getWindow(vector<int> labels, Mat regions) {/*{{{*/
 		exit(0);
 	}
 
-	FORxy(regions.size().height,regions.size().width) 
+	FORxyM(regions) 
 		for(int z=0;z<labels.size();z++) 
 			if(regions.at<int>(y,x) == labels.at(z)) {
 				x0=min(x0,x);
@@ -376,6 +401,10 @@ int main(int argc, char **argv) {/*{{{*/
 
 	/*}}}*/
 
+	// Processing /*{{{*/
+	
+	junctionRegions(seedimg);
+
 	Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
 
 	vector<int> regsizes = regionSizes(seedimg);
@@ -401,6 +430,7 @@ int main(int argc, char **argv) {/*{{{*/
 	//Mat test = localGraphCut(img,seedimg,300,300,20);
 	
 	Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
+/*}}}*/
 
 	// Output/*{{{*/
 	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
