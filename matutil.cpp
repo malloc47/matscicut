@@ -258,3 +258,10 @@ Mat combine(Mat a, Mat b, float blend) {/*{{{*/
 	return c;
 
 }/*}}}*/
+template <typename T>/*{{{*/
+void swap(const T &a, const T &b) {
+	T temp;
+	temp = a;
+	a = b;
+	b = temp;
+}/*}}}*/

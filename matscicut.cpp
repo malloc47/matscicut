@@ -234,12 +234,10 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	return new_seed;
 
 }/*}}}*/
-Mat localGraphCut(Mat img_orig, Mat seedimg_orig, int ptx, int pty, int boxsize) {/*{{{*/
+Mat localGraphCut(Mat img_orig, Mat seedimg_orig, int x0, int x1, int y0, int y1) {/*{{{*/
 
-	int x0 = max(0,ptx-boxsize), x1 = min(img_orig.size().width,ptx+boxsize);
-	int y0 = max(0,pty-boxsize), y1 = min(img_orig.size().height,pty+boxsize);
-
-	cout << "@extracting \t" << ptx << "," << pty << endl;
+	if(x0>x1) swap(x0,x1);	
+	if(y0>y1) swap(y0,y1);	
 
 	return localGraphCut(img_orig(Range(y0,y1),Range(x0,x1)),seedimg_orig(Range(y0,y1),Range(x0,x1)));
 }/*}}}*/
@@ -270,7 +268,6 @@ Mat localGraphCut(Mat img, Mat seedimg) {/*{{{*/
 	return new_seed;
 }/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
-
 	// Read in cmd line args/*{{{*/
 	int dilate_amount = 20;
 	int framenum = 1;
@@ -346,7 +343,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 /*}}}*/
 
-	Mat test = localGraphCut(img,seedimg,300,300,20);
+	//Mat test = localGraphCut(img,seedimg,300,300,20);
 
 	Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
 
