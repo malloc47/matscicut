@@ -3,12 +3,12 @@ CXX = g++
 CCFLAGS = -I /usr/include/opencv -L /usr/local/lib -lm `pkg-config --cflags --libs opencv`
 
 
-all: gco 
+all: matscicut 
 
-gco: matscicut.o matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o
+matscicut: matscicut.o matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o
 	${CXX} ${CCFLAGS} -o matscicut matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o matscicut.o
 
-matscicut.o: matscicut.cpp matscicut.h matutil.o
+matscicut.o: matscicut.cpp matscicut.h 
 	${CXX} ${CCFLAGS} -c matscicut.cpp
 
 matutil.o: matutil.cpp matutil.h

@@ -144,7 +144,7 @@ Mat toMat(int* data,int width,int height) {/*{{{*/
 		output.at<int>(y,x) = data[c++];
 	return output;
 }/*}}}*/
-Mat overlay(Mat img1, Mat img2,float alpha) {/*{{{*/
+Mat overlay(Mat img1, Mat img2,float alpha,int hilight) {/*{{{*/
 	Mat composite(img1.size().height,img1.size().width,CV_8UC3,Scalar(0));
 
 	int colormap[64][3] = {{0,0,143},/*{{{*/
@@ -212,12 +212,22 @@ Mat overlay(Mat img1, Mat img2,float alpha) {/*{{{*/
 		{143,0,0},
 		{128,0,0}};/*}}}*/
 
+	int randmap[64] = {
+    54,6,46,17,35,63,1,23,28,27,49,2,13,21,14,39,30,47,45,4,26,5,57,61,55,52,32,34,41,18,12,25,53,56,22,19,48,9,37,8,60,36,64,16,3,58,44,15,7,10,20,24,40,11,43,50,38,51,59,29,62,31,33,42};
+
 	Mat_<Vec3b>& img = (Mat_<Vec3b>&)composite;
 
 	for(int y=0;y<img1.size().height;y++) for(int x=0;x<img1.size().width;x++) {
-		img(y,x)[1] = int(alpha * colormap[img1.at<int>(y,x) % 64][1]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
-		img(y,x)[2] = int(alpha * colormap[img1.at<int>(y,x) % 64][2]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
-		img(y,x)[3] = int(alpha * colormap[img1.at<int>(y,x) % 64][3]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
+		if(img1.at<int>(y,x)==hilight) {
+			img(y,x)[1] = 255;
+			img(y,x)[2] = 255;
+			img(y,x)[3] = 255;
+		}
+		else {
+			img(y,x)[1] = int(alpha * colormap[randmap[img1.at<int>(y,x) % 64]][1]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
+			img(y,x)[2] = int(alpha * colormap[randmap[img1.at<int>(y,x) % 64]][2]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
+			img(y,x)[3] = int(alpha * colormap[randmap[img1.at<int>(y,x) % 64]][3]) + int((1-alpha) * int(img2.at<unsigned char>(y,x))); 
+		}
 	}
 
 	return composite;
@@ -264,4 +274,9 @@ void swap(const T &a, const T &b) {
 	temp = a;
 	a = b;
 	b = temp;
+}/*}}}*/
+void printVector(vector<int> vec) {/*{{{*/
+	for(int i=0;i<vec.size();i++)
+		cout << vec.at(i) << " ";
+	cout << endl;
 }/*}}}*/

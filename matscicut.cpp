@@ -66,6 +66,48 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 
 	return adj;
 }/*}}}*/
+vector<int> getAdj(Mat adj,int region) {/*{{{*/
+	// Adj is symmetrical, so it shouldn't matter how we iterate through it
+	vector<int> adjacent;
+	for(int i=0;i<adj.size().width;i++) 
+		if(adj.at<int>(region,i)==1 && i != region) {
+			adjacent.push_back(i);
+		}
+	return adjacent;
+}/*}}}*/
+vector<int> regionSizes(Mat regions) {/*{{{*/
+
+	int num_regions = mat_max(regions)+1;
+
+	vector<int> sizes(num_regions,0);
+
+	FORxy(regions.size().height,regions.size().width)
+		sizes.at(regions.at<int>(y,x)) = sizes.at(regions.at<int>(y,x))+1;
+
+	return sizes;
+
+}/*}}}*/
+Rect getWindow(vector<int> labels, Mat regions) {/*{{{*/
+	// Get bounding window around multiple labels
+	int x0=regions.size().width, y0=regions.size().height, x1=0, y1=0;
+
+	if(labels.size() < 1) {
+		cout << "No labels to generate window" << endl;
+		exit(0);
+	}
+
+	FORxy(regions.size().height,regions.size().width) 
+		for(int z=0;z<labels.size();z++) 
+			if(regions.at<int>(y,x) == labels.at(z)) {
+				x0=min(x0,x);
+				y0=min(y0,y);
+				x1=max(x1,x);
+				y1=max(y1,y);
+			}
+
+	return Rect(x0,y0,x1-x0,y1-y0);
+
+}/*}}}*/
 Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 	Mat layer(seedimg.size(),CV_8U); // Must use CV_8U for dilation
 	for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
@@ -162,11 +204,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	return result;
 }/*}}}*/
-int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
-
-	int num_labels = mat_max(seedimg)+1;
-	int num_pixels = seedimg.size().width*seedimg.size().height;
-	int energy = 0;
+int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/ int num_labels = mat_max(seedimg)+1; int num_pixels = seedimg.size().width*seedimg.size().height; int energy = 0;
 
 	try {
 		
@@ -243,11 +281,6 @@ Mat localGraphCut(Mat img_orig, Mat seedimg_orig, int x0, int x1, int y0, int y1
 }/*}}}*/
 Mat localGraphCut(Mat img, Mat seedimg) {/*{{{*/
 	cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
-
-	int width = img.size().width; 
-	int height = img.size().height;
-	int num_pixels = width*height;
-
 	int num_labels = mat_max(seedimg)+1;
 	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 
@@ -259,7 +292,7 @@ Mat localGraphCut(Mat img, Mat seedimg) {/*{{{*/
 
 	int *result = graphCut(data,sites,seedimg,adj);
 
-	Mat new_seed = toMat(result,width,height);
+	Mat new_seed = toMat(result,img.size().width,img.size().height);
 
 	delete [] data;
 	delete [] sites;
@@ -271,37 +304,37 @@ int main(int argc, char **argv) {/*{{{*/
 	// Read in cmd line args/*{{{*/
 	int dilate_amount = 20;
 	int framenum = 1;
-    int cmdargs;
-    static struct option long_options[] = {
-        {"dilate", 1, 0, 'd'},
-        {"help", 0, 0, 'h'},
-        {NULL, 0, NULL, 0}
-    };
-    int option_index = 0;
-    while ((cmdargs = getopt_long(argc, argv, "d:h",
-                 long_options, &option_index)) != -1) {
-        switch (cmdargs) {
-        case 'd':
-			dilate_amount = atoi(optarg);
-            break;
-		case 'h':
-			cout << "Usage: matscicut [OPTION] framenumber\n"
+	int cmdargs;
+	static struct option long_options[] = {
+		{"dilate", 1, 0, 'd'},
+		{"help", 0, 0, 'h'},
+		{NULL, 0, NULL, 0}
+	};
+	int option_index = 0;
+	while ((cmdargs = getopt_long(argc, argv, "d:h",
+					long_options, &option_index)) != -1) {
+		switch (cmdargs) {
+			case 'd':
+				dilate_amount = atoi(optarg);
+				break;
+			case 'h':
+				cout << "Usage: matscicut [OPTION] framenumber\n"
 					"Label propagation for material science image segmentation\n\n"
 					"Options\n"
-				    "  -d, --dilate\t global dilation amount\n"
+					"  -d, --dilate\t global dilation amount\n"
 					" (-h) --help\t show this help (-h works with no other options\n";
-			exit(0);
-			break;
-        case '?':
-			exit(0);
-            break;
-        }
-    }
+				exit(0);
+				break;
+			case '?':
+				exit(0);
+				break;
+		}
+	}
 
-    if (optind < argc) {
-        while (optind < argc)
+	if (optind < argc) {
+		while (optind < argc)
 			framenum = atoi(argv[optind++]);
-    }/*}}}*/
+	}/*}}}*/
 
 	// Sanity checks on input/*{{{*/
 	if(framenum < 1) {
@@ -338,25 +371,47 @@ int main(int argc, char **argv) {/*{{{*/
 	Mat imgblend = combine(img,map);
 
 	//Mat img = imread(fileb1,0);
-	
+
 	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
 
-/*}}}*/
+	/*}}}*/
+
+	Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
+
+	vector<int> regsizes = regionSizes(seedimg);
+
+	for(int l=0;l<mat_max(seedimg)+1;l++) {
+		
+		if(regsizes.at(l) > 1000 || regsizes.at(l) < 1) continue;
+
+		cout << l << ": " << regsizes.at(l) << endl;
+
+		vector<int> labels = getAdj(adj,l);
+
+		Rect test = getWindow(labels,seedimg);
+
+		cout << test.x << "," << test.y << "," << test.width << "," << test.height << endl;
+
+		Mat imgcuttest = img(test);
+		Mat imgseedtest = seedimg(test);
+
+		display(zpnum(l,1),overlay(imgseedtest,imgcuttest,0.5,l));
+	}
 
 	//Mat test = localGraphCut(img,seedimg,300,300,20);
-
+	
 	Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
 
 	// Output/*{{{*/
 	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
 	/*Mat composite = overlay(new_seed,img,0.5);
-	Mat composite2 = overlay(seedimg,img,0.5);
+	  Mat composite2 = overlay(seedimg,img,0.5);
 
-	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
+	  cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
-	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
-	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
+	  imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
+	  imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
 
 	return 0;//*}}}*/
 }
