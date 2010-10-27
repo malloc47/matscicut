@@ -235,14 +235,16 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 
 }/*}}}*/
 Mat localGraphCut(Mat img_orig, Mat seedimg_orig, int ptx, int pty, int boxsize) {/*{{{*/
-	cout << "@subregion \t" << ptx << "," << pty << endl;
 
 	int x0 = max(0,ptx-boxsize), x1 = min(img_orig.size().width,ptx+boxsize);
 	int y0 = max(0,pty-boxsize), y1 = min(img_orig.size().height,pty+boxsize);
 
-	// Note that this is row,col rather than x,y
-	Mat img = img_orig(Range(y0,y1),Range(x0,x1));	
-	Mat seedimg = seedimg_orig(Range(y0,y1),Range(x0,x1));	
+	cout << "@extracting \t" << ptx << "," << pty << endl;
+
+	return localGraphCut(img_orig(Range(y0,y1),Range(x0,x1)),seedimg_orig(Range(y0,y1),Range(x0,x1)));
+}/*}}}*/
+Mat localGraphCut(Mat img, Mat seedimg) {/*{{{*/
+	cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
 
 	int width = img.size().width; 
 	int height = img.size().height;
@@ -344,7 +346,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 /*}}}*/
 
-	//Mat test = localGraphCut(img,seedimg,300,300,20);
+	Mat test = localGraphCut(img,seedimg,300,300,20);
 
 	Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
 

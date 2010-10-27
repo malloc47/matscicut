@@ -30,3 +30,4 @@ int * globalDataTerm(Mat seedimg,int dilate_amount);
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj);
 Mat globalGraphCut(Mat img, Mat seedimg);
 Mat localGraphCut(Mat img, Mat seedimg, int ptx, int pty, int boxsize);
+Mat localGraphCut(Mat img, Mat seedimg);
