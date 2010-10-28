@@ -88,6 +88,8 @@ vector<int> regionSizes(Mat regions) {/*{{{*/
 
 }/*}}}*/
 vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
+	// Stores x,y at junctions[i][0..1] and the
+	// remaining three regions in junctions[i][2..4]
 	vector< vector<int> > junctions;
 
 	for(int y=0;y<regions.size().height-1;y++) for(int x=0;x<regions.size().width-1;x++) {
@@ -140,6 +142,20 @@ Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 		layer.at<unsigned char>(y,x) = (seedimg.at<int>(y,x) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
+Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/	
+	FORxyM(seedimg) {
+		bool inRegion = false;
+		for(int z=0;z<regions.size();z++)
+			if(seedimg.at<int>(y,x) == regions[z]) inRegion=true;
+		if(!inRegion) seedimg.at<int>(y,x) = -1;
+	}
+	return seedimg;
+}/*}}}*/
+Mat changeRegion(Mat seedimg, int region1, int region2) {/*{{{*/
+	FORxyM(seedimg) 
+		if(seedimg.at<int>(y,x)==region1)
+			seedimg.at<int>(y,x)=region2;
+}/*}}}*/
 int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
@@ -160,8 +176,6 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 		cout << "\b" << flush;
 		cout << bar[l%4] << flush;
 
-		//display("tmp",dilation);
-
 		// Don't bother if no dilation
 		if(dilate_amount > 0)
 			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
@@ -169,7 +183,7 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 		//display("tmp",dilation);
 
 		for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
-				data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(y,x)) == 255 ? 0 : INF);
+			data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(y,x)) == 255 ? 0 : INF);
 	}
 	cout << "\b" << flush;
 	cout << "Done" << endl;
@@ -177,22 +191,45 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 	return data;
 
 }/*}}}*/
-int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
+int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions) {/*{{{*/
+	int num_labels = regions.size()+2;
+	int num_pixels = seedimg.size().width*seedimg.size().height;
+	int *data = new int[num_pixels*num_labels];
 
-	int num_labels = mat_max(seedimg)+1;
+	for(int l=0;l<num_labels-1;l++) {
+		Mat layer = selectRegion(seedimg,l);
+		FORxyM(seedimg)
+			data[(x+y*seedimg.size().width)*num_labels+l] = (int(layer.at<unsigned char>(y,x)) == 255 ? 0 : INF);
+	}
+
+	Rect win(center.x-ADDWIN,center.y-ADDWIN,ADDWIN*2,ADDWIN*2);
+	cout << win.x << "," << win.y << "," << win.width << "," << win.height << endl;
+
+	FORxyM(seedimg) {
+		//if(win.contains(Point(x,y)) && seedimg.at<int>(y,x) > 0)
+			//cout << (win.contains(Point(x,y)) ? 0 : INF) << ", was: " << seedimg.at<int>(y,x) << endl;
+		data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = (win.contains(Point(x,y)) ? 0 : INF);
+	}
+	
+	return data;
+}	/*}}}*/
+int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool initialize) {/*{{{*/
+
+	//int num_labels = mat_max(seedimg)+1;
 	int num_pixels = seedimg.size().width*seedimg.size().height;
 
 	int *result = new int[num_pixels];
 
 	try {
 		cout << "@grid graph" << endl;
-		
+	
 		// Setup grid-based graph
 		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(seedimg.size().width,seedimg.size().height,num_labels);
 
 		// Initialize labels
-		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++)
-			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(y,x));
+		if(initialize)
+			for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++)
+				gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(y,x));
 
 		// Use input data cost
 		gc->setDataCost(data);
@@ -230,7 +267,8 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/
 
 	return result;
 }/*}}}*/
-int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/ int num_labels = mat_max(seedimg)+1; int num_pixels = seedimg.size().width*seedimg.size().height; int energy = 0;
+int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj) {/*{{{*/ 
+	int num_labels = mat_max(seedimg)+1; int num_pixels = seedimg.size().width*seedimg.size().height; int energy = 0;
 
 	try {
 		
@@ -286,7 +324,7 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	cout << "@sites" << endl;
 	int *sites = toLinear(img);
 
-	int *result = graphCut(data,sites,seedimg,adj);
+	int *result = graphCut(data,sites,seedimg,adj,mat_max(seedimg)+1);
 	Mat new_seed = toMat(result,width,height);
 
 	//writeRaw(outputpath+"labels/image"+zpnum(1,FNAMELEN)+".labels",result,num_pixels);
@@ -298,27 +336,54 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	return new_seed;
 
 }/*}}}*/
-Mat localGraphCut(Mat img_orig, Mat seedimg_orig, int x0, int x1, int y0, int y1) {/*{{{*/
-
-	if(x0>x1) swap(x0,x1);	
-	if(y0>y1) swap(y0,y1);	
-
-	return localGraphCut(img_orig(Range(y0,y1),Range(x0,x1)),seedimg_orig(Range(y0,y1),Range(x0,x1)));
-}/*}}}*/
-Mat localGraphCut(Mat img, Mat seedimg) {/*{{{*/
+Mat junctionGraphCut(Mat img, Mat seedimg, Point center, vector<int> regions) {/*{{{*/
 	cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
-	int num_labels = mat_max(seedimg)+1;
+	//int num_labels = mat_max(seedimg)+1;
+	int num_labels = regions.size()+2;
 	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 
-	Mat adj = regionsAdj(seedimg,num_labels);
+	//Mat adj = regionsAdj(seedimg,num_labels);
+	Mat adj(num_labels,num_labels,CV_32S,1);
+
+	Mat shifted_seed(seedimg.size(),CV_32S,-1);
+
+	FORxyM(seedimg) {
+		int val=seedimg.at<int>(y,x);
+		if(val==-1) shifted_seed.at<int>(y,x)=0;
+		for(int i=0;i<regions.size();i++)
+			if(val==regions[i])
+				shifted_seed.at<int>(y,x)=i+1;
+	}
 	
-	int *data = globalDataTerm(seedimg,0);
+	int *data = junctionDataTerm(shifted_seed,center,regions);
 
 	int *sites = toLinear(img);
 
-	int *result = graphCut(data,sites,seedimg,adj);
+	//display("test",overlay(shifted_seed,img));
+
+	int *result = graphCut(data,sites,shifted_seed,adj,num_labels,false);
 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
+
+	printstats(new_seed);
+
+	vector<int> sizes = regionSizes(new_seed);
+
+	if(mat_max(new_seed) > 3 && sizes[4] > 30)
+	display("test",overlay(new_seed,img));
+
+	Mat new_shifted_seed = seedimg.clone();
+
+	FORxyM(new_seed) {
+		int origval=seedimg.at<int>(y,x);
+		int newval=new_seed.at<int>(y,x);
+		if(origval != -1) { // Only change stuff inside the boundary
+			if(newval < regions.size()+1)
+				new_shifted_seed.at<int>(y,x) = regions[newval+1];
+			else
+				new_shifted_seed.at<int>(y,x) = -2;
+		}
+	}
 
 	delete [] data;
 	delete [] sites;
@@ -331,21 +396,28 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 	// Identify junctions
 	vector< vector<int> > junctions = junctionRegions(seedimg);
 	// Recalculate adjacencies
-	Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
+	//Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
 	// Step through junctions, processing each
 	for(int i=0;i<junctions.size();i++) {
-		int x=junctions[i][0], y=junctions[i][1];
+		Point center(junctions[i][0],junctions[i][1]);
+		//int x=junctions[i][0], y=junctions[i][1];
 		vector<int> regions(3,-1);
 		regions[0]=junctions[i][2];
 		regions[1]=junctions[i][3];
 		regions[2]=junctions[i][4];
 
 		Rect win = getWindow(regions,seedimg);
+		center.x = center.x - win.x;
+		center.y = center.y - win.y;
 
 		Mat imgj = img(win);	
-		Mat seedj = seedimg(win);
+		Mat seedj = seedimg(win).clone();
 
-		display("test",overlay(seedj,imgj,0.5));
+		seedj = clearRegions(seedj,regions); 
+		
+		//display("test",overlay(seedj,imgj));
+
+		Mat imgj_new = junctionGraphCut(imgj,seedj,center,regions);
 
 	}
 
@@ -439,8 +511,8 @@ int main(int argc, char **argv) {/*{{{*/
 	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
 	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";
 
-	string filenew=datapath + "stfl" + zpnum(framenum,2) + "alss1.tif";
-	string filemap=outputpath + "maps/image" + zpnum(framenum,4) + ".tif";/*}}}*/
+	string filenew=datapath + "stfl" + zpnum(framenum-1,2) + "alss1.tif"; // FIX THIS
+	string filemap=outputpath + "maps/image" + zpnum(framenum-1,4) + ".tif";/*}}}*/
 
 	Mat img = imread(filenew,0);
 	Mat map = imread(filemap,0);
@@ -455,11 +527,10 @@ int main(int argc, char **argv) {/*{{{*/
 
 	// Processing /*{{{*/
 	
-	Mat seedtest = processJunctions(img,seedimg);
-
-	//Mat test = localGraphCut(img,seedimg,300,300,20);
-	
 	//Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
+	Mat seedtest = processJunctions(img,new_seed);
+
+
 /*}}}*/
 
 	// Output/*{{{*/

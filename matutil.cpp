@@ -121,7 +121,7 @@ int mat_max(Mat matrix) {/*{{{*/
 	return int(templabels);
 }/*}}}*/
 int * toLinear(Mat matrix) {/*{{{*/
-	cout << matrix.size().width << "," << matrix.size().height << endl;
+	//cout << matrix.size().width << "," << matrix.size().height << endl;
 	int *linear = new int[matrix.size().width * matrix.size().height];
 	for(int y=0;y<matrix.size().height;y++) for(int x=0;x<matrix.size().width;x++) 
 		switch(matrix.type()) {
