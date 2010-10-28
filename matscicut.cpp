@@ -345,8 +345,6 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 		Mat imgj = img(win);	
 		Mat seedj = seedimg(win);
 
-		img.at<int>(x-win.x,y-win.y) = 255;
-
 		display("test",overlay(seedj,imgj,0.5));
 
 	}
