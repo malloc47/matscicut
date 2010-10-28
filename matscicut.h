@@ -9,7 +9,7 @@
 #define LTHRESH 10
 #define FNAMELEN 4
 #define ADDWIN 10 
-#define WINTHRESH 30 
+#define WINTHRESH 20 
 
 #define FORxy(a,b) for(int y=0;y<(a);y++) for(int x=0;x<(b);x++)
 #define FORxyM(m) for(int y=0;y<(m).size().height;y++) for(int x=0;x<(m).size().width;x++)
