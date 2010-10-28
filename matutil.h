@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <set>
 
 #include <cv.h>
 #include <cvaux.h>

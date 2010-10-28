@@ -87,29 +87,30 @@ vector<int> regionSizes(Mat regions) {/*{{{*/
 	return sizes;
 
 }/*}}}*/
-/*vector< vector<int> >*/ void junctionRegions(Mat regions) {/*{{{*/
-
-	int numJunctions = 0;
+vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
+	vector< vector<int> > junctions;
 
 	for(int y=0;y<regions.size().height-1;y++) for(int x=0;x<regions.size().width-1;x++) {
-		vector<int> win(4,0);
-		vector<int>::iterator it;
+		set<int> win;
 
-		win[0] = regions.at<int>(y,x);
-		win[1] = regions.at<int>(y,x+1);
-		win[2] = regions.at<int>(y+1,x);
-		win[3] = regions.at<int>(y+1,x+1);
+		win.insert(regions.at<int>(y,x));
+		win.insert(regions.at<int>(y,x+1));
+		win.insert(regions.at<int>(y+1,x));
+		win.insert(regions.at<int>(y+1,x+1));
 
-		it = unique(win.begin(),win.end());
-		win.resize(it-win.begin());
-
-		if(win.size() == 3)
-			numJunctions++;
+		if(win.size() == 3) {
+			vector<int> entry(5,-1);
+			entry[0]=x;
+			entry[1]=y;
+			int counter = 2;
+			// Annoyingly, only easy access w/o boost is with iterator
+			for (set<int>::iterator it=win.begin() ; it != win.end(); it++ )
+				entry[counter++] = *it;
+			junctions.push_back(entry);
+		}
 	}
 
-	cout << numJunctions << endl;
-		
-
+	return junctions;
 		
 }/*}}}*/
 Rect getWindow(vector<int> labels, Mat regions) {/*{{{*/
@@ -325,6 +326,45 @@ Mat localGraphCut(Mat img, Mat seedimg) {/*{{{*/
 
 	return new_seed;
 }/*}}}*/
+Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
+	Mat seedout = seedimg.clone();
+	// Identify junctions
+	vector< vector<int> > junctions = junctionRegions(seedimg);
+	// Recalculate adjacencies
+	Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
+	// Step through junctions, processing each
+	for(int i=0;i<junctions.size();i++) {
+		int x=junctions[i][0], y=junctions[i][1];
+		cout << x << "," << y << endl;
+	}
+
+
+}/*}}}*/
+Mat processSmall(Mat img, Mat seedimg) {/*{{{*/
+
+	Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
+
+	vector<int> regsizes = regionSizes(seedimg);
+
+	for(int l=0;l<mat_max(seedimg)+1;l++) {
+		
+		if(regsizes.at(l) > 1000 || regsizes.at(l) < 1) continue;
+
+		cout << l << ": " << regsizes.at(l) << endl;
+
+		vector<int> labels = getAdj(adj,l);
+
+		Rect test = getWindow(labels,seedimg);
+
+		cout << test.x << "," << test.y << "," << test.width << "," << test.height << endl;
+
+		Mat imgcuttest = img(test);
+		Mat imgseedtest = seedimg(test);
+
+		//display(zpnum(l,1),overlay(imgseedtest,imgcuttest,0.5,l));
+	}
+
+}/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
 	// Read in cmd line args/*{{{*/
 	int dilate_amount = 20;
@@ -403,37 +443,15 @@ int main(int argc, char **argv) {/*{{{*/
 
 	// Processing /*{{{*/
 	
-	junctionRegions(seedimg);
-
-	Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
-
-	vector<int> regsizes = regionSizes(seedimg);
-
-	for(int l=0;l<mat_max(seedimg)+1;l++) {
-		
-		if(regsizes.at(l) > 1000 || regsizes.at(l) < 1) continue;
-
-		cout << l << ": " << regsizes.at(l) << endl;
-
-		vector<int> labels = getAdj(adj,l);
-
-		Rect test = getWindow(labels,seedimg);
-
-		cout << test.x << "," << test.y << "," << test.width << "," << test.height << endl;
-
-		Mat imgcuttest = img(test);
-		Mat imgseedtest = seedimg(test);
-
-		display(zpnum(l,1),overlay(imgseedtest,imgcuttest,0.5,l));
-	}
+	Mat seedtest = processJunctions(img,seedimg);
 
 	//Mat test = localGraphCut(img,seedimg,300,300,20);
 	
-	Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
+	//Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
 /*}}}*/
 
 	// Output/*{{{*/
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
+	//writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
 	/*Mat composite = overlay(new_seed,img,0.5);
 	  Mat composite2 = overlay(seedimg,img,0.5);
