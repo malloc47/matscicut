@@ -76,16 +76,17 @@ vector<int> getAdj(Mat adj,int region) {/*{{{*/
 	return adjacent;
 }/*}}}*/
 vector<int> regionSizes(Mat regions) {/*{{{*/
-
 	int num_regions = mat_max(regions)+1;
-
 	vector<int> sizes(num_regions,0);
-
 	FORxyM(regions)
 		sizes.at(regions.at<int>(y,x)) = sizes.at(regions.at<int>(y,x))+1;
-
 	return sizes;
-
+}/*}}}*/
+int regionSize(Mat regions,int region) {/*{{{*/
+	int total=0;
+	FORxyM(regions)
+		total += regions.at<int>(y,x) == region ? 1 : 0;
+	return total;
 }/*}}}*/
 vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
 	// Stores x,y at junctions[i][0..1] and the
@@ -206,9 +207,7 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions) {/*{{{*/
 	cout << win.x << "," << win.y << "," << win.width << "," << win.height << endl;
 
 	FORxyM(seedimg) {
-		//if(win.contains(Point(x,y)) && seedimg.at<int>(y,x) > 0)
-			//cout << (win.contains(Point(x,y)) ? 0 : INF) << ", was: " << seedimg.at<int>(y,x) << endl;
-		data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = (win.contains(Point(x,y)) ? 0 : INF);
+		data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = ( ( win.contains(Point(x,y)) && seedimg.at<int>(y,x) > 0 ) ? 0 : INF);
 	}
 	
 	return data;
@@ -354,23 +353,27 @@ Mat junctionGraphCut(Mat img, Mat seedimg, Point center, vector<int> regions) {/
 			if(val==regions[i])
 				shifted_seed.at<int>(y,x)=i+1;
 	}
+
+	// Initialization with at least one label in center
+	shifted_seed.at<int>(center.y,center.x) = regions.size()+1;
+	shifted_seed.at<int>(center.y+1,center.x) = regions.size()+1;
+	shifted_seed.at<int>(center.y,center.x+1) = regions.size()+1;
+	shifted_seed.at<int>(center.y+1,center.x+1) = regions.size()+1;
 	
 	int *data = junctionDataTerm(shifted_seed,center,regions);
 
 	int *sites = toLinear(img);
 
-	//display("test",overlay(shifted_seed,img));
-
-	int *result = graphCut(data,sites,shifted_seed,adj,num_labels,false);
+	int *result = graphCut(data,sites,shifted_seed,adj,num_labels);
 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
 
-	printstats(new_seed);
-
 	vector<int> sizes = regionSizes(new_seed);
 
-	if(mat_max(new_seed) > 3 && sizes[4] > 30)
-	display("test",overlay(new_seed,img));
+	/*if(mat_max(new_seed) > 3 && sizes[4] > 30) {
+		display("test",overlay(shifted_seed,img));
+		display("test",overlay(new_seed,img));
+	}*/
 
 	Mat new_shifted_seed = seedimg.clone();
 
@@ -384,40 +387,46 @@ Mat junctionGraphCut(Mat img, Mat seedimg, Point center, vector<int> regions) {/
 				new_shifted_seed.at<int>(y,x) = -2;
 		}
 	}
-
+	
 	delete [] data;
 	delete [] sites;
 	delete [] result;
 
-	return new_seed;
+	return new_shifted_seed;
 }/*}}}*/
 Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 	Mat seedout = seedimg.clone();
 	// Identify junctions
 	vector< vector<int> > junctions = junctionRegions(seedimg);
-	// Recalculate adjacencies
-	//Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
 	// Step through junctions, processing each
 	for(int i=0;i<junctions.size();i++) {
+		// Setup variables
 		Point center(junctions[i][0],junctions[i][1]);
-		//int x=junctions[i][0], y=junctions[i][1];
 		vector<int> regions(3,-1);
 		regions[0]=junctions[i][2];
 		regions[1]=junctions[i][3];
 		regions[2]=junctions[i][4];
 
+		// Compute window surrounding regions
 		Rect win = getWindow(regions,seedimg);
 		center.x = center.x - win.x;
 		center.y = center.y - win.y;
 
+		// Crop out subregion
 		Mat imgj = img(win);	
 		Mat seedj = seedimg(win).clone();
 
+		// Zero out (-1 out, actually) background regions
 		seedj = clearRegions(seedj,regions); 
 		
-		//display("test",overlay(seedj,imgj));
-
+		// Compute graph cut on subregion
 		Mat imgj_new = junctionGraphCut(imgj,seedj,center,regions);
+
+		if(regionSize(imgj_new,-2) > WINTHRESH) {
+			display("reg1",overlay(seedimg(win),img(win)));
+			display("reg2",overlay(imgj_new,img(win)));
+			// Copy region back
+		}
 
 	}
 
@@ -527,8 +536,10 @@ int main(int argc, char **argv) {/*{{{*/
 
 	// Processing /*{{{*/
 	
+	Mat seedtest = processJunctions(img,seedimg);
+
 	//Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
-	Mat seedtest = processJunctions(img,new_seed);
+	//Mat seedtest = processJunctions(img,new_seed);
 
 
 /*}}}*/

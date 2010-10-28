@@ -9,6 +9,7 @@
 #define LTHRESH 10
 #define FNAMELEN 4
 #define ADDWIN 10 
+#define WINTHRESH 30 
 
 #define FORxy(a,b) for(int y=0;y<(a);y++) for(int x=0;x<(b);x++)
 #define FORxyM(m) for(int y=0;y<(m).size().height;y++) for(int x=0;x<(m).size().width;x++)
@@ -31,6 +32,7 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData);
 Mat regionsAdj(Mat regions, int num_regions);
 vector<int> getAdj(Mat adj,int region);
 vector<int> regionSizes(Mat regions);
+int regionSize(Mat regions,int region);
 vector< vector<int> > junctionRegions(Mat regions);
 Rect getWindow(vector<int> regions, Mat labels);
 Mat selectRegion(Mat seedimg, int region);
