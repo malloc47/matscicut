@@ -30,7 +30,7 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData);
 Mat regionsAdj(Mat regions, int num_regions);
 vector<int> getAdj(Mat adj,int region);
 vector<int> regionSizes(Mat regions);
-Rect getWindow(vector<int> labels, Mat regions);
+Rect getWindow(vector<int> regions, Mat labels);
 Mat selectRegion(Mat seedimg, int region);
 int * globalDataTerm(Mat seedimg,int dilate_amount);
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj);

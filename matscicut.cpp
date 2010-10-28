@@ -113,18 +113,18 @@ vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
 	return junctions;
 		
 }/*}}}*/
-Rect getWindow(vector<int> labels, Mat regions) {/*{{{*/
-	// Get bounding window around multiple labels
-	int x0=regions.size().width, y0=regions.size().height, x1=0, y1=0;
+Rect getWindow(vector<int> regions, Mat labels) {/*{{{*/
+	// Get bounding window around multiple regions
+	int x0=labels.size().width, y0=labels.size().height, x1=0, y1=0;
 
-	if(labels.size() < 1) {
-		cout << "No labels to generate window" << endl;
+	if(regions.size() < 1) {
+		cout << "No regions to generate window" << endl;
 		exit(0);
 	}
 
-	FORxyM(regions) 
-		for(int z=0;z<labels.size();z++) 
-			if(regions.at<int>(y,x) == labels.at(z)) {
+	FORxyM(labels) 
+		for(int z=0;z<regions.size();z++) 
+			if(labels.at<int>(y,x) == regions.at(z)) {
 				x0=min(x0,x);
 				y0=min(y0,y);
 				x1=max(x1,x);
@@ -335,9 +335,23 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 	// Step through junctions, processing each
 	for(int i=0;i<junctions.size();i++) {
 		int x=junctions[i][0], y=junctions[i][1];
-		cout << x << "," << y << endl;
+		vector<int> regions(3,-1);
+		regions[0]=junctions[i][2];
+		regions[1]=junctions[i][3];
+		regions[2]=junctions[i][4];
+
+		Rect win = getWindow(regions,seedimg);
+
+		Mat imgj = img(win);	
+		Mat seedj = seedimg(win);
+
+		img.at<int>(x-win.x,y-win.y) = 255;
+
+		display("test",overlay(seedj,imgj,0.5));
+
 	}
 
+	return seedout;
 
 }/*}}}*/
 Mat processSmall(Mat img, Mat seedimg) {/*{{{*/
