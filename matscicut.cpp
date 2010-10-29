@@ -261,42 +261,6 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 
 	return result;
 }/*}}}*/
-int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj, int num_labels) {/*{{{*/ 
-	int num_pixels = seedimg.size().width*seedimg.size().height; int energy = 0;
-
-	try {
-		
-		// Setup grid-based graph
-		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(seedimg.size().width,seedimg.size().height,num_labels);
-
-		// Initialize labels
-		for(int x=0;x<seedimg.size().width;x++) for(int y=0;y<seedimg.size().height;y++)
-			gc->setLabel(sub2ind(x,y,seedimg.size().width),seedimg.at<int>(y,x));
-
-		// Use input data cost
-		gc->setDataCost(data);
-
-		// Setup data to pass to the smooth function
-		ForSmoothFn toFn;
-		toFn.adj = adj;
-		toFn.num_labels = num_labels;
-		toFn.sites = sites;
-
-		// Send the smooth function pointer
-		gc->setSmoothCost(&smoothFn,&toFn);
-
-		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
-
-		energy = gc->giveSmoothEnergy(); 
-
-		delete gc;
-	}
-	catch (GCException e) {
-		e.Report();
-	}
-
-	return energy;
-}/*}}}*/
 Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	int width = img.size().width; 
 	int height = img.size().height;
@@ -339,24 +303,6 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 	// All adjacent
 	Mat adj(num_labels,num_labels,CV_32S,1);
 
-	/*// I use -1 as "background" pixels
-	Mat shifted_seed(seedimg.size(),CV_32S,-1);
-
-	// Convert 
-	FORxyM(seedimg) {
-		int val=seedimg.at<int>(y,x);
-		if(val==-1) shifted_seed.at<int>(y,x)=0;
-		for(int i=0;i<regions.size();i++)
-			if(val==regions[i])
-				shifted_seed.at<int>(y,x)=i+1;
-	}*/
-
-	// Initialization with at least one label in center
-	/*Rect seedreg(center.x-2,center.y-2,4,4);
-	FORxyM(shifted_seed)
-		if(seedreg.contains(Point(x,y)))
-			shifted_seed.at<int>(y,x) = regions.size()+1;*/
-
 	seedimg.at<int>(seed)=regions.size()+1;
 	
 	int *data = junctionDataTerm(seedimg,center,regions,seed);
@@ -368,25 +314,6 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
 
 	vector<int> sizes = regionSizes(new_seed);
-
-	/*if(mat_max(new_seed) > 3 && sizes[4] > 30) {
-		display("test",overlay(shifted_seed,img));
-		display("test",overlay(new_seed,img));
-	}*/
-
-	/*Mat new_shifted_seed(seedimg.size(),CV_32S,-1);
-
-	FORxyM(new_seed) {
-		int origval=seedimg.at<int>(y,x);
-		int newval=new_seed.at<int>(y,x);
-		if(origval != -1) { // Only change stuff inside the boundary
-			if(newval < regions.size()+1 && newval > 0)
-				new_shifted_seed.at<int>(y,x) = regions[newval-1];
-			else
-				// Use -2 to represent new region
-				new_shifted_seed.at<int>(y,x) = -2;
-		}
-	}*/
 	
 	delete [] data;
 	delete [] sites;
