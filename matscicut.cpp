@@ -561,7 +561,7 @@ int main(int argc, char **argv) {/*{{{*/
 	//Mat seedtest = processJunctions(img,seedimg);
 
 	Mat tmp_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
-	Mat new_seed= processJunctions(img,new_seed);
+	Mat new_seed= processJunctions(img,tmp_seed);
 
 
 /*}}}*/
