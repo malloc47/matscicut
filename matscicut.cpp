@@ -247,7 +247,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 
 		//cout << "@alpha-beta expansion" << endl;
 	
-		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 		gc->swap(1);
 		//gc->expansion(1);
@@ -255,7 +255,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 		// Retrieve labeling
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 
 		delete gc;
@@ -355,10 +355,14 @@ Mat junctionGraphCut(Mat img, Mat seedimg, Point center, vector<int> regions) {/
 	}
 
 	// Initialization with at least one label in center
-	shifted_seed.at<int>(center.y,center.x) = regions.size()+1;
+	/*shifted_seed.at<int>(center.y,center.x) = regions.size()+1;
 	shifted_seed.at<int>(center.y+1,center.x) = regions.size()+1;
 	shifted_seed.at<int>(center.y,center.x+1) = regions.size()+1;
-	shifted_seed.at<int>(center.y+1,center.x+1) = regions.size()+1;
+	shifted_seed.at<int>(center.y+1,center.x+1) = regions.size()+1;*/
+	Rect seedreg(center.x-2,center.y-2,4,4);
+	FORxyM(shifted_seed)
+		if(seedreg.contains(Point(x,y)))
+			shifted_seed.at<int>(y,x) = regions.size()+1;
 	
 	int *data = junctionDataTerm(shifted_seed,center,regions);
 
@@ -427,11 +431,11 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 
 		// Subregion criterion
 		if(regionSize(seedj_new,-2) > WINTHRESH) {
-			//cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
-			//printstats(seedj);
-			//printstats(seedj_new);
-			//display("reg1",overlay(seedimg(win),img(win)));
-			//display("reg2",overlay(seedj_new,img(win)));
+			cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
+			printstats(seedj);
+			printstats(seedj_new);
+			display("reg1",overlay(seedimg(win),img(win)));
+			display("reg2",overlay(seedj_new,img(win)));
 
 			// Compute new label
 			numbernew++;
@@ -569,7 +573,7 @@ int main(int argc, char **argv) {/*{{{*/
 	// Output/*{{{*/
 	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
-	/*Mat composite = overlay(new_seed,img,0.5);
+	Mat composite = overlay(new_seed,img,0.5);
 	  //Mat composite2 = overlay(seedimg,img,0.5);
 
 	  cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
