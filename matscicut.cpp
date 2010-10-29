@@ -66,6 +66,33 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 
 	return adj;
 }/*}}}*/
+int regionNum(Mat regions) {/*{{{*/
+	int count=0;
+	int max_regions=mat_max(regions);
+
+	vector<int> regioncount(mat_max(regions)+1,0);
+
+	FORxyM(regions) {
+		regioncount.at(regions.at<int>(y,x))++;
+	}
+
+	for(int i=0;i<regioncount.size();i++)
+		if(regioncount.at(i) > 0)
+			count++;
+	
+	return count;
+
+}/*}}}*/
+Mat regionCompact(Mat regionsin) {/*{{{*/
+	Mat regions = regionsin.clone();
+	for(int i=0;i<mat_max(regions)+1;i++) // For each reg
+		if(regionSize(regions,i)<1) // If it's too small
+			FORxyM(regions) // Visit all regs
+				if(regions.at<int>(y,x)>i) // If they're bigger than the current reg
+					regions.at<int>(y,x)--; // Decrement by one
+	return regions;
+
+}/*}}}*/
 vector<int> getAdj(Mat adj,int region) {/*{{{*/
 	// Adj is symmetrical, so it shouldn't matter how we iterate through it
 	vector<int> adjacent;
@@ -345,8 +372,6 @@ vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r) {/*{{{*
 	if(candidates[0][2] != candidates[candidates.size()-1][2])
 		changept.push_back(0);
 
-	printVector(changept);
-
 	// Find midpoints between derivatives
 	vector<int> seedpt;
 	for(int i=0;i<changept.size()-1;i++) {
@@ -354,8 +379,6 @@ vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r) {/*{{{*
 	}
 	// Wrap around
 	seedpt.push_back(((changept[changept.size()-1] + candidates.size() + changept[0])/2)%candidates.size());
-
-	printVector(seedpt);
 
 	// Use midpoint indices to output full candidate points
 	vector< vector<int> > output;
@@ -423,29 +446,29 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,7);
 
 		for(int i=0;i<seeds.size();i++) {
-
 			// Compute graph cut on subregion
 			Mat seedj_new = junctionGraphCut(imgj,shifted_seed,center,regions,Point(seeds[i][0],seeds[i][1]));
 			Mat backshift_seed = shiftBackSubregion(seedj,seedj_new,regions);
 
-			if(regionSize(backshift_seed,-2) > WINTHRESH) {
-				//cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
-				//cout << "S:" << regionSize(backshift_seed,-2) << endl;
-				//printstats(seedj);
-				//printstats(backshift_seed);
-				//display("reg1",overlay(seedimg(win),img(win)));
-				//display("reg2",overlay(backshift_seed,img(win)));
+			// Region criterion
+			if(regionSize(backshift_seed,-2) < WINTHRESH) continue;
+			
+			//cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
+			//cout << "S:" << regionSize(backshift_seed,-2) << endl;
+			//printstats(seedj);
+			//printstats(backshift_seed);
+			//display("reg1",overlay(seedimg(win),img(win)));
+			//display("reg2",overlay(backshift_seed,img(win)));
 
-				numbernew++;
-				int new_label = num_regions++;
-				//Map region back to whole label matrix
-				FORxyM(backshift_seed) {
-					if(backshift_seed.at<int>(y,x)==-1) continue; //Not bg
-					if(backshift_seed.at<int>(y,x)==-2)
-						seedout.at<int>(y+win.y,x+win.x) = new_label;
-					else
-						seedout.at<int>(y+win.y,x+win.x) = backshift_seed.at<int>(y,x);
-				}
+			numbernew++;
+			int new_label = num_regions++;
+			//Map region back to whole label matrix
+			FORxyM(backshift_seed) {
+				if(backshift_seed.at<int>(y,x)==-1) continue; //Not bg
+				if(backshift_seed.at<int>(y,x)==-2)
+					seedout.at<int>(y+win.y,x+win.x) = new_label;
+				else
+					seedout.at<int>(y+win.y,x+win.x) = backshift_seed.at<int>(y,x);
 			}
 		}
 	}
@@ -554,6 +577,11 @@ int main(int argc, char **argv) {/*{{{*/
 
 	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
 
+	cout << mat_max(seedimg)+1 << endl;
+	seedimg = regionCompact(seedimg);
+	cout << mat_max(seedimg)+1 << endl;
+	cout << regionNum(seedimg) << endl;
+
 	/*}}}*/
 
 	// Processing /*{{{*/
@@ -570,7 +598,7 @@ int main(int argc, char **argv) {/*{{{*/
 	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
 	Mat composite = overlay(new_seed,img,0.5);
-	  Mat composite2 = overlay(seedimg,img,0.5);
+	Mat composite2 = overlay(seedimg,img,0.5);
 
 	  cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
