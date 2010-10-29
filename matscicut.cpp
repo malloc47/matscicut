@@ -323,10 +323,9 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	cout << "@sites" << endl;
 	int *sites = toLinear(img);
 
+	cout << "@graphcut" << endl;
 	int *result = graphCut(data,sites,seedimg,adj,mat_max(seedimg)+1);
 	Mat new_seed = toMat(result,width,height);
-
-	//writeRaw(outputpath+"labels/image"+zpnum(1,FNAMELEN)+".labels",result,num_pixels);
 
 	delete [] data;
 	delete [] sites;
@@ -397,12 +396,12 @@ Mat junctionGraphCut(Mat img, Mat seedimg, Point center, vector<int> regions) {/
 	return new_shifted_seed;
 }/*}}}*/
 Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
+	cout << "@localgcj" << endl;
 	Mat seedout = seedimg.clone();
 	int num_regions = mat_max(seedimg)+1;
 	// Identify junctions
 	vector< vector<int> > junctions = junctionRegions(seedimg);
-	int numbernew = 0;
-	// Step through junctions, processing each
+	int numbernew = 0; // Step through junctions, processing each
 	for(int i=0;i<junctions.size();i++) {
 		// Setup variables
 		Point center(junctions[i][0],junctions[i][1]);
@@ -426,14 +425,18 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 		// Compute graph cut on subregion
 		Mat seedj_new = junctionGraphCut(imgj,seedj,center,regions);
 
+		// Subregion criterion
 		if(regionSize(seedj_new,-2) > WINTHRESH) {
 			//cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
 			//printstats(seedj);
 			//printstats(seedj_new);
 			//display("reg1",overlay(seedimg(win),img(win)));
 			//display("reg2",overlay(seedj_new,img(win)));
+
+			// Compute new label
 			numbernew++;
 			int new_label = num_regions++;
+			// Map region back to whole label matrix
 			FORxyM(seedj_new) {
 				if(seedj_new.at<int>(y,x)==-1) continue; // Not bg
 				if(seedj_new.at<int>(y,x)==-2)
@@ -557,22 +560,22 @@ int main(int argc, char **argv) {/*{{{*/
 	
 	//Mat seedtest = processJunctions(img,seedimg);
 
-	Mat new_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
-	Mat newer_seed= processJunctions(img,new_seed);
+	Mat tmp_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
+	Mat new_seed= processJunctions(img,new_seed);
 
 
 /*}}}*/
 
 	// Output/*{{{*/
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",newer_seed);
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
 	/*Mat composite = overlay(new_seed,img,0.5);
-	  Mat composite2 = overlay(seedimg,img,0.5);
+	  //Mat composite2 = overlay(seedimg,img,0.5);
 
 	  cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
 	  imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
-	  imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
+	  //imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
 
 	return 0;//*}}}*/
 }
