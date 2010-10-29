@@ -152,11 +152,6 @@ Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/
 	}
 	return seedimg;
 }/*}}}*/
-Mat changeRegion(Mat seedimg, int region1, int region2) {/*{{{*/
-	FORxyM(seedimg) 
-		if(seedimg.at<int>(y,x)==region1)
-			seedimg.at<int>(y,x)=region2;
-}/*}}}*/
 int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
@@ -412,12 +407,10 @@ vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r) {/*{{{*
 		candidate.push_back(seedimg.at<int>(y+center.y,x+center.x));
 		if(candidate[2] != -1) // Exclude background candidates
 			candidates.push_back(candidate);
-		//cout << x+center.x << "," << y+center.y << endl;
 	}
 
 	// Get "derivative" of region changes
 	vector<int> changept;
-	//cout << "Finding region changes" << endl;
 	for(int i=0;i<candidates.size()-1;i++)
 		if(candidates[i][2] != candidates[i+1][2])
 			changept.push_back(i);
@@ -428,7 +421,6 @@ vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r) {/*{{{*
 	printVector(changept);
 
 	// Find midpoints between derivatives
-	//cout << "Finding change centers" << endl;
 	vector<int> seedpt;
 	for(int i=0;i<changept.size()-1;i++) {
 		seedpt.push_back(int((changept[i+1]+changept[i])/2));
@@ -499,73 +491,38 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 		// Zero out (-1 out, actually) background regions
 		seedj = clearRegions(seedj,regions); 
 
-		/*// I use -1 as "background" pixels
-		Mat shifted_seed(seedj.size(),CV_32S,-1);
-
-		// Convert 
-		FORxyM(seedj) {
-			int val=seedj.at<int>(y,x);
-			if(val==-1) shifted_seed.at<int>(y,x)=0;
-			for(int i=0;i<regions.size();i++)
-				if(val==regions[i])
-					shifted_seed.at<int>(y,x)=i+1;
-		}*/
-
 		Mat shifted_seed = shiftSubregion(seedj,regions);
 
-		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,5);
+		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,7);
 
 		for(int i=0;i<seeds.size();i++) {
 
 			// Compute graph cut on subregion
 			Mat seedj_new = junctionGraphCut(imgj,shifted_seed,center,regions,Point(seeds[i][0],seeds[i][1]));
-
-			/*Mat new_shifted_seed(seedj.size(),CV_32S,-1);
-
-			FORxyM(seedj_new) {
-				int origval=seedj.at<int>(y,x);
-				int newval=seedj_new.at<int>(y,x);
-				if(origval != -1) { // Only change stuff inside the boundary
-					if(newval < regions.size()+1 && newval > 0)
-						new_shifted_seed.at<int>(y,x) = regions[newval-1];
-					else
-						// Use -2 to represent new region
-						new_shifted_seed.at<int>(y,x) = -2;
-				}
-			}*/
-
 			Mat backshift_seed = shiftBackSubregion(seedj,seedj_new,regions);
 
-			display("reg1",overlay(backshift_seed,img(win)));
+			if(regionSize(backshift_seed,-2) > WINTHRESH) {
+				//cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
+				//cout << "S:" << regionSize(backshift_seed,-2) << endl;
+				//printstats(seedj);
+				//printstats(backshift_seed);
+				//display("reg1",overlay(seedimg(win),img(win)));
+				//display("reg2",overlay(backshift_seed,img(win)));
 
-
-		}
-		
-		//Subregion criterion
-		/*if(regionSize(seedj_new,-2) > WINTHRESH) {
-			cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
-			cout << "S:" << regionSize(seedj_new,-2) << endl;
-			printstats(seedj);
-			printstats(seedj_new);
-			display("reg1",overlay(seedimg(win),img(win)));
-			display("reg2",overlay(seedj_new,img(win)));
-
-			Compute new label
-			numbernew++;
-			int new_label = num_regions++;
-			Map region back to whole label matrix
-			FORxyM(seedj_new) {
-				if(seedj_new.at<int>(y,x)==-1) continue; Not bg
-				if(seedj_new.at<int>(y,x)==-2)
-					seedout.at<int>(y+win.y,x+win.x) = new_label;
-				else
-					seedout.at<int>(y+win.y,x+win.x) = seedj_new.at<int>(y,x);
+				numbernew++;
+				int new_label = num_regions++;
+				//Map region back to whole label matrix
+				FORxyM(backshift_seed) {
+					if(backshift_seed.at<int>(y,x)==-1) continue; //Not bg
+					if(backshift_seed.at<int>(y,x)==-2)
+						seedout.at<int>(y+win.y,x+win.x) = new_label;
+					else
+						seedout.at<int>(y+win.y,x+win.x) = backshift_seed.at<int>(y,x);
+				}
 			}
-		}*/
+		}
 	}
 
-	//display("final",overlay(seedout,img));
-	
 	cout << "New: " << numbernew << endl;
 
 	return seedout;

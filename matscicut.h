@@ -8,7 +8,7 @@
 #define N 255
 #define LTHRESH 10
 #define FNAMELEN 4
-#define ADDWIN 20 
+#define ADDWIN 25 
 #define WINTHRESH 20 
 
 #define FORxy(a,b) for(int y=0;y<(a);y++) for(int x=0;x<(b);x++)
@@ -39,7 +39,6 @@ vector< vector<int> > junctionRegions(Mat regions);
 Rect getWindow(vector<int> regions, Mat labels);
 Mat selectRegion(Mat seedimg, int region);
 Mat clearRegions(Mat seedimg, vector<int> regions);
-Mat changeRegion(Mat seedimg, int region1, int region2);
 int * globalDataTerm(Mat seedimg,int dilate_amount);
 int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed);
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj, int num_labels, bool initialize=true);
