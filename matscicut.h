@@ -21,6 +21,8 @@ const string datapath="data/old/scaled/";
 //const string datapath="data/new/raw/";
 const string outputpath="output2/";
 //const string outputpath="output/"
+//
+const float PI = std::atan(1.0)*4;
 
 struct ForSmoothFn {/*{{{*/
 	int num_labels;
@@ -39,10 +41,10 @@ Mat selectRegion(Mat seedimg, int region);
 Mat clearRegions(Mat seedimg, vector<int> regions);
 Mat changeRegion(Mat seedimg, int region1, int region2);
 int * globalDataTerm(Mat seedimg,int dilate_amount);
-int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions);
+int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed);
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj, int num_labels, bool initialize=true);
 int graphCutEnergy(int* data, int* sites, Mat seedimg, Mat adj);
 Mat globalGraphCut(Mat img, Mat seedimg);
-Mat junctionGraphCut(Mat img, Mat seedimg, Point center);
+Mat junctionGraphCut(Mat img, Mat seedimg, Point center, vector<int> regions);
 Mat processJunctions(Mat img, Mat seedimg);
 Mat processSmall(Mat img, Mat seedimg);

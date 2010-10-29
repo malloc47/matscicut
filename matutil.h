@@ -35,3 +35,4 @@ Mat combine(Mat a, Mat b, float blend = 0.5);
 template <typename T>
 void swap(const T &a, const T &b);
 void printVector(vector<int> vec);
+float euclideanDist(Point a, Point b);
