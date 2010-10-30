@@ -32,6 +32,9 @@ struct ForSmoothFn {/*{{{*/
 
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData);
 Mat regionsAdj(Mat regions, int num_regions);
+int regionNum(Mat regions);
+Mat regionCompact(Mat regionsin);
+Mat regionClean(Mat regionsin);
 vector<int> getAdj(Mat adj,int region);
 vector<int> regionSizes(Mat regions);
 int regionSize(Mat regions,int region);

@@ -85,13 +85,58 @@ int regionNum(Mat regions) {/*{{{*/
 }/*}}}*/
 Mat regionCompact(Mat regionsin) {/*{{{*/
 	Mat regions = regionsin.clone();
-	for(int i=0;i<mat_max(regions)+1;i++) // For each reg
-		if(regionSize(regions,i)<1) // If it's too small
-			FORxyM(regions) // Visit all regs
-				if(regions.at<int>(y,x)>i) // If they're bigger than the current reg
-					regions.at<int>(y,x)--; // Decrement by one
+	bool clean=false;
+	while(!clean) {
+		clean=true;
+		for(int i=0;i<mat_max(regions)+1;i++) { // For each reg
+			if(regionSize(regions,i)<1) { // If it's too small
+				FORxyM(regions) { // Visit all regs
+					if(regions.at<int>(y,x)>i) { // If they're bigger than the current reg
+						regions.at<int>(y,x)--; // Decrement by one
+						clean=false;
+					}
+				}
+				if(!clean) break;
+			}
+		}
+	}
 	return regions;
 
+}/*}}}*/
+Mat regionClean(Mat regionsin) {/*{{{*/
+	Mat regions = regionsin.clone();
+	// Filter single pixel errors
+	// Doesn't handle border, currently  
+	for(int y=1;y<regions.size().height-1;y++) for(int x=1;x<regions.size().width-1;x++) {
+		if(regions.at<int>(y,x) != regions.at<int>(y,x-1) &&
+		regions.at<int>(y,x) != regions.at<int>(y-1,x) &&
+		regions.at<int>(y,x) != regions.at<int>(y,x+1) &&
+		regions.at<int>(y,x) != regions.at<int>(y+1,x))
+			regions.at<int>(y,x)=regions.at<int>(y,x-1); // Closest region
+	}
+	return regionCompact(regions);
+}/*}}}*/
+bool regionBorderCriteria(Mat img, Mat regions, int region) {/*{{{*/
+	float total_border=0.0,total_thresh=0.0;
+	FORxyM(regions) {	
+		if(regions.at<int>(y,x) != region) continue;
+		// Skip regions that are internal
+		if( ( x!=0 && regions.at<int>(y,x)!=regions.at<int>(y,x-1) ) || 
+		   (y!=0 && regions.at<int>(y,x)!=regions.at<int>(y-1,x) ) ||
+		   (x!=regions.size().width-1 && regions.at<int>(y,x)!=regions.at<int>(y,x+1) ) ||
+		   (y!=regions.size().height-1 && regions.at<int>(y,x)!=regions.at<int>(y+1,x)) ) {
+			total_border++;
+			if( int(img.at<unsigned char>(y,x) > 32) )
+				total_thresh++;
+		}
+	}
+
+	cout << (total_thresh/total_border) << " > 0.66" << endl;
+	
+
+
+	return (total_thresh/total_border> 0.66);
+	
 }/*}}}*/
 vector<int> getAdj(Mat adj,int region) {/*{{{*/
 	// Adj is symmetrical, so it shouldn't matter how we iterate through it
@@ -269,7 +314,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 
 		//cout << "@alpha-beta expansion" << endl;
 	
-		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 		gc->swap(1);
 		//gc->expansion(1);
@@ -277,7 +322,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 		// Retrieve labeling
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 
 		delete gc;
@@ -321,7 +366,7 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 
 }/*}}}*/
 Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, Point seed) {/*{{{*/
-	cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
+	//cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
 	int num_labels = regions.size()+2;
 	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 	
@@ -418,6 +463,7 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 	cout << "@localgcj" << endl;
 	Mat seedout = seedimg.clone();
 	int num_regions = mat_max(seedimg)+1;
+	vector<int> sizes = regionSizes(seedimg);
 	// Identify junctions
 	vector< vector<int> > junctions = junctionRegions(seedimg);
 	int numbernew = 0; // Step through junctions, processing each
@@ -443,7 +489,7 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 
 		Mat shifted_seed = shiftSubregion(seedj,regions);
 
-		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,7);
+		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,5);
 
 		for(int i=0;i<seeds.size();i++) {
 			// Compute graph cut on subregion
@@ -452,8 +498,16 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 
 			// Region criterion
 			if(regionSize(backshift_seed,-2) < WINTHRESH) continue;
+
+			if(regionSize(backshift_seed,regions[0]) < sizes[regions[0]]/3 ) continue;
+			if(regionSize(backshift_seed,regions[1]) < sizes[regions[1]]/3 ) continue;
+			if(regionSize(backshift_seed,regions[2]) < sizes[regions[2]]/3 ) continue;
+			if(!regionBorderCriteria(imgj,backshift_seed,-2)) continue;
 			
 			//cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
+			//cout << regionSize(backshift_seed,regions[0]) << " < " << sizes[regions[0]]/3 << endl;
+			//cout << regionSize(backshift_seed,regions[1]) << " < " << sizes[regions[1]]/3 << endl;
+			//cout << regionSize(backshift_seed,regions[2]) << " < " << sizes[regions[2]]/3 << endl;
 			//cout << "S:" << regionSize(backshift_seed,-2) << endl;
 			//printstats(seedj);
 			//printstats(backshift_seed);
@@ -577,11 +631,6 @@ int main(int argc, char **argv) {/*{{{*/
 
 	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
 
-	cout << mat_max(seedimg)+1 << endl;
-	seedimg = regionCompact(seedimg);
-	cout << mat_max(seedimg)+1 << endl;
-	cout << regionNum(seedimg) << endl;
-
 	/*}}}*/
 
 	// Processing /*{{{*/
@@ -589,24 +638,27 @@ int main(int argc, char **argv) {/*{{{*/
 	//Mat new_seed = processJunctions(img,seedimg);
 
 	Mat tmp_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
+	tmp_seed = regionClean(tmp_seed);
 	Mat new_seed= processJunctions(img,tmp_seed);
+	new_seed = regionClean(new_seed);
 
 
 /*}}}*/
 
 	// Output/*{{{*/
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
 	Mat composite = overlay(new_seed,img,0.5);
 	Mat composite2 = overlay(seedimg,img,0.5);
 
-	  cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
+	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
 
-	  display("tmp",composite2);
-	  display("tmp",composite);
+	//display("tmp",overlay(seedimg,img,0.5));
+	//display("tmp",overlay(new_seed,img,0.5));
+	
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
-	  //imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
-	  //imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
+	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
+	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
 
 	return 0;//*}}}*/
 }
