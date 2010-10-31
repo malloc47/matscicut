@@ -4,8 +4,6 @@ for imgnum = imgnums
 
 series = 1;
 
-disp(imgnum);
-
 %datapath = 'data/new/raw/';
 datapath = 'data/old/scaled/';
 %outputpath = 'output/';
@@ -18,6 +16,8 @@ img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
 % groundbmp = seg2bmap(ground);
 
 labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+
+disp([int2str(imgnum) ':' int2str(length(unique(labels)))]);
 
 %labels_raw = labels_raw(:);
 

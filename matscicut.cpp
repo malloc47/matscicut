@@ -259,15 +259,18 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 	return data;
 
 }/*}}}*/
-int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed) {/*{{{*/
+int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, int dilate_amount) {/*{{{*/
 	int num_labels = regions.size()+2;
 	int num_pixels = seedimg.size().width*seedimg.size().height;
 	int *data = new int[num_pixels*num_labels];
 
 	for(int l=0;l<num_labels-1;l++) {
 		Mat layer = selectRegion(seedimg,l);
+		Mat dilation = layer.clone();
+		if(dilate_amount > 0)
+			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
 		FORxyM(seedimg)
-			data[(x+y*seedimg.size().width)*num_labels+l] = (int(layer.at<unsigned char>(y,x)) == 255 && !(x==seed.x && y==seed.y) ? 0 : INF);
+			data[(x+y*seedimg.size().width)*num_labels+l] = (int(dilation.at<unsigned char>(y,x)) == 255 && seedimg.at<int>(y,x) != 0 && !(x==seed.x && y==seed.y) ? 0 : INF);
 	}
 
 	Rect win(center.x-ADDWIN,center.y-ADDWIN,ADDWIN*2,ADDWIN*2);
@@ -366,7 +369,7 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 
 }/*}}}*/
 Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, Point seed) {/*{{{*/
-	//cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
+	cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
 	int num_labels = regions.size()+2;
 	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 	
@@ -377,7 +380,7 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 
 	seedimg.at<int>(seed)=regions.size()+1;
 	
-	int *data = junctionDataTerm(seedimg,center,regions,seed);
+	int *data = junctionDataTerm(seedimg,center,regions,seed,10);
 
 	int *sites = toLinear(img);
 
@@ -397,7 +400,7 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r) {/*{{{*/
 	vector< vector<int> > candidates;
 	// Generate rasterized poitns on circle (and shift to center)
-	for(float theta=0;theta<2*PI;theta=theta+PI/12){
+	for(float theta=0;theta<2*PI;theta=theta+PI/24){
 		vector<int> candidate;
 		int x=r*cos(theta);
 		int y=r*sin(theta);
@@ -434,6 +437,8 @@ vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r) {/*{{{*
 
 }/*}}}*/
 Mat shiftSubregion(Mat seedimg, vector<int> regions) {/*{{{*/
+	// Shift all specified regions to continuous 1,2,... regions
+	// 0 is reserved for all non-considered regions
 	Mat shifted_seed(seedimg.size(),CV_32S,-1);
 	FORxyM(seedimg) {
 		int val=seedimg.at<int>(y,x);
@@ -445,6 +450,10 @@ Mat shiftSubregion(Mat seedimg, vector<int> regions) {/*{{{*/
 	return shifted_seed;
 }/*}}}*/
 Mat shiftBackSubregion(Mat seedimg, Mat newseedimg, vector<int> regions) {/*{{{*/
+	// :Shift all continuous regions (1,2,3,...) back to their respective
+	//  actual, not-necessarily-continuous labels
+	// :Anything in the 0 region is ignored 
+	// :-2 is reserved for the newly-introduced region
 	Mat new_shifted_seed(newseedimg.size(),CV_32S,-1);
 	FORxyM(newseedimg) {
 		int origval=seedimg.at<int>(y,x);
@@ -466,6 +475,12 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 	vector<int> sizes = regionSizes(seedimg);
 	// Identify junctions
 	vector< vector<int> > junctions = junctionRegions(seedimg);
+
+	Mat composite = overlay(seedimg,img);
+	for(int i=0;i<junctions.size();i++)
+		circle(composite,Point(junctions[i][0],junctions[i][1]),5,Scalar(255,255,255,255));
+	//display("junctions",composite);
+
 	int numbernew = 0; // Step through junctions, processing each
 	for(int i=0;i<junctions.size();i++) {
 		// Setup variables
@@ -490,8 +505,12 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 		Mat shifted_seed = shiftSubregion(seedj,regions);
 
 		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,5);
-		vector< vector<int> > seeds2 = selectSeedPoints(shifted_seed,center,10);
+		vector< vector<int> > seeds2 = selectSeedPoints(shifted_seed,center,7);
+		vector< vector<int> > seeds3 = selectSeedPoints(shifted_seed,center,10);
+		vector< vector<int> > seeds4 = selectSeedPoints(shifted_seed,center,15);
 		seeds.insert(seeds.end(),seeds2.begin(),seeds2.end());
+		seeds.insert(seeds.end(),seeds3.begin(),seeds3.end());
+		seeds.insert(seeds.end(),seeds4.begin(),seeds4.end());
 
 		for(int i=0;i<seeds.size();i++) {
 			// Compute graph cut on subregion
@@ -504,7 +523,7 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			if(regionSize(backshift_seed,regions[0]) < sizes[regions[0]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[1]) < sizes[regions[1]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[2]) < sizes[regions[2]]/3 ) continue;
-			if(!regionBorderCriteria(imgj,backshift_seed,-2)) continue;
+			//if(!regionBorderCriteria(imgj,backshift_seed,-2)) continue;
 			
 			//cout << regions[0] << "," << regions[1] << "," << regions[2] << endl;
 			//cout << regionSize(backshift_seed,regions[0]) << " < " << sizes[regions[0]]/3 << endl;
@@ -652,7 +671,7 @@ int main(int argc, char **argv) {/*{{{*/
 	Mat composite = overlay(new_seed,img,0.5);
 	Mat composite2 = overlay(seedimg,img,0.5);
 
-	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png";
+	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png" << endl;
 
 	//display("tmp",overlay(seedimg,img,0.5));
 	//display("tmp",overlay(new_seed,img,0.5));

@@ -8,7 +8,7 @@
 #define N 255
 #define LTHRESH 10
 #define FNAMELEN 4
-#define ADDWIN 25 
+#define ADDWIN 30 
 #define WINTHRESH 20 
 
 #define FORxy(a,b) for(int y=0;y<(a);y++) for(int x=0;x<(b);x++)
