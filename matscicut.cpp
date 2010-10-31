@@ -490,6 +490,8 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 		Mat shifted_seed = shiftSubregion(seedj,regions);
 
 		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,5);
+		vector< vector<int> > seeds2 = selectSeedPoints(shifted_seed,center,10);
+		seeds.insert(seeds.end(),seeds2.begin(),seeds2.end());
 
 		for(int i=0;i<seeds.size();i++) {
 			// Compute graph cut on subregion
@@ -657,7 +659,7 @@ int main(int argc, char **argv) {/*{{{*/
 	
 	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
 
-	imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
+	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
 	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
 
 	return 0;//*}}}*/
