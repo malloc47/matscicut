@@ -151,7 +151,8 @@ vector<int> regionSizes(Mat regions) {/*{{{*/
 	int num_regions = mat_max(regions)+1;
 	vector<int> sizes(num_regions,0);
 	FORxyM(regions)
-		sizes.at(regions.at<int>(y,x)) = sizes.at(regions.at<int>(y,x))+1;
+		sizes.at(regions.at<int>(y,x))++;
+		//sizes.at(regions.at<int>(y,x)) = sizes.at(regions.at<int>(y,x))+1;
 	return sizes;
 }/*}}}*/
 int regionSize(Mat regions,int region) {/*{{{*/
@@ -282,6 +283,22 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, 
 	
 	return data;
 }	/*}}}*/
+int * deleteDataTerm(Mat seedimg,vector<int> regions,int dilate_amount) {/*{{{*/
+	int num_labels = regions.size()+1;
+	int num_pixels = seedimg.size().width*seedimg.size().height;
+	int *data = new int[num_pixels*num_labels];
+
+	for(int l=0;l<num_labels;l++) {
+		Mat layer = selectRegion(seedimg,l);
+		Mat dilation = layer.clone();
+		if(dilate_amount > 0)
+			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		FORxyM(seedimg)
+			data[(x+y*seedimg.size().width)*num_labels+l] = (int(dilation.at<unsigned char>(y,x)) == 255 && seedimg.at<int>(y,x) != 0 ? 0 : INF);
+	}
+	
+	return data;
+}	/*}}}*/
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool initialize) {/*{{{*/
 
 	//int num_labels = mat_max(seedimg)+1;
@@ -368,6 +385,26 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	return new_seed;
 
 }/*}}}*/
+Mat deleteGraphCut(Mat img, Mat seedimgin, vector<int> regions, int delreg) {/*{{{*/
+	int num_labels = regions.size()+1;
+	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
+	Mat seedimg = seedimgin.clone();
+	Mat adj(num_labels,num_labels,CV_32S,1); // Everything adjacent
+
+	int *data = deleteDataTerm(seedimg,regions,20);
+
+	int *sites = toLinear(img);
+
+	int *result = graphCut(data,sites,seedimg,adj,num_labels);
+
+	Mat new_seed = toMat(result,img.size().width,img.size().height);
+
+	delete [] data;
+	delete [] sites;
+	delete [] result;
+
+	return new_seed;
+}/*}}}*/
 Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, Point seed) {/*{{{*/
 	cout << "@subregion \t" << img.size().width << "," << img.size().height << endl;
 	int num_labels = regions.size()+2;
@@ -388,19 +425,18 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
 
-	vector<int> sizes = regionSizes(new_seed);
+	//vector<int> sizes = regionSizes(new_seed);
 	
 	delete [] data;
 	delete [] sites;
 	delete [] result;
 
-	//return new_shifted_seed;
 	return new_seed;
 }/*}}}*/
 vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r) {/*{{{*/
 	vector< vector<int> > candidates;
 	// Generate rasterized poitns on circle (and shift to center)
-	for(float theta=0;theta<2*PI;theta=theta+PI/24){
+	for(float theta=0;theta<2*PI;theta=theta+PI/6){
 		vector<int> candidate;
 		int x=r*cos(theta);
 		int y=r*sin(theta);
@@ -472,13 +508,13 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 	cout << "@localgcj" << endl;
 	Mat seedout = seedimg.clone();
 	int num_regions = mat_max(seedimg)+1;
-	vector<int> sizes = regionSizes(seedimg);
+	vector<int> sizes = regionSizes(seedimg); // CRASH HERE
 	// Identify junctions
 	vector< vector<int> > junctions = junctionRegions(seedimg);
 
-	Mat composite = overlay(seedimg,img);
-	for(int i=0;i<junctions.size();i++)
-		circle(composite,Point(junctions[i][0],junctions[i][1]),5,Scalar(255,255,255,255));
+	//Mat composite = overlay(seedimg,img);
+	//for(int i=0;i<junctions.size();i++)
+		//circle(composite,Point(junctions[i][0],junctions[i][1]),5,Scalar(255,255,255,255));
 	//display("junctions",composite);
 
 	int numbernew = 0; // Step through junctions, processing each
@@ -504,13 +540,13 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 
 		Mat shifted_seed = shiftSubregion(seedj,regions);
 
-		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,5);
-		vector< vector<int> > seeds2 = selectSeedPoints(shifted_seed,center,7);
-		vector< vector<int> > seeds3 = selectSeedPoints(shifted_seed,center,10);
-		vector< vector<int> > seeds4 = selectSeedPoints(shifted_seed,center,15);
-		seeds.insert(seeds.end(),seeds2.begin(),seeds2.end());
-		seeds.insert(seeds.end(),seeds3.begin(),seeds3.end());
-		seeds.insert(seeds.end(),seeds4.begin(),seeds4.end());
+		//vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,5);
+		vector< vector<int> > seeds = selectSeedPoints(shifted_seed,center,7);
+		//vector< vector<int> > seeds3 = selectSeedPoints(shifted_seed,center,10);
+		//vector< vector<int> > seeds4 = selectSeedPoints(shifted_seed,center,15);
+		//seeds.insert(seeds.end(),seeds2.begin(),seeds2.end());
+		//seeds.insert(seeds.end(),seeds3.begin(),seeds3.end());
+		//seeds.insert(seeds.end(),seeds4.begin(),seeds4.end());
 
 		for(int i=0;i<seeds.size();i++) {
 			// Compute graph cut on subregion
@@ -553,29 +589,46 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 	return seedout;
 
 }/*}}}*/
-Mat processSmall(Mat img, Mat seedimg) {/*{{{*/
-
-	Mat adj = regionsAdj(seedimg,mat_max(seedimg)+1);
+Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
+	cout << "@localgcs" << endl;
+	Mat seedout = seedimg.clone();
+	int num_regions = mat_max(seedimg)+1;
+	Mat adj = regionsAdj(seedimg,num_regions);
 
 	vector<int> regsizes = regionSizes(seedimg);
 
-	for(int l=0;l<mat_max(seedimg)+1;l++) {
+	for(int l=0;l<num_regions;l++) {
 		
-		if(regsizes.at(l) > 1000 || regsizes.at(l) < 1) continue;
+		if(regsizes.at(l) > 200 || regsizes.at(l) < 1) continue;
 
 		cout << l << ": " << regsizes.at(l) << endl;
 
-		vector<int> labels = getAdj(adj,l);
+		vector<int> regions = getAdj(adj,l);
 
-		Rect test = getWindow(labels,seedimg);
+		Rect win = getWindow(regions,seedimg);
 
-		cout << test.x << "," << test.y << "," << test.width << "," << test.height << endl;
+		Mat subimg = img(win);
+		Mat subseed = seedimg(win).clone();
 
-		Mat imgcuttest = img(test);
-		Mat imgseedtest = seedimg(test);
+		display(zpnum(l,1),overlay(subseed,subimg,0.5,l));
 
-		//display(zpnum(l,1),overlay(imgseedtest,imgcuttest,0.5,l));
+		subseed = clearRegions(subseed,regions);
+
+		Mat subseed_s = shiftSubregion(subseed,regions);
+
+		Mat subseed_new = deleteGraphCut(subimg,subseed_s,regions,l);
+
+		subseed = shiftBackSubregion(subseed,subseed_new,regions);
+
+		display(zpnum(l,1),overlay(subseed,subimg,0.5,l));
+
+		FORxyM(subseed) {
+			if(subseed.at<int>(y,x)==-1) continue; //Not bg
+			else seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
+		}
 	}
+
+	return seedout;
 
 }/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
@@ -660,7 +713,9 @@ int main(int argc, char **argv) {/*{{{*/
 
 	Mat tmp_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
 	tmp_seed = regionClean(tmp_seed);
-	Mat new_seed= processJunctions(img,tmp_seed);
+	Mat tmp_seed2 = processDelete(img,tmp_seed);	
+	tmp_seed2 = regionClean(tmp_seed2);
+	Mat new_seed= processJunctions(img,tmp_seed2);
 	new_seed = regionClean(new_seed);
 
 

@@ -51,4 +51,4 @@ vector< vector<int> > selectSeedPoints(Mat seedimg, Point center, int r);
 Mat shiftSubregion(Mat seedimg, vector<int> regions);
 Mat shiftBackSubregion(Mat seedimg, Mat newseedimg, vector<int> regions);
 Mat processJunctions(Mat img, Mat seedimg);
-Mat processSmall(Mat img, Mat seedimg);
+Mat processDelete(Mat img, Mat seedimg);
