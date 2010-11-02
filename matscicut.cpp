@@ -1,4 +1,5 @@
 #include "matscicut.h"
+#include "BlobResult.h"
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
@@ -132,6 +133,7 @@ Mat regionCompact(Mat regionsin) {/*{{{*/
 
 }/*}}}*/
 Mat regionClean(Mat regionsin) {/*{{{*/
+
 	Mat regions = regionsin.clone();
 	// Filter single pixel errors
 	// Doesn't handle border, currently  
@@ -142,7 +144,77 @@ Mat regionClean(Mat regionsin) {/*{{{*/
 		regions.at<int>(y,x) != regions.at<int>(y+1,x) ) )
 			regions.at<int>(y,x)=regions.at<int>(y,x-1); // Closest region
 	}
-	return regionCompact(regions);
+
+	regions = regionCompact(regions);
+
+	Mat regions_out(regions.size(),CV_32S,-1);
+
+	for(int l=0;l<mat_max(regions)+1;l++) {
+
+		Mat layer = selectRegion(regions,l).clone();
+
+
+		IplImage oldlayer = layer;
+		IplImage* blobimg = 0;
+
+		CBlobResult blobs;
+		blobs = CBlobResult(&oldlayer,NULL,0);
+
+		CBlob blob;
+		blobs.GetNthBlob(CBlobGetArea(),0,blob);
+
+		blobimg = cvCreateImage(cvGetSize(&oldlayer),IPL_DEPTH_8U,3);
+		FORxyM(layer) {
+			CvScalar s;
+			s.val[0] = 0;
+			s.val[1] = 0;
+			s.val[2] = 0;
+			cvSet2D(blobimg,y,x,s);
+		}
+
+		blob.FillBlob(blobimg,CV_RGB(255,255,255));
+
+		Mat new_layers = cvarrToMat(blobimg).clone();
+
+	    vector<Mat> planes;
+	    split(new_layers, planes);
+
+		Mat new_layer = planes[0];
+
+		cvReleaseImage(&blobimg);
+
+		FORxyM(regions_out) 
+			if(int(new_layer.at<unsigned char>(y,x)) > 0)
+				regions_out.at<int>(y,x) = l;
+		
+	}
+
+
+	while(mat_min(regions_out) < 0) {
+		cout << "Cleaning" << endl;
+		FORxyM(regions_out) {
+			if(regions_out.at<int>(y,x) < 0) {
+				if(x!=0 && regions_out.at<int>(y,x-1) != -1) {
+					regions_out.at<int>(y,x) = regions_out.at<int>(y,x-1);
+					continue;
+				}
+				if(y!=0 && regions_out.at<int>(y-1,x) != -1) {
+					regions_out.at<int>(y,x) = regions_out.at<int>(y-1,x);
+					continue;
+				}
+				if(x!=regions_out.size().width-1 && regions_out.at<int>(y,x+1) != -1) {
+					regions_out.at<int>(y,x) = regions_out.at<int>(y,x+1);
+					continue;
+				}
+				if(y!=regions_out.size().height-1 && regions_out.at<int>(y+1,x) != -1) {
+					regions_out.at<int>(y,x) = regions_out.at<int>(y+1,x);
+					continue;
+				}
+			}
+		}
+	}
+
+	return regions_out;
 }/*}}}*/
 Point regionCentroid(Mat seedimg, int region) {/*{{{*/
 	int centroidx=0;
@@ -817,6 +889,9 @@ int main(int argc, char **argv) {/*{{{*/
 		//cout << l << endl;
 		//display("tmp",overlay(seedimg,img,0.5,l));
 	//}
+	
+	
+	seedimg = regionClean(seedimg);
 
 	Mat tmp_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
 	tmp_seed = regionClean(tmp_seed);

@@ -114,10 +114,17 @@ void printstats (Mat img) {/*{{{*/
 	minMaxLoc(img,&mat_min,&mat_max,NULL,NULL);
 	cout << "Min: " << mat_min << endl;
 	cout << "Max: " << mat_max << endl;
+	cout << "Type:" << img.type() << endl;
+	cout << "Chan:" << img.channels() << endl;
 }/*}}}*/
 int mat_max(Mat matrix) {/*{{{*/
 	double templabels = 0;
 	minMaxLoc(matrix,NULL,&templabels,NULL,NULL);
+	return int(templabels);
+}/*}}}*/
+int mat_min(Mat matrix) {/*{{{*/
+	double templabels = 0;
+	minMaxLoc(matrix,&templabels,NULL,NULL,NULL);
 	return int(templabels);
 }/*}}}*/
 int * toLinear(Mat matrix) {/*{{{*/

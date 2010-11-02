@@ -27,6 +27,7 @@ int* loadRaw(string filename, int size);
 void display(string handle, Mat img);
 void printstats (Mat img);
 int mat_max(Mat matrix);
+int mat_min(Mat matrix);
 int * toLinear(Mat matrix);
 Mat toMat(int* data,int width,int height);
 Mat overlay(Mat img1, Mat img2,float alpha=0.5,int hilight=-1);

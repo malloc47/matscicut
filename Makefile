@@ -1,12 +1,13 @@
 CXX = g++
 #CCFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
-CCFLAGS = -I /usr/include/opencv -L /usr/local/lib -lm `pkg-config --cflags --libs opencv`
+CCFLAGS = -L. -I. -L /usr/local/lib `pkg-config --cflags --libs opencv` -lm -lblob
 
 
 all: matscicut 
 
 matscicut: matscicut.o matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o
-	${CXX} ${CCFLAGS} -o matscicut matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o matscicut.o
+	#${CXX} ${CCFLAGS} -o matscicut matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o matscicut.o
+	${CXX} ${CCFLAGS} -o matscicut *.o 
 
 matscicut.o: matscicut.cpp matscicut.h 
 	${CXX} ${CCFLAGS} -c matscicut.cpp
