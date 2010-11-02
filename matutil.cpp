@@ -152,7 +152,7 @@ Mat toMat(int* data,int width,int height) {/*{{{*/
 	return output;
 }/*}}}*/
 Mat overlay(Mat img1, Mat img2,float alpha,int hilight) {/*{{{*/
-	Mat composite(img1.size().height,img1.size().width,CV_8UC3,Scalar(0));
+	Mat composite(img2.size(),CV_8UC3,Scalar(0));
 
 	int colormap[128][3] = {{0,0,143},/*{{{*/
 		{0,0,159},

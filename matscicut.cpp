@@ -289,7 +289,6 @@ vector<Point> regionEdge(Mat regions,int l1,int l2) {/*{{{*/
 	vector<Point> points;
 
 	if(!(l2 < 0)) {
-
 		// Horizontal, including first, exluding last column
 		for(int x=0;x<regions.size().width-1;x++) {
 			for(int y=0;y<regions.size().height;y++) {
@@ -311,7 +310,6 @@ vector<Point> regionEdge(Mat regions,int l1,int l2) {/*{{{*/
 					points.push_back(Point(x,y));
 			}
 		}
-
 	}
 	else
 		switch(l2) {
@@ -419,7 +417,7 @@ Rect getWindow(vector<int> regions, Mat labels) {/*{{{*/
 				y1=max(y1,y);
 			}
 
-	return Rect(x0,y0,x1-x0,y1-y0);
+	return Rect(x0,y0,x1-x0+1,y1-y0+1);
 
 }/*}}}*/
 /*Rect getWindow(pair<int,int> regionpair, Mat labels) {[>{{{<]
@@ -732,23 +730,13 @@ Mat edgeGraphCut(Mat img, Mat seedimgin, Mat edge, vector<int> regions, Point se
 	int num_labels = regions.size()+2;
 	if(num_labels < 2) { cout << "Must have > 1 label" << endl;	exit(1); }
 
-	cout << "Loop" << endl;
-
-	//FORxyM(seedimgin) cout << seedimgin.at<int>(y,x) << " " << endl;
-	
-	cout << "Clone" << endl;
-	
-	//Mat seedimg = seedimgin.clone();
-	Mat seedimg(seedimgin.size(),CV_32S);
-	FORxyM(seedimgin) seedimg.at<int>(y,x) = seedimgin.at<int>(y,x);
-
-	cout << "Adj" << endl;
+	Mat seedimg = seedimgin.clone();
 
 	Mat adj(num_labels,num_labels,CV_32S,1);
 	
 	seedimg.at<int>(seed)=regions.size()+1;
 
-	int *data = edgeDataTerm(seedimg,edge,regions,seed,20);
+	int *data = edgeDataTerm(seedimg,edge,regions,seed,40);
 
 	int *sites = toLinear(img);
 
@@ -756,8 +744,6 @@ Mat edgeGraphCut(Mat img, Mat seedimgin, Mat edge, vector<int> regions, Point se
 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
 
-	//vector<int> sizes = regionSizes(new_seed);
-	
 	delete [] data;
 	delete [] sites;
 	delete [] result;
@@ -1043,8 +1029,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	cout << "@localgce \t" << regionpair.size() << endl;
 
 	for(int i=0;i<regionpair.size();i++) {
-		if(i<230) continue;
-		cout << i << " of " << regionpair.size() << endl;
+		//cout << i << " of " << regionpair.size() << endl;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1070,29 +1055,43 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		float theta = atan2(ybearing,xbearing);
 		Point seed(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
 		
-		Mat composite=overlay(subseed,subimg);
-		circle(composite,edg_centroid,3,Scalar(0,255,0,255));
-		circle(composite,reg_centroid,3,Scalar(0,255,0,255));
-		circle(composite,seed,3,Scalar(0,255,0,255));
+		//Mat composite=overlay(subseed,subimg);
+		//circle(composite,edg_centroid,3,Scalar(0,255,0,255));
+		//circle(composite,reg_centroid,3,Scalar(0,255,0,255));
+		//circle(composite,seed,3,Scalar(0,255,0,255));
 		//display("tmp",composite);
 
 		// Construct edge image
-		Mat edgeimg(subseed.size(),CV_8U); 
-		FORxyM(edgeimg) edgeimg.at<unsigned char>(y,x) = 0;
-		for (int j=0;j<edge.size();j++)
+		Mat edgeimg(subseed.size(),CV_8U,Scalar(0)); 
+		//FORxyM(edgeimg) edgeimg.at<unsigned char>(y,x) = 0;
+		for (int j=0;j<edge.size();j++){
 			edgeimg.at<unsigned char>(edge.at(j).y-win.y,edge.at(j).x-win.x)=255;
-		//display("tmp",edgeimg);
-		
-		Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
+		}
 
+		Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
 		subseed = shiftBackSubregion(subseed,subseed_new,regions);
 
-		//display("tmp",overlay(subseed,subimg));
+		bool admissible=true;
 
-		//FORxyM(subseed) {
-			//if(subseed.at<int>(y,x)==-1) continue; //Not bg
-			//else seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
-		//}
+		if(regionSize(subseed,-2)>1)
+			cout << regionSize(subseed,-2) << endl; 
+
+		if(regionSize(subseed,-2) < WINTHRESH) admissible=false;
+
+		for(int j=0;j<regions.size();j++) {
+			if(regionSize(subseed,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
+		}
+		if(!regionBorderCriteria(subimg,subseed,-2,0.66)) admissible=false;
+
+		if(admissible) {
+			display("tmp",overlay(subseed,subimg));
+		}
+
+		if(admissible)
+			FORxyM(subseed) {
+				if(subseed.at<int>(y,x)==-1) continue; //Not bg
+				else seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
+			}
 
 		//Mat composite=overlay(subseed,subimg);
 		//vector<Point> edge = regionEdge(seedimg,regionp.first,regionp.second);
@@ -1184,7 +1183,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 	//Mat img = imread(fileb1,0);
 
-	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
+	//Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
 
 	/*}}}*/
 
@@ -1200,7 +1199,7 @@ int main(int argc, char **argv) {/*{{{*/
 	
 	
 	// Clean first
-	seedimg = regionClean(seedimg);
+	//seedimg = regionClean(seedimg);
 
 	// Process global
 	//Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
@@ -1229,7 +1228,7 @@ int main(int argc, char **argv) {/*{{{*/
 	// Output/*{{{*/
 
 	Mat composite = overlay(seedimg4,img,0.5);
-	Mat composite2 = overlay(seedimg,img,0.5);
+	//Mat composite2 = overlay(seedimg,img,0.5);
 
 	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png" << endl;
 
