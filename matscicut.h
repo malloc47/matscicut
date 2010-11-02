@@ -41,7 +41,7 @@ int regionSize(Mat regions,int region);
 vector< vector<int> > junctionRegions(Mat regions);
 Rect getWindow(vector<int> regions, Mat labels);
 Mat selectRegion(Mat seedimg, int region);
-Mat clearRegions(Mat seedimg, vector<int> regions);
+void clearRegions(Mat seedimg, vector<int> regions);
 int * globalDataTerm(Mat seedimg,int dilate_amount);
 int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed);
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj, int num_labels, bool initialize=true);
