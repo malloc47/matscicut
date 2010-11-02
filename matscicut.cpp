@@ -262,6 +262,38 @@ bool regionBorderCriteria(Mat img, Mat regions, int region, float thresh) {/*{{{
 	return (total_thresh/total_border> thresh);
 	
 }/*}}}*/
+vector<Point> regionEdge(Mat regions,int l1,int l2) {/*{{{*/
+	vector<Point> points;
+
+	if(l2 < 0) {
+
+		// Horizontal, including first, exluding last column
+		for(int x=0;x<regions.size().width-1;x++) {
+			for(int y=0;y<regions.size().height;y++) {
+				int r1 = regions.at<int>(y,x);
+				int r2 = regions.at<int>(y,x+1);
+				if( (r1 == l1 && r2 == l2) ||
+						(r1 == l2 && r2 == l1) )
+					points.push_back(Point(x,y));
+			}
+		}
+
+		// Verticle, including first, excluding last row 
+		for(int x=0;x<regions.size().width;x++) {
+			for(int y=0;y<regions.size().height-1;y++) {
+				int r1 = regions.at<int>(y,x);
+				int r2 = regions.at<int>(y+1,x);
+				if( (r1 == l1 && r2 == l2) ||
+						(r1 == l2 && r2 == l1) )
+					points.push_back(Point(x,y));
+			}
+		}
+
+	}
+
+	return points;
+
+}/*}}}*/
 vector<int> getAdj(Mat adj,int region) {/*{{{*/
 	// Adj is symmetrical, so it shouldn't matter how we iterate through it
 	vector<int> adjacent;
@@ -337,6 +369,13 @@ Rect getWindow(vector<int> regions, Mat labels) {/*{{{*/
 	return Rect(x0,y0,x1-x0,y1-y0);
 
 }/*}}}*/
+/*Rect getWindow(pair<int,int> regionpair, Mat labels) {[>{{{<]
+	vector<int> regions;
+	if(!(regionpair.first < 0)) regions.push_back(regionpair.first);
+	if(!(regionpair.second < 0))regions.push_back(regionpair.second);
+	if(regions.empty()) {cout << "Empty region!" << endl; exit(0);}
+	return getWindow(regions,labels);
+}[>}}}<]*/
 Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 	Mat layer(seedimg.size(),CV_8U); // Must use CV_8U for dilation
 	for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
@@ -804,6 +843,86 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 	return seedout;
 
 }/*}}}*/
+Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
+	// Region pairs calculated
+	// By convention, the first of the two pairs will be the "primary" region
+	// that will be dilated into. The following special numbers are also used
+	// -1 -> top boundary
+	// -2 -> bottom boundary
+	// -3 -> left boundary
+	// -4 -> right boundary
+	int num_labels = mat_max(seedimg)+1;
+	Mat adj = regionsAdj(seedimg,num_labels);
+	vector<int> sizes = regionSizes(seedimg);
+	vector< pair<int,int> > regionpair;
+	// Add all normal pairs of regions
+	for(int l1=0;l1<num_labels;l1++) for(int l2=0;l2<num_labels;l2++) {
+		if(!adj.at<int>(l1,l2)) continue;
+		if(sizes.at(l1) < 200) continue;
+		if(sizes.at(l2) < 200) continue;
+		if(regionEdge(seedimg,l1,l2).size() < 50) continue;
+		regionpair.push_back(make_pair(l1,l2));
+	}
+
+	set<int> boundaries;
+
+	// Top
+	for(int x=0;x<seedimg.size().width;x++)
+		boundaries.insert(seedimg.at<int>(0,x));
+	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
+		regionpair.push_back(make_pair(*it,-1));
+	boundaries.clear();
+	
+	// Bottom 
+	for(int x=0;x<seedimg.size().width;x++)
+		boundaries.insert(seedimg.at<int>(seedimg.size().height-1,x));
+	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
+		regionpair.push_back(make_pair(*it,-2));
+	boundaries.clear();
+
+	// Left
+	for(int y=0;y<seedimg.size().width;y++)
+		boundaries.insert(seedimg.at<int>(y,0));
+	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
+		regionpair.push_back(make_pair(*it,-3));
+	boundaries.clear();
+
+	// Right
+	for(int y=0;y<seedimg.size().width;y++)
+		boundaries.insert(seedimg.at<int>(y,seedimg.size().width-1));
+	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
+		regionpair.push_back(make_pair(*it,-4));
+	boundaries.clear();
+
+	cout << "@localgce \t" << regionpair.size() << endl;
+
+	for(int i=0;i<regionpair.size();i++) {
+		pair<int,int> regionp = regionpair.at(i);
+		vector<int> regions;
+		if(!(regionp.first < 0)) regions.push_back(regionp.first);
+		if(!(regionp.second < 0))regions.push_back(regionp.second);
+		if(regions.empty()) {cout << "Empty region!" << endl; exit(0);}
+
+		Rect win = getWindow(regions,seedimg);
+		Mat subimg = img(win);
+		Mat subseed = seedimg(win).clone();
+
+		subseed = clearRegions(subseed,regions);
+
+		display("tmp",overlay(subseed,subimg));
+		//vector<Point> edge = regionEdge(seedimg,regionp.first,regionp.second);
+		//circle(composite,Point(junctions[i][0],junctions[i][1]),5,Scalar(255,255,255,255));
+
+
+		// Handle "normal" cases first
+		//if(regionp.second >= 0) {
+
+		//}
+	}
+
+	return seedimg;
+
+}/*}}}*/
 int main(int argc, char **argv) {/*{{{*/
 	// Read in cmd line args/*{{{*/
 	int dilate_amount = 20;
@@ -891,22 +1010,25 @@ int main(int argc, char **argv) {/*{{{*/
 	//}
 	
 	
+	// Clean first
 	seedimg = regionClean(seedimg);
 
-	Mat tmp_seed = globalGraphCut(imgblend,seedimg,dilate_amount);
-	tmp_seed = regionClean(tmp_seed);
+	// Process global
+	Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
+	seedimg1 = regionClean(seedimg1);
 
-	//for(int l=0;l<mat_max(tmp_seed)+1;l++) {
-		//cout << l << endl;
-		//display("tmp",overlay(tmp_seed,img,0.5,l));
-	//}
+	// Delete unneeded grains 
+	//Mat seedimg2 = processDelete(img,seedimg1);	
+	//seedimg2 = regionClean(seedimg2);
 
-	//display("tmp",overlay(tmp_seed,img,0.5));
-	Mat tmp_seed2 = processDelete(img,tmp_seed);	
-	//display("tmp",overlay(tmp_seed2,img,0.5));
-	tmp_seed2 = regionClean(tmp_seed2);
-	Mat new_seed = processJunctions(img,tmp_seed2);
-	new_seed = regionClean(new_seed);
+	// Add in missed junctions
+	//Mat seedimg3 = processJunctions(img,seedimg2);
+	//seedimg3 = regionClean(seedimg3);
+
+	// Add in grains created at edges 
+	Mat seedimg4 = processEdges(img,seedimg1);
+	seedimg4 = regionClean(seedimg4);
+
 	//display("tmp",overlay(new_seed,img,0.5));
 
 
@@ -914,7 +1036,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 	// Output/*{{{*/
 
-	Mat composite = overlay(new_seed,img,0.5);
+	Mat composite = overlay(seedimg4,img,0.5);
 	Mat composite2 = overlay(seedimg,img,0.5);
 
 	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png" << endl;
@@ -922,7 +1044,7 @@ int main(int argc, char **argv) {/*{{{*/
 	//display("tmp",overlay(seedimg,img,0.5));
 	//display("tmp",overlay(new_seed,img,0.5));
 	
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",new_seed);
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",seedimg4);
 
 	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
 	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
