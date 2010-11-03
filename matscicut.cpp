@@ -444,6 +444,11 @@ Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/
 	}
 	return seedimg;
 }/*}}}*/
+Point pointDirection(Point center, Point direction, int r) {/*{{{*/
+	Point bearing = direction - center;
+	float theta = atan2(bearing.y,bearing.x);
+	return Point(r*cos(theta)+center.x,r*sin(theta)+center.y);
+}/*}}}*/
 int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
@@ -553,11 +558,11 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, 
 	return data;
 }	/*}}}*/
 int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilate_amount) {/*{{{*/
-	//vector<Point> seeds;
-	//seeds.push_back(seed);
-	//seeds.push_back(Point(seed.x+1,seed.y));
-	//seeds.push_back(Point(seed.x,seed.y+1));
-	//seeds.push_back(Point(seed.x+1,seed.y+1));
+	vector<Point> seeds;
+	seeds.push_back(seed);
+	seeds.push_back(Point(seed.x+1,seed.y));
+	seeds.push_back(Point(seed.x,seed.y+1));
+	seeds.push_back(Point(seed.x+1,seed.y+1));
 
 	int num_labels = regions.size()+2;
 	int num_pixels = seedimg.size().width*seedimg.size().height;
@@ -581,9 +586,9 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 		Mat dilation = layer.clone();
 		
 		vector<Point> offlimits;
-		//for(int j=0;j<seeds.size();j++) 
-			//offlimits.push_back(seeds.at(j));
-		offlimits.push_back(seed);
+		for(int j=0;j<seeds.size();j++) 
+			offlimits.push_back(seeds.at(j));
+		//offlimits.push_back(seed);
 		//offlimits.push_back(Point(seed.x+1,seed.y));
 		//offlimits.push_back(Point(seed.x,seed.y+1));
 		//offlimits.push_back(Point(seed.x+1,seed.y+1));
@@ -617,9 +622,9 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 
 	FORxyM(seedimg) {
 		// Always set seed, regardless of whether it is within the dilation or not
-		if(x==seed.x && y==seed.y)
-			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = 0; 
-		else
+		//if(x==seed.x && y==seed.y)
+			//data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = 0; 
+		//else
 			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = INF; 
 		
 		vector<Point> offlimits;
@@ -635,6 +640,9 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 		if(zero)
 			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = 0;
 	}
+	// Always set seed, regardless of whether it is within the dilation or not
+	for(int i=0;i<seeds.size();i++)
+		data[(seeds.at(i).x+seeds.at(i).y*seedimg.size().width)*num_labels+num_labels-1] = 0;
 	
 	return data;
 }	/*}}}*/
@@ -696,7 +704,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 
 		//cout << "@alpha-beta expansion" << endl;
 	
-		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 		gc->swap(1);
 		//gc->expansion(1);
@@ -704,7 +712,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 		// Retrieve labeling
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 
 		if(gc->giveDataEnergy() > 0)
@@ -1158,6 +1166,9 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 			float theta = atan2(ybearing,xbearing);
 			Point seedpt(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
 			seeds.push_back(seedpt);
+			// Experiment
+			Point seedpt2 = pointDirection(edg_centroid,reg_centroid,r);
+			cout<<seedpt.x<<","<<seedpt.y<<"=="<<seedpt2.x<<","<<seedpt2.y<<endl;
 		}
 
 		// Construct edge image
@@ -1314,25 +1325,25 @@ int main(int argc, char **argv) {/*{{{*/
 	
 	
 	// Clean first
-	//seedimg = regionClean(seedimg);
+	seedimg = regionClean(seedimg);
 
 	// Process global
-	//Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
-	//seedimg1 = regionClean(seedimg1);
+	Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
+	seedimg1 = regionClean(seedimg1);
 	
 	//writeMat("tmp.labels",seedimg1);
 	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Delete unneeded grains 
-	//Mat seedimg2 = processDelete(img,seedimg1);	
-	//seedimg2 = regionClean(seedimg2);
+	Mat seedimg2 = processDelete(img,seedimg1);	
+	seedimg2 = regionClean(seedimg2);
 
 	// Add in missed junctions
-	//Mat seedimg3 = processJunctions(img,seedimg2);
-	//seedimg3 = regionClean(seedimg3);
+	Mat seedimg3 = processJunctions(img,seedimg2);
+	seedimg3 = regionClean(seedimg3);
 
 	//writeMat("tmp.labels",seedimg3);
-	Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
+	//Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Add in grains created at edges 
 	Mat seedimg4 = processEdges(img,seedimg3);
