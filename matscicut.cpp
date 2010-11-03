@@ -96,20 +96,22 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 	return adj;
 }/*}}}*/
 int regionNum(Mat regions) {/*{{{*/
-	int count=0;
-	int max_regions=mat_max(regions);
+	set<int> unique_regions;
+	//int count=0;
+	//int max_regions=mat_max(regions);
 
-	vector<int> regioncount(mat_max(regions)+1,0);
+	//vector<int> regioncount(mat_max(regions)+1,0);
 
 	FORxyM(regions) {
-		regioncount.at(regions.at<int>(y,x))++;
+		unique_regions.insert(regions.at<int>(y,x));
+		//regioncount.at(regions.at<int>(y,x))++;
 	}
 
-	for(int i=0;i<regioncount.size();i++)
-		if(regioncount.at(i) > 0)
-			count++;
+	//for(int i=0;i<regioncount.size();i++)
+		//if(regioncount.at(i) > 0)
+			//count++;
 	
-	return count;
+	return unique_regions.size();
 
 }/*}}}*/
 Mat regionCompact(Mat regionsin) {/*{{{*/
@@ -417,7 +419,7 @@ Rect getWindow(vector<int> regions, Mat labels) {/*{{{*/
 				y1=max(y1,y);
 			}
 
-	return Rect(x0,y0,x1-x0,y1-y0);
+	return Rect(x0,y0,x1-x0+1,y1-y0+1);
 
 }/*}}}*/
 /*Rect getWindow(pair<int,int> regionpair, Mat labels) {[>{{{<]
@@ -559,11 +561,9 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 	}
 
 	Mat edged = edge.clone();
-	display("tmp",edge);
 	//dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)),Point(-1,-1),1,BORDER_CONSTANT,Scalar(0));
 	dilate_amount = dilate_amount * 4;
 	dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
-	display("tmp",edged);
 
 	FORxyM(seedimg) {
 		data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = INF; 
@@ -740,11 +740,11 @@ Mat edgeGraphCut(Mat img, Mat seedimgin, Mat edge, vector<int> regions, Point se
 	
 	seedimg.at<int>(seed)=regions.size()+1;
 
-	int *data = edgeDataTerm(seedimg,edge,regions,seed,10);
+	int *data = edgeDataTerm(seedimg,edge,regions,seed,90);
 
 	int *sites = toLinear(img);
 
-	int *result = graphCut(data,sites,seedimg,adj,num_labels);
+	int *result = graphCut(data,sites,seedimg,adj,num_labels,false);
 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
 
@@ -983,10 +983,12 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	int sizethresh = 500;
 	int lengththresh = 50;
 	int num_labels = mat_max(seedimg)+1;
+	int num_regions = mat_max(seedimg)+1;
 	Mat seedout = seedimg.clone();
 	Mat adj = regionsAdj(seedimg,num_labels);
 	vector<int> sizes = regionSizes(seedimg);
 	vector< pair<int,int> > regionpair;
+
 	// Add all normal pairs of regions
 	for(int l1=0;l1<num_labels;l1++) for(int l2=0;l2<num_labels;l2++) {
 		if(!adj.at<int>(l1,l2)) continue;
@@ -1034,7 +1036,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 	for(int i=0;i<regionpair.size();i++) {
 		cout << i << " of " << regionpair.size() << endl;
-		if(i<250) continue;
+		if(i<252) continue;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1057,17 +1059,15 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		edg_centroid.y -= win.y; 
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
-		int r=4;
-		int xbearing = reg_centroid.x - edg_centroid.x;
-		int ybearing = reg_centroid.y - edg_centroid.y;
-		float theta = atan2(ybearing,xbearing);
-		Point seed(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
-		
-		Mat composite=overlay(subseed,subimg);
-		circle(composite,edg_centroid,3,Scalar(0,255,0,255));
-		circle(composite,reg_centroid,3,Scalar(0,255,0,255));
-		circle(composite,seed,3,Scalar(0,255,0,255));
-		display("tmp",composite);
+		vector<Point> seeds;
+		for(int r=3;r<16;r++) {
+			//int r=4;
+			int xbearing = reg_centroid.x - edg_centroid.x;
+			int ybearing = reg_centroid.y - edg_centroid.y;
+			float theta = atan2(ybearing,xbearing);
+			Point seedpt(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
+			seeds.push_back(seedpt);
+		}
 
 		// Construct edge image
 		Mat edgeimg(subseed.size(),CV_8U,Scalar(0)); 
@@ -1076,32 +1076,61 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 			edgeimg.at<unsigned char>(edge.at(j).y-win.y,edge.at(j).x-win.x)=255;
 		}
 
-		Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
-		subseed = shiftBackSubregion(subseed,subseed_new,regions);
+		for(int s=0;s<seeds.size();s++) {
+			Point seed = seeds.at(s);
 
-		display("tmp",overlay(subseed,subimg));
+			Mat composite=overlay(subseed,subimg);
+			circle(composite,edg_centroid,3,Scalar(0,255,0,255));
+			circle(composite,reg_centroid,3,Scalar(0,255,0,255));
+			circle(composite,seed,3,Scalar(0,255,0,255));
+			display("tmp",composite);
 
-		bool admissible=true;
+			cout << "subseed" << endl;
+			printstats(subseed);
+			cout << regionNum(subseed) << endl;;
+			
+			cout << "subseed_s" << endl;
+			printstats(subseed_s);
+			cout << regionNum(subseed_s) << endl;;
 
-		if(regionSize(subseed,-2)>1)
-			cout << regionSize(subseed,-2) << endl; 
+			Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
+			cout << "subseed_new" << endl;
+			printstats(subseed_new);
+			cout << regionNum(subseed_new) << endl;;
+			Mat subseedt = shiftBackSubregion(subseed,subseed_new,regions);
+			cout << "subseedt" << endl;
+			printstats(subseedt);
+			cout << regionNum(subseedt) << endl;;
+			cout << "Size: " << regionSize(subseedt,-2) << endl;
+			display("tmp",overlay(subseedt,subimg));
 
-		if(regionSize(subseed,-2) < WINTHRESH) admissible=false;
+			bool admissible=true;
 
-		for(int j=0;j<regions.size();j++) {
-			if(regionSize(subseed,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
-		}
-		if(!regionBorderCriteria(subimg,subseed,-2,0.66)) admissible=false;
+			//if(regionSize(subseedt,-2)>1)
+				//cout << regionSize(subseedt,-2) << endl; 
 
-		if(admissible) {
-			display("tmp",overlay(subseed,subimg));
-		}
+			//if(regionSize(subseedt,-2) < WINTHRESH) admissible=false;
 
-		if(admissible)
-			FORxyM(subseed) {
-				if(subseed.at<int>(y,x)==-1) continue; //Not bg
-				else seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
+			//for(int j=0;j<regions.size();j++) {
+				//if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
+			//}
+			//if(!regionBorderCriteria(subimg,subseedt,-2,0.66)) admissible=false;
+
+			//if(admissible) {
+				//display("tmp",overlay(subseedt,subimg));
+			//}
+
+			if(admissible) {
+				int new_label = num_labels++;
+				//Map region back to whole label matrix
+				FORxyM(subseedt) {
+					if(subseedt.at<int>(y,x)==-1) continue; //Not bg
+					if(subseedt.at<int>(y,x)==-2)
+						seedout.at<int>(y+win.y,x+win.x) = new_label;
+					else seedout.at<int>(y+win.y,x+win.x) = subseedt.at<int>(y,x);
+				}
 			}
+		}
 
 		//Mat composite=overlay(subseed,subimg);
 		//vector<Point> edge = regionEdge(seedimg,regionp.first,regionp.second);
@@ -1219,15 +1248,15 @@ int main(int argc, char **argv) {/*{{{*/
 	Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Delete unneeded grains 
-	Mat seedimg2 = processDelete(img,seedimg1);	
-	seedimg2 = regionClean(seedimg2);
+	//Mat seedimg2 = processDelete(img,seedimg1);	
+	//seedimg2 = regionClean(seedimg2);
 
 	// Add in missed junctions
-	Mat seedimg3 = processJunctions(img,seedimg2);
-	seedimg3 = regionClean(seedimg3);
+	//Mat seedimg3 = processJunctions(img,seedimg2);
+	//seedimg3 = regionClean(seedimg3);
 
 	// Add in grains created at edges 
-	Mat seedimg4 = processEdges(img,seedimg3);
+	Mat seedimg4 = processEdges(img,seedimg1);
 	seedimg4 = regionClean(seedimg4);
 
 	//display("tmp",overlay(new_seed,img,0.5));
