@@ -498,7 +498,6 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, 
 	// Loop over all intermediate regions
 	for(int k=0;k<regions.size();k++) {
 		int l=k+1; // Labels start at 1, not zero, since we've already done the zero region
-		Point centroid = regionCentroid(seedimg,l);
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
 		
@@ -554,6 +553,12 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, 
 	return data;
 }	/*}}}*/
 int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilate_amount) {/*{{{*/
+	//vector<Point> seeds;
+	//seeds.push_back(seed);
+	//seeds.push_back(Point(seed.x+1,seed.y));
+	//seeds.push_back(Point(seed.x,seed.y+1));
+	//seeds.push_back(Point(seed.x+1,seed.y+1));
+
 	int num_labels = regions.size()+2;
 	int num_pixels = seedimg.size().width*seedimg.size().height;
 	int *data = new int[num_pixels*num_labels];
@@ -570,17 +575,21 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 			data[(x+y*seedimg.size().width)*num_labels+0] = INF;
 
 	// Loop over all intermediate regions
-	for(int k=0;k<regions.size();k++) {
-		int l=k+1; // Labels start at 1, not zero, since we've already done the zero region
-		Point centroid = regionCentroid(seedimg,l);
+	for(int i=0;i<regions.size();i++) {
+		int l=i+1; // Labels start at 1, not zero, since we've already done the zero region
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
 		
 		vector<Point> offlimits;
+		//for(int j=0;j<seeds.size();j++) 
+			//offlimits.push_back(seeds.at(j));
 		offlimits.push_back(seed);
-		for(int i=0;i<regions.size();i++)
-			if(i!=k) // Allow our own seed to be included	
-				offlimits.push_back(centroids.at(i));
+		//offlimits.push_back(Point(seed.x+1,seed.y));
+		//offlimits.push_back(Point(seed.x,seed.y+1));
+		//offlimits.push_back(Point(seed.x+1,seed.y+1));
+		for(int j=0;j<regions.size();j++)
+			if(i!=j) // Allow our own seed to be included	
+				offlimits.push_back(centroids.at(j));
 
 		// Dilate region
 		if(dilate_amount > 0)
@@ -594,8 +603,8 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 			// If outside the admissible region (e.g. in the zero region) , always INF
 			if(seedimg.at<int>(y,x) == 0) continue;
 			// If in another region's seed, or the new seed, always INF
-			for(int i=0;i<offlimits.size();i++)
-				if(x==offlimits.at(i).x && y==offlimits.at(i).y)
+			for(int j=0;j<offlimits.size();j++)
+				if(x==offlimits.at(j).x && y==offlimits.at(j).y)
 					zero=false;
 			if(zero)
 				data[(x+y*seedimg.size().width)*num_labels+l] = 0;
@@ -603,7 +612,7 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 	}
 
 	Mat edged = edge.clone();
-	dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)),Point(-1,-1),1,BORDER_CONSTANT,Scalar(0));
+	//dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)),Point(-1,-1),1,BORDER_CONSTANT,Scalar(0));
 	dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
 
 	FORxyM(seedimg) {
@@ -634,10 +643,17 @@ int * deleteDataTerm(Mat seedimg,vector<int> regions,int dilate_amount) {/*{{{*/
 	int num_pixels = seedimg.size().width*seedimg.size().height;
 	int *data = new int[num_pixels*num_labels];
 
-	for(int l=0;l<num_labels;l++) {
+	// Create zero region first
+	FORxyM(seedimg)
+		if(seedimg.at<int>(y,x) == 0)
+			data[(x+y*seedimg.size().width)*num_labels+0] = 0;
+		else
+			data[(x+y*seedimg.size().width)*num_labels+0] = INF;
+
+	for(int l=1;l<num_labels;l++) {
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
-		if(dilate_amount > 0 && l!=0)
+		if(dilate_amount > 0)
 			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
 		FORxyM(seedimg)
 			data[(x+y*seedimg.size().width)*num_labels+l] = (int(dilation.at<unsigned char>(y,x)) == 255 && seedimg.at<int>(y,x) != 0 ? 0 : INF);
@@ -792,8 +808,11 @@ Mat edgeGraphCut(Mat img, Mat seedimgin, Mat edge, vector<int> regions, Point se
 	Mat adj(num_labels,num_labels,CV_32S,1);
 	
 	seedimg.at<int>(seed)=regions.size()+1;
+	seedimg.at<int>(Point(seed.x+1,seed.y))=regions.size()+1;
+	seedimg.at<int>(Point(seed.x,seed.y+1))=regions.size()+1;
+	seedimg.at<int>(Point(seed.x+1,seed.y+1))=regions.size()+1;
 
-	int *data = edgeDataTerm(seedimg,edge,regions,seed,20);
+	int *data = edgeDataTerm(seedimg,edge,regions,seed,40);
 
 	int *sites = toLinear(img);
 
@@ -1049,8 +1068,8 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	// -2 -> bottom boundary
 	// -3 -> left boundary
 	// -4 -> right boundary
-	int sizethresh = 500;
-	int lengththresh = 5;
+	int sizethresh = 300;
+	int lengththresh = 4;
 	int num_labels = mat_max(seedimg)+1;
 	int num_regions = mat_max(seedimg)+1;
 	Mat seedout = seedimg.clone();
@@ -1109,7 +1128,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 	for(int i=0;i<regionpair.size();i++) {
 		cout << i << " of " << regionpair.size() << endl;
-		//if(i<30) continue;
+		//if(i<429) continue;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1133,9 +1152,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
 		vector<Point> seeds;
-		int initr = regionp.second < 0 ? 1 : 3 ;
-		for(int r=initr;r<10;r+=2) {
-			//int r=4;
+		for(int r=(regionp.second < 0 ? 1 : 3);r<10;r+=3) {
 			int xbearing = reg_centroid.x - edg_centroid.x;
 			int ybearing = reg_centroid.y - edg_centroid.y;
 			float theta = atan2(ybearing,xbearing);
@@ -1145,19 +1162,19 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 		// Construct edge image
 		Mat edgeimg(subseed.size(),CV_8U,Scalar(0)); 
-		//FORxyM(edgeimg) edgeimg.at<unsigned char>(y,x) = 0;
-		for (int j=0;j<edge.size();j++){
+		for (int j=0;j<edge.size();j++)
 			edgeimg.at<unsigned char>(edge.at(j).y-win.y,edge.at(j).x-win.x)=255;
-		}
 
 		for(int s=0;s<seeds.size();s++) {
 			Point seed = seeds.at(s);
 
-			//Mat composite=overlay(subseed,subimg);
-			//circle(composite,edg_centroid,3,Scalar(0,255,0,255));
-			//circle(composite,reg_centroid,3,Scalar(0,255,0,255));
-			//circle(composite,seed,3,Scalar(0,255,0,255));
-			//display("tmp",composite);
+			//if(i==429) {
+				//Mat composite=overlay(subseed,subimg);
+				//circle(composite,edg_centroid,3,Scalar(0,255,0,255));
+				//circle(composite,reg_centroid,3,Scalar(0,255,0,255));
+				//circle(composite,seed,3,Scalar(0,255,0,255));
+				//display("tmp",composite);
+			//}
 
 			Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
 			Mat subseedt = shiftBackSubregion(subseed,subseed_new,regions);
@@ -1172,10 +1189,12 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
 			//if(!regionBorderCriteria(subimg,subseedt,-2,0.66)) admissible=false;
 
-			if(admissible) {
-				display("tmp",overlay(subseed,subimg));
-				display("tmp",overlay(subseedt,subimg));
-			}
+			//if(i==429) {
+				//if(admissible) {
+					//display("tmp",overlay(subseed,subimg));
+					//display("tmp",overlay(subseedt,subimg));
+				//}
+			//}
 
 			if(admissible) {
 				int new_label = num_labels++;
@@ -1279,7 +1298,7 @@ int main(int argc, char **argv) {/*{{{*/
 
 	//Mat img = imread(fileb1,0);
 
-	//Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
+	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
 
 	/*}}}*/
 
@@ -1302,7 +1321,7 @@ int main(int argc, char **argv) {/*{{{*/
 	//seedimg1 = regionClean(seedimg1);
 	
 	//writeMat("tmp.labels",seedimg1);
-	Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
+	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Delete unneeded grains 
 	//Mat seedimg2 = processDelete(img,seedimg1);	
@@ -1312,8 +1331,11 @@ int main(int argc, char **argv) {/*{{{*/
 	//Mat seedimg3 = processJunctions(img,seedimg2);
 	//seedimg3 = regionClean(seedimg3);
 
+	//writeMat("tmp.labels",seedimg3);
+	Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
+
 	// Add in grains created at edges 
-	Mat seedimg4 = processEdges(img,seedimg1);
+	Mat seedimg4 = processEdges(img,seedimg3);
 	seedimg4 = regionClean(seedimg4);
 
 	//display("tmp",overlay(new_seed,img,0.5));
