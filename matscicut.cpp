@@ -1051,7 +1051,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	// -3 -> left boundary
 	// -4 -> right boundary
 	int sizethresh = 500;
-	int lengththresh = 50;
+	int lengththresh = 5;
 	int num_labels = mat_max(seedimg)+1;
 	int num_regions = mat_max(seedimg)+1;
 	Mat seedout = seedimg.clone();
@@ -1059,7 +1059,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	vector<int> sizes = regionSizes(seedimg);
 	vector< pair<int,int> > regionpair;
 
-	// Add all normal pairs of regions
+	//Add all normal pairs of regions
 	for(int l1=0;l1<num_labels;l1++) for(int l2=0;l2<num_labels;l2++) {
 		if(!adj.at<int>(l1,l2)) continue;
 		if(sizes.at(l1) < sizethresh) continue;
@@ -1076,6 +1076,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-1).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-1));
+	cout<<boundaries.size() <<endl;
 	boundaries.clear();
 	
 	//Bottom 
@@ -1084,6 +1085,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-2).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-2));
+	cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
 	//Left
@@ -1092,6 +1094,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-3).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-3));
+	cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
 	//Right
@@ -1100,13 +1103,14 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-4).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-4));
+	cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
 	cout << "@localgce \t" << regionpair.size() << endl;
 
 	for(int i=0;i<regionpair.size();i++) {
 		cout << i << " of " << regionpair.size() << endl;
-		//if(i<252) continue;
+		//if(i<30) continue;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1130,7 +1134,8 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
 		vector<Point> seeds;
-		for(int r=3;r<10;r++) {
+		int initr = regionp.second < 0 ? 1 : 3 ;
+		for(int r=initr;r<10;r+=2) {
 			//int r=4;
 			int xbearing = reg_centroid.x - edg_centroid.x;
 			int ybearing = reg_centroid.y - edg_centroid.y;
