@@ -278,7 +278,7 @@ bool regionBorderCriteria(Mat img, Mat regions, int region, float thresh) {/*{{{
 		}
 	}
 
-	cout << (total_thresh/total_border) << " > " << thresh << endl;
+	//cout << (total_thresh/total_border) << " > " << thresh << endl;
 	
 
 
@@ -417,7 +417,7 @@ Rect getWindow(vector<int> regions, Mat labels) {/*{{{*/
 				y1=max(y1,y);
 			}
 
-	return Rect(x0,y0,x1-x0+1,y1-y0+1);
+	return Rect(x0,y0,x1-x0,y1-y0);
 
 }/*}}}*/
 /*Rect getWindow(pair<int,int> regionpair, Mat labels) {[>{{{<]
@@ -433,14 +433,14 @@ Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 		layer.at<unsigned char>(y,x) = (seedimg.at<int>(y,x) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
-void clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/	
+Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/	
 	FORxyM(seedimg) {
 		bool inRegion = false;
 		for(int z=0;z<regions.size();z++)
 			if(seedimg.at<int>(y,x) == regions[z]) inRegion=true;
 		if(!inRegion) seedimg.at<int>(y,x) = -1;
 	}
-	//return seedimg;
+	return seedimg;
 }/*}}}*/
 int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
@@ -542,7 +542,7 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
 		if(dilate_amount > 0 && l!=0)
-			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+			dilate(layer,dilation,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
 		FORxyM(seedimg) {
 			// Set to inf by default
 			data[(x+y*seedimg.size().width)*num_labels+l] = INF;
@@ -559,12 +559,16 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 	}
 
 	Mat edged = edge.clone();
-	dilate(edge,edged,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
-	//display("tmp",edged);
+	display("tmp",edge);
+	//dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)),Point(-1,-1),1,BORDER_CONSTANT,Scalar(0));
+	dilate_amount = dilate_amount * 4;
+	dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
+	display("tmp",edged);
+
 	FORxyM(seedimg) {
 		data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = INF; 
 		bool zero=true;
-		if(!(edged.at<unsigned char>(y,x) > 0)) continue;
+		if(!(int(edged.at<unsigned char>(y,x)) == 255)) continue;
 		if(!(seedimg.at<int>(y,x) > 0)) continue;
 			for(int i=0;i<centroids.size();i++)
 				if((x==centroids.at(i).x && y==centroids.at(i).y))
@@ -626,7 +630,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 
 		//cout << "@alpha-beta expansion" << endl;
 	
-		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 		gc->swap(1);
 		//gc->expansion(1);
@@ -634,7 +638,7 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 		// Retrieve labeling
 		for ( int  i = 0; i < num_pixels; i++ ) result[i] = gc->whatLabel(i);
 
-		//cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
+		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
 
 		delete gc;
@@ -736,7 +740,7 @@ Mat edgeGraphCut(Mat img, Mat seedimgin, Mat edge, vector<int> regions, Point se
 	
 	seedimg.at<int>(seed)=regions.size()+1;
 
-	int *data = edgeDataTerm(seedimg,edge,regions,seed,40);
+	int *data = edgeDataTerm(seedimg,edge,regions,seed,10);
 
 	int *sites = toLinear(img);
 
@@ -857,8 +861,8 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 		Mat seedj = seedimg(win).clone();
 
 		// Zero out (-1 out, actually) background regions
-		//seedj = clearRegions(seedj,regions); 
-		clearRegions(seedj,regions); 
+		seedj = clearRegions(seedj,regions); 
+		//clearRegions(seedj,regions); 
 
 		Mat shifted_seed = shiftSubregion(seedj,regions);
 
@@ -948,8 +952,8 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 
 		//display(zpnum(l,1),overlay(subseed,subimg,0.5,l));
 
-		//subseed = clearRegions(subseed,regions);
-		clearRegions(subseed,regions);
+		subseed = clearRegions(subseed,regions);
+		//clearRegions(subseed,regions);
 
 		Mat subseed_s = shiftSubregion(subseed,regions);
 
@@ -1029,7 +1033,8 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	cout << "@localgce \t" << regionpair.size() << endl;
 
 	for(int i=0;i<regionpair.size();i++) {
-		//cout << i << " of " << regionpair.size() << endl;
+		cout << i << " of " << regionpair.size() << endl;
+		if(i<250) continue;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1040,7 +1045,10 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Mat subimg = img(win);
 		Mat subseed = seedimg(win).clone();
 
-		clearRegions(subseed,regions);
+		subseed = clearRegions(subseed,regions);
+		
+		//display("tmp",overlay(subseed,subimg));
+
 		Mat subseed_s = shiftSubregion(subseed,regions);
 
 		vector<Point> edge = regionEdge(seedimg,regionp.first,regionp.second);
@@ -1049,17 +1057,17 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		edg_centroid.y -= win.y; 
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
-		int r=7;
+		int r=4;
 		int xbearing = reg_centroid.x - edg_centroid.x;
 		int ybearing = reg_centroid.y - edg_centroid.y;
 		float theta = atan2(ybearing,xbearing);
 		Point seed(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
 		
-		//Mat composite=overlay(subseed,subimg);
-		//circle(composite,edg_centroid,3,Scalar(0,255,0,255));
-		//circle(composite,reg_centroid,3,Scalar(0,255,0,255));
-		//circle(composite,seed,3,Scalar(0,255,0,255));
-		//display("tmp",composite);
+		Mat composite=overlay(subseed,subimg);
+		circle(composite,edg_centroid,3,Scalar(0,255,0,255));
+		circle(composite,reg_centroid,3,Scalar(0,255,0,255));
+		circle(composite,seed,3,Scalar(0,255,0,255));
+		display("tmp",composite);
 
 		// Construct edge image
 		Mat edgeimg(subseed.size(),CV_8U,Scalar(0)); 
@@ -1070,6 +1078,8 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 		Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
 		subseed = shiftBackSubregion(subseed,subseed_new,regions);
+
+		display("tmp",overlay(subseed,subimg));
 
 		bool admissible=true;
 
@@ -1209,15 +1219,15 @@ int main(int argc, char **argv) {/*{{{*/
 	Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Delete unneeded grains 
-	//Mat seedimg2 = processDelete(img,seedimg1);	
-	//seedimg2 = regionClean(seedimg2);
+	Mat seedimg2 = processDelete(img,seedimg1);	
+	seedimg2 = regionClean(seedimg2);
 
 	// Add in missed junctions
-	//Mat seedimg3 = processJunctions(img,seedimg2);
-	//seedimg3 = regionClean(seedimg3);
+	Mat seedimg3 = processJunctions(img,seedimg2);
+	seedimg3 = regionClean(seedimg3);
 
 	// Add in grains created at edges 
-	Mat seedimg4 = processEdges(img,seedimg1);
+	Mat seedimg4 = processEdges(img,seedimg3);
 	seedimg4 = regionClean(seedimg4);
 
 	//display("tmp",overlay(new_seed,img,0.5));
