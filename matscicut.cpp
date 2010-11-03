@@ -1161,14 +1161,15 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 		vector<Point> seeds;
 		for(int r=(regionp.second < 0 ? 1 : 3);r<10;r+=3) {
-			int xbearing = reg_centroid.x - edg_centroid.x;
-			int ybearing = reg_centroid.y - edg_centroid.y;
-			float theta = atan2(ybearing,xbearing);
-			Point seedpt(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
-			seeds.push_back(seedpt);
+			//int xbearing = reg_centroid.x - edg_centroid.x;
+			//int ybearing = reg_centroid.y - edg_centroid.y;
+			//float theta = atan2(ybearing,xbearing);
+			//Point seedpt(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
+			//seeds.push_back(seedpt);
+			seeds.push_back(pointDirection(edg_centroid,reg_centroid,r));
 			// Experiment
-			Point seedpt2 = pointDirection(edg_centroid,reg_centroid,r);
-			cout<<seedpt.x<<","<<seedpt.y<<"=="<<seedpt2.x<<","<<seedpt2.y<<endl;
+			//Point seedpt2 = pointDirection(edg_centroid,reg_centroid,r);
+			//cout<<seedpt.x<<","<<seedpt.y<<"=="<<seedpt2.x<<","<<seedpt2.y<<endl;
 		}
 
 		// Construct edge image
