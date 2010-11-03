@@ -488,11 +488,14 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, 
 	for(int i=0;i<regions.size();i++)
 		centroids.at(i) = regionCentroid(seedimg,i+1);
 
-	//for(int i=0;i<centroids.size();i++) {
-		//cout << regions.at(i)  << ":" << centroids.at(i).x << "," << centroids.at(i).y << endl;
-	//}
+	// Setup zero region first
+	FORxyM(seedimg)
+		if(seedimg.at<int>(y,x) == 0)
+			data[(x+y*seedimg.size().width)*num_labels+0] = 0;
+		else
+			data[(x+y*seedimg.size().width)*num_labels+0] = INF;
 
-	for(int l=0;l<num_labels-1;l++) {
+	for(int l=1;l<num_labels-1;l++) {
 		//Point centroid = regionCentroid(seedimg,l);
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
@@ -539,40 +542,88 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 	for(int i=0;i<regions.size();i++)
 		centroids.at(i) = regionCentroid(seedimg,i+1);
 
-	for(int l=0;l<num_labels-1;l++) {
-		//Point centroid = regionCentroid(seedimg,l);
+	// Create zero region first
+	FORxyM(seedimg)
+		if(seedimg.at<int>(y,x) == 0)
+			data[(x+y*seedimg.size().width)*num_labels+0] = 0;
+		else
+			data[(x+y*seedimg.size().width)*num_labels+0] = INF;
+
+	// Loop over all intermediate regions
+	for(int k=0;k<regions.size();k++) {
+		int l=k+1; // Labels start at 1, not zero, since we've already done the zero region
+		Point centroid = regionCentroid(seedimg,l);
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
-		if(dilate_amount > 0 && l!=0)
+		
+		vector<Point> offlimits;
+		offlimits.push_back(seed);
+		for(int i=0;i<regions.size();i++)
+			if(i!=k) // Allow our own seed to be included	
+				offlimits.push_back(centroids.at(i));
+
+		// Dilate region
+		if(dilate_amount > 0)
 			dilate(layer,dilation,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
 		FORxyM(seedimg) {
-			// Set to inf by default
+			//Set to inf by default
 			data[(x+y*seedimg.size().width)*num_labels+l] = INF;
 			bool zero=true;
+			// If outside the dilation, always INF
 			if(int(dilation.at<unsigned char>(y,x)) != 255) continue;
+			// If outside the admissible region (e.g. in the zero region) , always INF
 			if(seedimg.at<int>(y,x) == 0) continue;
-			if((x==seed.x && y==seed.y)) continue; 
-			for(int i=0;i<centroids.size();i++)
-				if((i+1 != l) && (x==centroids.at(i).x && y==centroids.at(i).y))
+			// If in another region's seed, or the new seed, always INF
+			for(int i=0;i<offlimits.size();i++)
+				if(x==offlimits.at(i).x && y==offlimits.at(i).y)
 					zero=false;
 			if(zero)
 				data[(x+y*seedimg.size().width)*num_labels+l] = 0;
 		}
 	}
 
+	//for(int l=1;l<num_labels-1;l++) {
+		//Point centroid = regionCentroid(seedimg,l);
+		//Mat layer = selectRegion(seedimg,l);
+		//Mat dilation = layer.clone();
+		//if(dilate_amount > 0)
+			//dilate(layer,dilation,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
+		//FORxyM(seedimg) {
+			////Set to inf by default
+			//data[(x+y*seedimg.size().width)*num_labels+l] = INF;
+			//bool zero=true;
+			//if(int(dilation.at<unsigned char>(y,x)) != 255) continue;
+			//if(seedimg.at<int>(y,x) == 0) continue;
+			//if((x==seed.x && y==seed.y)) continue; 
+			//for(int i=0;i<centroids.size();i++)
+				//if((i+1 != l) && (x==centroids.at(i).x && y==centroids.at(i).y))
+					//zero=false;
+			//if(zero)
+				//data[(x+y*seedimg.size().width)*num_labels+l] = 0;
+		//}
+	//}
+
 	Mat edged = edge.clone();
-	//dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)),Point(-1,-1),1,BORDER_CONSTANT,Scalar(0));
-	dilate_amount = dilate_amount * 4;
+	dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)),Point(-1,-1),1,BORDER_CONSTANT,Scalar(0));
 	dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
 
 	FORxyM(seedimg) {
-		data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = INF; 
+		// Always set seed, regardless of whether it is within the dilation or not
+		if(x==seed.x && y==seed.y)
+			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = 0; 
+		else
+			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = INF; 
+		
+		vector<Point> offlimits;
+		for(int i=0;i<centroids.size();i++)
+			offlimits.push_back(centroids.at(i));
+
 		bool zero=true;
-		if(!(int(edged.at<unsigned char>(y,x)) == 255)) continue;
-		if(!(seedimg.at<int>(y,x) > 0)) continue;
-			for(int i=0;i<centroids.size();i++)
-				if((x==centroids.at(i).x && y==centroids.at(i).y))
-					zero=false;
+		if(int(edged.at<unsigned char>(y,x)) != 255) continue;
+		if(seedimg.at<int>(y,x) == 0) continue;
+		for(int i=0;i<offlimits.size();i++)
+			if(x==offlimits.at(i).x && y==offlimits.at(i).y)
+				zero=false;
 		if(zero)
 			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = 0;
 	}
@@ -640,6 +691,9 @@ int * graphCut(int* data, int* sites, Mat seedimg, Mat adj,int num_labels, bool 
 
 		cout << "-T: " << gc->compute_energy() << ", D: " << gc->giveDataEnergy() << ", S: " << gc->giveSmoothEnergy() << endl;
 
+
+		if(gc->giveDataEnergy() > 0)
+			cout << "WARNING: NONZERO DATA COST" << endl;
 
 		delete gc;
 	}
@@ -740,13 +794,29 @@ Mat edgeGraphCut(Mat img, Mat seedimgin, Mat edge, vector<int> regions, Point se
 	
 	seedimg.at<int>(seed)=regions.size()+1;
 
-	int *data = edgeDataTerm(seedimg,edge,regions,seed,90);
+	int *data = edgeDataTerm(seedimg,edge,regions,seed,20);
 
 	int *sites = toLinear(img);
 
-	int *result = graphCut(data,sites,seedimg,adj,num_labels,false);
+	int *result = graphCut(data,sites,seedimg,adj,num_labels);
 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
+
+	Mat composite=overlay(new_seed,img,0.5);
+
+	// DEBUG
+	bool displayterm = false;
+	FORxyM(new_seed) {
+		if(data[(x+y*seedimg.size().width)*num_labels+new_seed.at<int>(y,x)] > 0){ 
+			displayterm = true;
+			cout<<"Offender:"<<x<<","<<y<<","<<new_seed.at<int>(y,x)<<":"<<data[(x+y*seedimg.size().width)*num_labels+new_seed.at<int>(y,x)]<<endl;
+			cout<<"Seed    :"<<seed.x<<","<<seed.y<<endl;
+			circle(composite,Point(x,y),3,Scalar(0,255,0,255));
+		}
+	}
+	if(displayterm)
+		display("tmp",composite);
+	// /DEBUG
 
 	delete [] data;
 	delete [] sites;
@@ -1036,7 +1106,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 	for(int i=0;i<regionpair.size();i++) {
 		cout << i << " of " << regionpair.size() << endl;
-		if(i<252) continue;
+		//if(i<252) continue;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1060,7 +1130,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
 		vector<Point> seeds;
-		for(int r=3;r<16;r++) {
+		for(int r=3;r<10;r++) {
 			//int r=4;
 			int xbearing = reg_centroid.x - edg_centroid.x;
 			int ybearing = reg_centroid.y - edg_centroid.y;
@@ -1079,46 +1149,29 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		for(int s=0;s<seeds.size();s++) {
 			Point seed = seeds.at(s);
 
-			Mat composite=overlay(subseed,subimg);
-			circle(composite,edg_centroid,3,Scalar(0,255,0,255));
-			circle(composite,reg_centroid,3,Scalar(0,255,0,255));
-			circle(composite,seed,3,Scalar(0,255,0,255));
-			display("tmp",composite);
-
-			cout << "subseed" << endl;
-			printstats(subseed);
-			cout << regionNum(subseed) << endl;;
-			
-			cout << "subseed_s" << endl;
-			printstats(subseed_s);
-			cout << regionNum(subseed_s) << endl;;
+			//Mat composite=overlay(subseed,subimg);
+			//circle(composite,edg_centroid,3,Scalar(0,255,0,255));
+			//circle(composite,reg_centroid,3,Scalar(0,255,0,255));
+			//circle(composite,seed,3,Scalar(0,255,0,255));
+			//display("tmp",composite);
 
 			Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
-			cout << "subseed_new" << endl;
-			printstats(subseed_new);
-			cout << regionNum(subseed_new) << endl;;
 			Mat subseedt = shiftBackSubregion(subseed,subseed_new,regions);
-			cout << "subseedt" << endl;
-			printstats(subseedt);
-			cout << regionNum(subseedt) << endl;;
-			cout << "Size: " << regionSize(subseedt,-2) << endl;
-			display("tmp",overlay(subseedt,subimg));
+
+			//display("tmp",overlay(subseedt,subimg));
 
 			bool admissible=true;
 
-			//if(regionSize(subseedt,-2)>1)
-				//cout << regionSize(subseedt,-2) << endl; 
+			if(regionSize(subseedt,-2) < WINTHRESH) admissible=false;
 
-			//if(regionSize(subseedt,-2) < WINTHRESH) admissible=false;
-
-			//for(int j=0;j<regions.size();j++) {
-				//if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
-			//}
+			for(int j=0;j<regions.size();j++)
+				if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
 			//if(!regionBorderCriteria(subimg,subseedt,-2,0.66)) admissible=false;
 
-			//if(admissible) {
-				//display("tmp",overlay(subseedt,subimg));
-			//}
+			if(admissible) {
+				display("tmp",overlay(subseed,subimg));
+				display("tmp",overlay(subseedt,subimg));
+			}
 
 			if(admissible) {
 				int new_label = num_labels++;
