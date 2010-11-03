@@ -488,30 +488,41 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, 
 	for(int i=0;i<regions.size();i++)
 		centroids.at(i) = regionCentroid(seedimg,i+1);
 
-	// Setup zero region first
+	// Create zero region first
 	FORxyM(seedimg)
 		if(seedimg.at<int>(y,x) == 0)
 			data[(x+y*seedimg.size().width)*num_labels+0] = 0;
 		else
 			data[(x+y*seedimg.size().width)*num_labels+0] = INF;
 
-	for(int l=1;l<num_labels-1;l++) {
-		//Point centroid = regionCentroid(seedimg,l);
+	// Loop over all intermediate regions
+	for(int k=0;k<regions.size();k++) {
+		int l=k+1; // Labels start at 1, not zero, since we've already done the zero region
+		Point centroid = regionCentroid(seedimg,l);
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
-		if(dilate_amount > 0 && l!=0)
-			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		
+		vector<Point> offlimits;
+		offlimits.push_back(seed);
+		for(int i=0;i<regions.size();i++)
+			if(i!=k) // Allow our own seed to be included	
+				offlimits.push_back(centroids.at(i));
+
+		// Dilate region
+		if(dilate_amount > 0)
+			dilate(layer,dilation,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
 		FORxyM(seedimg) {
-			// Set to inf by default
+			//Set to inf by default
 			data[(x+y*seedimg.size().width)*num_labels+l] = INF;
 			bool zero=true;
+			// If outside the dilation, always INF
 			if(int(dilation.at<unsigned char>(y,x)) != 255) continue;
+			// If outside the admissible region (e.g. in the zero region) , always INF
 			if(seedimg.at<int>(y,x) == 0) continue;
-			if((x==seed.x && y==seed.y)) continue; 
-			for(int i=0;i<centroids.size();i++)
-				if((i+1 != l) && (x==centroids.at(i).x && y==centroids.at(i).y))
+			// If in another region's seed, or the new seed, always INF
+			for(int i=0;i<offlimits.size();i++)
+				if(x==offlimits.at(i).x && y==offlimits.at(i).y)
 					zero=false;
-
 			if(zero)
 				data[(x+y*seedimg.size().width)*num_labels+l] = 0;
 		}
@@ -520,17 +531,26 @@ int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed, 
 	Rect win(center.x-ADDWIN,center.y-ADDWIN,ADDWIN*2,ADDWIN*2);
 
 	FORxyM(seedimg) {
-		data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = INF; 
+		// Always set seed, regardless of whether it is within the dilation or not
+		if(x==seed.x && y==seed.y)
+			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = 0; 
+		else
+			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = INF; 
+		
+		vector<Point> offlimits;
+		for(int i=0;i<centroids.size();i++)
+			offlimits.push_back(centroids.at(i));
+
 		bool zero=true;
 		if(!win.contains(Point(x,y))) continue;
-		if(!(seedimg.at<int>(y,x) > 0)) continue;
-			for(int i=0;i<centroids.size();i++)
-				if((x==centroids.at(i).x && y==centroids.at(i).y))
-					zero=false;
+		if(seedimg.at<int>(y,x) == 0) continue;
+		for(int i=0;i<offlimits.size();i++)
+			if(x==offlimits.at(i).x && y==offlimits.at(i).y)
+				zero=false;
 		if(zero)
 			data[(x+y*seedimg.size().width)*num_labels+num_labels-1] = 0;
 	}
-	
+
 	return data;
 }	/*}}}*/
 int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilate_amount) {/*{{{*/
@@ -581,27 +601,6 @@ int * edgeDataTerm(Mat seedimg,Mat edge,vector<int> regions,Point seed,int dilat
 				data[(x+y*seedimg.size().width)*num_labels+l] = 0;
 		}
 	}
-
-	//for(int l=1;l<num_labels-1;l++) {
-		//Point centroid = regionCentroid(seedimg,l);
-		//Mat layer = selectRegion(seedimg,l);
-		//Mat dilation = layer.clone();
-		//if(dilate_amount > 0)
-			//dilate(layer,dilation,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)));
-		//FORxyM(seedimg) {
-			////Set to inf by default
-			//data[(x+y*seedimg.size().width)*num_labels+l] = INF;
-			//bool zero=true;
-			//if(int(dilation.at<unsigned char>(y,x)) != 255) continue;
-			//if(seedimg.at<int>(y,x) == 0) continue;
-			//if((x==seed.x && y==seed.y)) continue; 
-			//for(int i=0;i<centroids.size();i++)
-				//if((i+1 != l) && (x==centroids.at(i).x && y==centroids.at(i).y))
-					//zero=false;
-			//if(zero)
-				//data[(x+y*seedimg.size().width)*num_labels+l] = 0;
-		//}
-	//}
 
 	Mat edged = edge.clone();
 	dilate(edge,edged,getStructuringElement(MORPH_RECT,Size(dilate_amount,dilate_amount)),Point(-1,-1),1,BORDER_CONSTANT,Scalar(0));
