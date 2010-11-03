@@ -444,11 +444,6 @@ Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/
 	}
 	return seedimg;
 }/*}}}*/
-Point pointDirection(Point center, Point direction, int r) {/*{{{*/
-	Point bearing = direction - center;
-	float theta = atan2(bearing.y,bearing.x);
-	return Point(r*cos(theta)+center.x,r*sin(theta)+center.y);
-}/*}}}*/
 int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
@@ -981,7 +976,7 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			if(regionSize(backshift_seed,regions[0]) < sizes[regions[0]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[1]) < sizes[regions[1]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[2]) < sizes[regions[2]]/3 ) continue;
-			if(!regionBorderCriteria(imgj,backshift_seed,-2,0.66)) continue;
+			if(!regionBorderCriteria(imgj,backshift_seed,-2,0.75)) continue;
 
 			//if(i==159) {
 				//cout << i << endl;
@@ -1089,7 +1084,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for(int l1=0;l1<num_labels;l1++) for(int l2=0;l2<num_labels;l2++) {
 		if(!adj.at<int>(l1,l2)) continue;
 		if(sizes.at(l1) < sizethresh) continue;
-		//if(sizes.at(l2) < sizethresh) continue;
+		if(sizes.at(l2) < sizethresh) continue;
 		if(regionEdge(seedimg,l1,l2).size() < lengththresh) continue;
 		regionpair.push_back(make_pair(l1,l2));
 	}
@@ -1160,16 +1155,21 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
 		vector<Point> seeds;
-		for(int r=(regionp.second < 0 ? 1 : 3);r<10;r+=3) {
-			//int xbearing = reg_centroid.x - edg_centroid.x;
-			//int ybearing = reg_centroid.y - edg_centroid.y;
-			//float theta = atan2(ybearing,xbearing);
-			//Point seedpt(r*cos(theta)+edg_centroid.x,r*sin(theta)+edg_centroid.y);
-			//seeds.push_back(seedpt);
+		for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/6;r+=2)
 			seeds.push_back(pointDirection(edg_centroid,reg_centroid,r));
-			// Experiment
-			//Point seedpt2 = pointDirection(edg_centroid,reg_centroid,r);
-			//cout<<seedpt.x<<","<<seedpt.y<<"=="<<seedpt2.x<<","<<seedpt2.y<<endl;
+
+		if(regionp.second < 0) {
+			int x1=0,x2=seedimg.size().width,y1=0,y2=seedimg.size().height;
+			for(int j=0;j<edge.size();j++) {
+				y1=max(y1,edge.at(j).y);					
+				y2=min(y2,edge.at(j).y);					
+				x1=max(x1,edge.at(j).x);
+				x2=min(x2,edge.at(j).x);
+			}
+			for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/6;r+=2) {
+				seeds.push_back(pointDirection(Point(x1,y1),reg_centroid,r));
+				seeds.push_back(pointDirection(Point(x2,y2),reg_centroid,r));
+			}
 		}
 
 		// Construct edge image

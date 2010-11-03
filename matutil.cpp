@@ -353,3 +353,8 @@ void printVector(vector<int> vec) {/*{{{*/
 float euclideanDist(Point a, Point b) {/*{{{*/
 	return sqrt(float(pow(a.x-b.x,2)+pow(a.y-b.y,2)));
 }/*}}}*/
+Point pointDirection(Point center, Point direction, int r) {/*{{{*/
+	Point bearing = direction - center;
+	float theta = atan2(bearing.y,bearing.x);
+	return Point(r*cos(theta)+center.x,r*sin(theta)+center.y);
+}/*}}}*/
