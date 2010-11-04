@@ -21,7 +21,8 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 
 	// Initialize to zero
 	for(int i=0;i<num_regions;i++) for(int j=0;j<num_regions;j++)
-		adj.at<int>(i,j)=0;
+		if(boundsCheck(adj,Point(j,i)))
+			adj.at<int>(i,j)=0;
 
 	// Horizontal, including first, exluding last column
 	for(int x=0;x<regions.size().width-1;x++) {
@@ -29,8 +30,10 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 			int r1 = regions.at<int>(y,x);
 			int r2 = regions.at<int>(y,x+1);
 			if( r1 != r2 ) {
-				adj.at<int>(r1,r2) = 1;
-				adj.at<int>(r2,r1) = 1;
+				if(boundsCheck(adj,Point(r2,r1)))
+					adj.at<int>(r1,r2) = 1;
+				if(boundsCheck(adj,Point(r1,r2)))
+					adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
@@ -40,8 +43,10 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 			int r1 = regions.at<int>(y,x);
 			int r2 = regions.at<int>(y,x+2);
 			if( r1 != r2 ) {
-				adj.at<int>(r1,r2) = 1;
-				adj.at<int>(r2,r1) = 1;
+				if(boundsCheck(adj,Point(r2,r1)))
+					adj.at<int>(r1,r2) = 1;
+				if(boundsCheck(adj,Point(r1,r2)))
+					adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
@@ -52,8 +57,10 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 			int r1 = regions.at<int>(y,x);
 			int r2 = regions.at<int>(y+1,x);
 			if( r1 != r2 ) {
-				adj.at<int>(r1,r2) = 1;
-				adj.at<int>(r2,r1) = 1;
+				if(boundsCheck(adj,Point(r2,r1)))
+					adj.at<int>(r1,r2) = 1;
+				if(boundsCheck(adj,Point(r1,r2)))
+					adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
@@ -63,8 +70,10 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 			int r1 = regions.at<int>(y,x);
 			int r2 = regions.at<int>(y+2,x);
 			if( r1 != r2 ) {
-				adj.at<int>(r1,r2) = 1;
-				adj.at<int>(r2,r1) = 1;
+				if(boundsCheck(adj,Point(r2,r1)))
+					adj.at<int>(r1,r2) = 1;
+				if(boundsCheck(adj,Point(r1,r2)))
+					adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
@@ -75,8 +84,10 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 			int r1 = regions.at<int>(y,x);
 			int r2 = regions.at<int>(y,x-1);
 			if( r1 != r2 ) {
-				adj.at<int>(r1,r2) = 1;
-				adj.at<int>(r2,r1) = 1;
+				if(boundsCheck(adj,Point(r2,r1)))
+					adj.at<int>(r1,r2) = 1;
+				if(boundsCheck(adj,Point(r1,r2)))
+					adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
@@ -87,8 +98,10 @@ Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
 			int r1 = regions.at<int>(y,x);
 			int r2 = regions.at<int>(y-1,x);
 			if( r1 != r2 ) {
-				adj.at<int>(r1,r2) = 1;
-				adj.at<int>(r2,r1) = 1;
+				if(boundsCheck(adj,Point(r2,r1)))
+					adj.at<int>(r1,r2) = 1;
+				if(boundsCheck(adj,Point(r1,r2)))
+					adj.at<int>(r2,r1) = 1;
 			}
 		}
 	}
@@ -123,6 +136,7 @@ Mat regionCompact(Mat regionsin) {/*{{{*/
 			if(regionSize(regions,i)<1) { // If it's too small
 				FORxyM(regions) { // Visit all regs
 					if(regions.at<int>(y,x)>i) { // If they're bigger than the current reg
+						if(boundsCheck(regions,Point(x,y)))
 						regions.at<int>(y,x)--; // Decrement by one
 						clean=false;
 					}
@@ -187,7 +201,8 @@ Mat regionClean(Mat regionsin) {/*{{{*/
 
 		FORxyM(regions_out) 
 			if(int(new_layer.at<unsigned char>(y,x)) > 0)
-				regions_out.at<int>(y,x) = l;
+				if(boundsCheck(regions_out,Point(x,y)))
+					regions_out.at<int>(y,x) = l;
 		
 	}
 
@@ -197,19 +212,23 @@ Mat regionClean(Mat regionsin) {/*{{{*/
 		FORxyM(regions_out) {
 			if(regions_out.at<int>(y,x) < 0) {
 				if(x!=0 && regions_out.at<int>(y,x-1) != -1) {
-					regions_out.at<int>(y,x) = regions_out.at<int>(y,x-1);
+					if(boundsCheck(regions_out,Point(x,y)))
+						regions_out.at<int>(y,x) = regions_out.at<int>(y,x-1);
 					continue;
 				}
 				if(y!=0 && regions_out.at<int>(y-1,x) != -1) {
-					regions_out.at<int>(y,x) = regions_out.at<int>(y-1,x);
+					if(boundsCheck(regions_out,Point(x,y)))
+						regions_out.at<int>(y,x) = regions_out.at<int>(y-1,x);
 					continue;
 				}
 				if(x!=regions_out.size().width-1 && regions_out.at<int>(y,x+1) != -1) {
-					regions_out.at<int>(y,x) = regions_out.at<int>(y,x+1);
+					if(boundsCheck(regions_out,Point(x,y)))
+						regions_out.at<int>(y,x) = regions_out.at<int>(y,x+1);
 					continue;
 				}
 				if(y!=regions_out.size().height-1 && regions_out.at<int>(y+1,x) != -1) {
-					regions_out.at<int>(y,x) = regions_out.at<int>(y+1,x);
+					if(boundsCheck(regions_out,Point(x,y)))
+						regions_out.at<int>(y,x) = regions_out.at<int>(y+1,x);
 					continue;
 				}
 			}
@@ -288,21 +307,7 @@ Point vectorCentroid(vector<Point> edge) {/*{{{*/
 float regionBorderCriteria(Mat img, Mat regions, int region, int compregion) {/*{{{*/
 	float total_border=0.0,total_thresh=0.0;
 	const int thresh = 32;
-	//FORxyM(regions) {	
-		//if(regions.at<int>(y,x) != region) continue;
-		//// Skip regions that are internal
-		//if( ( x!=0 && regions.at<int>(y,x)!=regions.at<int>(y,x-1) ) || 
-		   //(y!=0 && regions.at<int>(y,x)!=regions.at<int>(y-1,x) ) ||
-		   //(x!=regions.size().width-1 && regions.at<int>(y,x)!=regions.at<int>(y,x+1) ) ||
-		   //(y!=regions.size().height-1 && regions.at<int>(y,x)!=regions.at<int>(y+1,x)) ) {
-			//total_border++;
-			//if( int(img.at<unsigned char>(y,x) > 32) )
-				//total_thresh++;
-		//}
-	//}
-
-	//cout << (total_thresh/total_border) << " > " << thresh << endl;
-
+	
 	// Horizontal, including first, exluding last column
 	for(int x=0;x<regions.size().width-1;x++) {
 		for(int y=0;y<regions.size().height;y++) {
@@ -503,7 +508,8 @@ Rect getWindow(vector<int> regions, Mat labels) {/*{{{*/
 Mat selectRegion(Mat seedimg, int region) {/*{{{*/
 	Mat layer(seedimg.size(),CV_8U); // Must use CV_8U for dilation
 	for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
-		layer.at<unsigned char>(y,x) = (seedimg.at<int>(y,x) == region ? 255 : 0);
+		if(boundsCheck(layer,Point(x,y)))
+			layer.at<unsigned char>(y,x) = (seedimg.at<int>(y,x) == region ? 255 : 0);
 	return layer;
 }/*}}}*/
 Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/	
@@ -511,7 +517,9 @@ Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/
 		bool inRegion = false;
 		for(int z=0;z<regions.size();z++)
 			if(seedimg.at<int>(y,x) == regions[z]) inRegion=true;
-		if(!inRegion) seedimg.at<int>(y,x) = -1;
+		if(!inRegion) 
+			if(boundsCheck(seedimg,Point(x,y)))
+				seedimg.at<int>(y,x) = -1;
 	}
 	return seedimg;
 }/*}}}*/
@@ -853,7 +861,8 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 	// All adjacent
 	Mat adj(num_labels,num_labels,CV_32S,1);
 
-	seedimg.at<int>(seed)=regions.size()+1;
+	if(boundsCheck(seedimg,seed))
+		seedimg.at<int>(seed)=regions.size()+1;
 	
 	int *data = junctionDataTerm(seedimg,center,regions,seed,20);
 
@@ -863,8 +872,6 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 
 	Mat new_seed = toMat(result,img.size().width,img.size().height);
 
-	//vector<int> sizes = regionSizes(new_seed);
-	
 	delete [] data;
 	delete [] sites;
 	delete [] result;
@@ -964,10 +971,13 @@ Mat shiftSubregion(Mat seedimg, vector<int> regions) {/*{{{*/
 	Mat shifted_seed(seedimg.size(),CV_32S,-1);
 	FORxyM(seedimg) {
 		int val=seedimg.at<int>(y,x);
-		if(val==-1) shifted_seed.at<int>(y,x)=0;
+		if(val==-1)
+			if(boundsCheck(shifted_seed,Point(x,y)))
+				shifted_seed.at<int>(y,x)=0;
 		for(int i=0;i<regions.size();i++)
 			if(val==regions[i])
-				shifted_seed.at<int>(y,x)=i+1;
+				if(boundsCheck(shifted_seed,Point(x,y)))
+					shifted_seed.at<int>(y,x)=i+1;
 	}
 	return shifted_seed;
 }/*}}}*/
@@ -982,12 +992,15 @@ Mat shiftBackSubregion(Mat seedimg, Mat newseedimg, vector<int> regions) {/*{{{*
 		int newval=newseedimg.at<int>(y,x);
 		if(origval != -1) { // Only change stuff inside the boundary
 			if(newval < regions.size()+1 && newval > 0)
-				new_shifted_seed.at<int>(y,x) = regions[newval-1];
+				if(boundsCheck(new_shifted_seed,Point(x,y)))
+					new_shifted_seed.at<int>(y,x) = regions[newval-1];
 			else if(newval == 0)
-				new_shifted_seed.at<int>(y,x) = -1;
+				if(boundsCheck(new_shifted_seed,Point(x,y)))
+					new_shifted_seed.at<int>(y,x) = -1;
 			else {
 				// Use -2 to represent new region
-				new_shifted_seed.at<int>(y,x) = -2;
+				if(boundsCheck(new_shifted_seed,Point(x,y)))
+					new_shifted_seed.at<int>(y,x) = -2;
 			}
 		}
 	}
@@ -1084,9 +1097,11 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			FORxyM(backshift_seed) {
 				if(backshift_seed.at<int>(y,x)==-1) continue; //Not bg
 				if(backshift_seed.at<int>(y,x)==-2)
-					seedout.at<int>(y+win.y,x+win.x) = new_label;
+					if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
+						seedout.at<int>(y+win.y,x+win.x) = new_label;
 				else
-					seedout.at<int>(y+win.y,x+win.x) = backshift_seed.at<int>(y,x);
+					if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
+						seedout.at<int>(y+win.y,x+win.x) = backshift_seed.at<int>(y,x);
 			}
 		}
 	}
@@ -1138,7 +1153,9 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 
 		FORxyM(subseed) {
 			if(subseed.at<int>(y,x)==-1) continue; //Not bg
-			else seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
+			else
+				if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
+					seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
 		}
 	}
 
@@ -1183,7 +1200,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-1).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-1));
-	cout<<boundaries.size() <<endl;
+	//cout<<boundaries.size() <<endl;
 	boundaries.clear();
 	
 	//Bottom 
@@ -1192,7 +1209,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-2).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-2));
-	cout<<boundaries.size() <<endl;
+	//cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
 	//Left
@@ -1201,7 +1218,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-3).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-3));
-	cout<<boundaries.size() <<endl;
+	//cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
 	//Right
@@ -1210,7 +1227,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	for (set<int>::iterator it=boundaries.begin() ; it != boundaries.end(); it++ )
 		if(sizes.at(*it) >= sizethresh && regionEdge(seedimg,*it,-4).size() > lengththresh)
 			regionpair.push_back(make_pair(*it,-4));
-	cout<<boundaries.size() <<endl;
+	//cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
 	cout << "@edges \t\\" << flush;
@@ -1241,7 +1258,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
 		vector<Point> seeds;
-		for(int r=(regionp.second < 0 ? 1 : 2);r<euclideanDist(edg_centroid,reg_centroid)/3;r+=1)
+		for(int r=(regionp.second < 0 ? 1 : 2);r<euclideanDist(edg_centroid,reg_centroid)/3;r+=2)
 			seeds.push_back(pointDirection(edg_centroid,reg_centroid,r));
 
 		if(regionp.second < 0) {
@@ -1252,7 +1269,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				x1=max(x1,edge.at(j).x-win.x);
 				x2=min(x2,edge.at(j).x-win.x);
 			}
-			for(int r=(regionp.second < 0 ? 1 : 2);r<euclideanDist(edg_centroid,reg_centroid)/3;r+=1) {
+			for(int r=(regionp.second < 0 ? 1 : 2);r<euclideanDist(edg_centroid,reg_centroid)/3;r+=2) {
 				seeds.push_back(pointDirection(Point(x1,y1),reg_centroid,r));
 				seeds.push_back(pointDirection(Point(x2,y2),reg_centroid,r));
 			}
@@ -1283,12 +1300,13 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 			bool admissible=true;
 
+			// Resulting size theshold
 			if(regionSize(subseedt,-2) < 20) admissible=false;
 
+			// Adjacent size threshold
 			for(int j=0;j<regions.size();j++)
 				if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
-			//if(!regionBorderCriteria(subimg,subseedt,-2,0.66)) admissible=false;
-			
+			// Intensity threshold
 			for(int j=0;j<regions.size();j++)
 				if(regionBorderCriteria(subimg,subseedt,-2,regions.at(j)) < 0.66) admissible=false;
 
@@ -1306,8 +1324,11 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				FORxyM(subseedt) {
 					if(subseedt.at<int>(y,x)==-1) continue; //Not bg
 					if(subseedt.at<int>(y,x)==-2)
-						seedout.at<int>(y+win.y,x+win.x) = new_label;
-					else seedout.at<int>(y+win.y,x+win.x) = subseedt.at<int>(y,x);
+						if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
+							seedout.at<int>(y+win.y,x+win.x) = new_label;
+					else 
+						if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
+							seedout.at<int>(y+win.y,x+win.x) = subseedt.at<int>(y,x);
 				}
 			}
 		}
