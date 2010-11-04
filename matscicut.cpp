@@ -1136,7 +1136,6 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 	for(int i=0;i<regionpair.size();i++) {
 		cout << i << " of " << regionpair.size() << endl;
-		if(i<493) continue;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1160,7 +1159,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
 		vector<Point> seeds;
-		for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/6;r+=2)
+		for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/4;r+=2)
 			seeds.push_back(pointDirection(edg_centroid,reg_centroid,r));
 
 		if(regionp.second < 0) {
@@ -1171,7 +1170,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				x1=max(x1,edge.at(j).x-win.x);
 				x2=min(x2,edge.at(j).x-win.x);
 			}
-			for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/6;r+=2) {
+			for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/4;r+=2) {
 				seeds.push_back(pointDirection(Point(x1,y1),reg_centroid,r));
 				seeds.push_back(pointDirection(Point(x2,y2),reg_centroid,r));
 			}
@@ -1202,7 +1201,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 			bool admissible=true;
 
-			if(regionSize(subseedt,-2) < WINTHRESH) admissible=false;
+			if(regionSize(subseedt,-2) < 20) admissible=false;
 
 			for(int j=0;j<regions.size();j++)
 				if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
