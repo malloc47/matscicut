@@ -923,7 +923,7 @@ Mat shiftBackSubregion(Mat seedimg, Mat newseedimg, vector<int> regions) {/*{{{*
 	return new_shifted_seed;
 }	/*}}}*/
 Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
-	cout << "@localgcj \t\\" << flush;
+	cout << "@junctions \t\\" << flush;
 	Mat seedout = seedimg.clone();
 	int num_regions = mat_max(seedimg)+1;
 	vector<int> sizes = regionSizes(seedimg);
@@ -1023,7 +1023,7 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 
 }/*}}}*/
 Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
-	cout << "@localgcs" << endl;
+	cout << "@delete \t\\" << flush;
 	Mat seedout = seedimg.clone();
 	int num_regions = mat_max(seedimg)+1;
 	Mat adj = regionsAdj(seedimg,num_regions);
@@ -1031,10 +1031,12 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 	vector<int> regsizes = regionSizes(seedimg);
 
 	for(int l=0;l<num_regions;l++) {
-		
+		cout << "\b" << flush;
+		cout << bar[l%4] << flush;
+
 		if(regsizes.at(l) > 200 || regsizes.at(l) < 1) continue;
 
-		cout << l << ": " << regsizes.at(l) << endl;
+		//cout << l << ": " << regsizes.at(l) << endl;
 
 		vector<int> regions = getAdj(adj,l);
 		regions.push_back(l);
@@ -1064,6 +1066,9 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 			else seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
 		}
 	}
+
+	cout << "\b" << flush;
+	cout << "Done" << endl;
 
 	return seedout;
 
@@ -1133,7 +1138,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
-	cout << "@localgce \t\\" << flush;
+	cout << "@edges \t\\" << flush;
 
 	for(int i=0;i<regionpair.size();i++) {
 		//cout << i << " of " << regionpair.size() << endl;
