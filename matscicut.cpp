@@ -1141,7 +1141,6 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	cout << "@edges \t\\" << flush;
 
 	for(int i=0;i<regionpair.size();i++) {
-		//cout << i << " of " << regionpair.size() << endl;
 		cout << "\b" << flush;
 		cout << bar[i%4] << flush;
 		pair<int,int> regionp = regionpair.at(i);
@@ -1167,7 +1166,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		Point reg_centroid = regionCentroid(subseed,regionp.first);
 
 		vector<Point> seeds;
-		for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/4;r+=2)
+		for(int r=(regionp.second < 0 ? 1 : 2);r<euclideanDist(edg_centroid,reg_centroid)/3;r+=1)
 			seeds.push_back(pointDirection(edg_centroid,reg_centroid,r));
 
 		if(regionp.second < 0) {
@@ -1178,7 +1177,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				x1=max(x1,edge.at(j).x-win.x);
 				x2=min(x2,edge.at(j).x-win.x);
 			}
-			for(int r=(regionp.second < 0 ? 1 : 3);r<euclideanDist(edg_centroid,reg_centroid)/4;r+=2) {
+			for(int r=(regionp.second < 0 ? 1 : 2);r<euclideanDist(edg_centroid,reg_centroid)/3;r+=1) {
 				seeds.push_back(pointDirection(Point(x1,y1),reg_centroid,r));
 				seeds.push_back(pointDirection(Point(x2,y2),reg_centroid,r));
 			}
