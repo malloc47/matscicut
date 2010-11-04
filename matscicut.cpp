@@ -1336,22 +1336,22 @@ int main(int argc, char **argv) {/*{{{*/
 	seedimg = regionClean(seedimg);
 
 	// Process global
-	//Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
-	//seedimg1 = regionClean(seedimg1);
+	Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
+	seedimg1 = regionClean(seedimg1);
 	
 	//writeMat("tmp.labels",seedimg1);
 	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Delete unneeded grains 
-	//Mat seedimg2 = processDelete(img,seedimg1);	
-	//seedimg2 = regionClean(seedimg2);
+	Mat seedimg2 = processDelete(img,seedimg1);	
+	seedimg2 = regionClean(seedimg2);
 
 	// Add in missed junctions
-	//Mat seedimg3 = processJunctions(img,seedimg2);
-	//seedimg3 = regionClean(seedimg3);
+	Mat seedimg3 = processJunctions(img,seedimg2);
+	seedimg3 = regionClean(seedimg3);
 
 	//writeMat("tmp.labels",seedimg3);
-	Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
+	//Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Add in grains created at edges 
 	Mat seedimg4 = processEdges(img,seedimg3);
