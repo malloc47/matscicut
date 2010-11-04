@@ -358,3 +358,8 @@ Point pointDirection(Point center, Point direction, int r) {/*{{{*/
 	float theta = atan2(bearing.y,bearing.x);
 	return Point(r*cos(theta)+center.x,r*sin(theta)+center.y);
 }/*}}}*/
+bool boundsCheck(Mat m, Point pt) {/*{{{*/
+	bool eval=( (pt.x>=0) && (pt.y>=0) && (pt.x<m.size().width) && (pt.y<m.size().height) );
+	if(!eval){ cout<<"BOUNDS CHECK FAIL: "<<pt.x<<","<<pt.y<<" -- "<<m.size().width<<"x"<<m.size().height<<endl; exit(0); }
+	return eval;
+}/*}}}*/

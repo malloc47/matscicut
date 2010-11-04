@@ -39,3 +39,4 @@ void swap(const T &a, const T &b);
 void printVector(vector<int> vec);
 float euclideanDist(Point a, Point b);
 Point pointDirection(Point center, Point direction, int r);
+bool boundsCheck(Mat m, Point pt);
