@@ -21,7 +21,7 @@ const string datapath="data/old/scaled/";
 //const string datapath="data/new/raw/";
 const string outputpath="output2/";
 //const string outputpath="output/"
-//
+const char bar[4] = {'\\', '|', '/','-'};
 const float PI = std::atan(1.0)*4;
 
 struct ForSmoothFn {/*{{{*/

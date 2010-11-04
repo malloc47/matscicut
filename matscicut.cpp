@@ -448,8 +448,6 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
 
-	char bar[4] = {'\\', '|', '/','-'};
-
 	// Could probably do better than recomputing these
 	int num_pixels = seedimg.size().width*seedimg.size().height;
 	int num_labels = mat_max(seedimg)+1;
@@ -1132,10 +1130,12 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
-	cout << "@localgce \t" << regionpair.size() << endl;
+	cout << "@localgce \t\\" << flush;
 
 	for(int i=0;i<regionpair.size();i++) {
-		cout << i << " of " << regionpair.size() << endl;
+		//cout << i << " of " << regionpair.size() << endl;
+		cout << "\b" << flush;
+		cout << bar[i%4] << flush;
 		pair<int,int> regionp = regionpair.at(i);
 		vector<int> regions;
 		if(!(regionp.first < 0)) regions.push_back(regionp.first);
@@ -1334,18 +1334,18 @@ int main(int argc, char **argv) {/*{{{*/
 	// Clean first
 	seedimg = regionClean(seedimg);
 
-	// Process global
+	//Process global
 	Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
 	seedimg1 = regionClean(seedimg1);
 	
 	//writeMat("tmp.labels",seedimg1);
 	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
-	// Delete unneeded grains 
+	//Delete unneeded grains 
 	Mat seedimg2 = processDelete(img,seedimg1);	
 	seedimg2 = regionClean(seedimg2);
 
-	// Add in missed junctions
+	//Add in missed junctions
 	Mat seedimg3 = processJunctions(img,seedimg2);
 	seedimg3 = regionClean(seedimg3);
 
