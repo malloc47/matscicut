@@ -1187,15 +1187,14 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 		for(int s=0;s<seeds.size();s++) {
 			Point seed = seeds.at(s);
 			
-			if(i==528) {
-				Mat composite=overlay(subseed,subimg);
-				circle(composite,edg_centroid,3,Scalar(0,255,0,255));
-				circle(composite,reg_centroid,3,Scalar(0,255,0,255));
-				circle(composite,seed,3,Scalar(0,255,0,255));
-				display("tmp",composite);
-			}
+			//if(i==528) {
+				//Mat composite=overlay(subseed,subimg);
+				//circle(composite,edg_centroid,3,Scalar(0,255,0,255));
+				//circle(composite,reg_centroid,3,Scalar(0,255,0,255));
+				//circle(composite,seed,3,Scalar(0,255,0,255));
+				//display("tmp",composite);
+			//}
 
-			cout << "GC" << endl;
 			Mat subseed_new = edgeGraphCut(subimg,subseed_s,edgeimg,regions,seed);
 			Mat subseedt = shiftBackSubregion(subseed,subseed_new,regions);
 
@@ -1227,7 +1226,6 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				}
 			}
 		}
-		cout << "Past mapping" << endl;
 
 		//Mat composite=overlay(subseed,subimg);
 		//vector<Point> edge = regionEdge(seedimg,regionp.first,regionp.second);
