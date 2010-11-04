@@ -265,7 +265,7 @@ Point vectorCentroid(vector<Point> edge) {/*{{{*/
 	return Point(centroidx,centroidy);
 
 }/*}}}*/
-bool regionBorderCriteria(Mat img, Mat regions, int region, float thresh) {/*{{{*/
+/*bool regionBorderCriteria(Mat img, Mat regions, int region, float thresh) {[>{{{<]
 	float total_border=0.0,total_thresh=0.0;
 	FORxyM(regions) {	
 		if(regions.at<int>(y,x) != region) continue;
@@ -281,10 +281,81 @@ bool regionBorderCriteria(Mat img, Mat regions, int region, float thresh) {/*{{{
 	}
 
 	//cout << (total_thresh/total_border) << " > " << thresh << endl;
-	
-
 
 	return (total_thresh/total_border> thresh);
+	
+}[>}}}<]*/
+float regionBorderCriteria(Mat img, Mat regions, int region, int compregion) {/*{{{*/
+	float total_border=0.0,total_thresh=0.0;
+	const int thresh = 32;
+	//FORxyM(regions) {	
+		//if(regions.at<int>(y,x) != region) continue;
+		//// Skip regions that are internal
+		//if( ( x!=0 && regions.at<int>(y,x)!=regions.at<int>(y,x-1) ) || 
+		   //(y!=0 && regions.at<int>(y,x)!=regions.at<int>(y-1,x) ) ||
+		   //(x!=regions.size().width-1 && regions.at<int>(y,x)!=regions.at<int>(y,x+1) ) ||
+		   //(y!=regions.size().height-1 && regions.at<int>(y,x)!=regions.at<int>(y+1,x)) ) {
+			//total_border++;
+			//if( int(img.at<unsigned char>(y,x) > 32) )
+				//total_thresh++;
+		//}
+	//}
+
+	//cout << (total_thresh/total_border) << " > " << thresh << endl;
+
+	// Horizontal, including first, exluding last column
+	for(int x=0;x<regions.size().width-1;x++) {
+		for(int y=0;y<regions.size().height;y++) {
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y,x+1);
+			if( r1==region && r2==compregion) {
+				if(int(img.at<unsigned char>(y,x))>thresh)
+					total_thresh++;
+				total_border++;
+			}
+		}
+	}
+
+	// Verticle, including first, excluding last row 
+	for(int x=0;x<regions.size().width;x++) {
+		for(int y=0;y<regions.size().height-1;y++) {
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y+1,x);
+			if( r1==region && r2==compregion) {
+				if(int(img.at<unsigned char>(y,x))>thresh)
+					total_thresh++;
+				total_border++;
+			}
+		}
+	}
+	
+	// Horizontal, excluding first, including last column
+	for(int x=1;x<regions.size().width;x++) {
+		for(int y=0;y<regions.size().height;y++) {
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y,x-1);
+			if( r1==region && r2==compregion) {
+				if(int(img.at<unsigned char>(y,x))>thresh)
+					total_thresh++;
+				total_border++;
+			}
+		}
+	}
+
+	// Verticle, excluding first, including last row 
+	for(int x=0;x<regions.size().width;x++) {
+		for(int y=1;y<regions.size().height;y++) {
+			int r1 = regions.at<int>(y,x);
+			int r2 = regions.at<int>(y-1,x);
+			if( r1==region && r2==compregion) {
+				if(int(img.at<unsigned char>(y,x))>thresh)
+					total_thresh++;
+				total_border++;
+			}
+		}
+	}
+
+	return (total_thresh/total_border);
 	
 }/*}}}*/
 vector<Point> regionEdge(Mat regions,int l1,int l2) {/*{{{*/
@@ -981,7 +1052,10 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			if(regionSize(backshift_seed,regions[0]) < sizes[regions[0]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[1]) < sizes[regions[1]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[2]) < sizes[regions[2]]/3 ) continue;
-			if(!regionBorderCriteria(imgj,backshift_seed,-2,0.75)) continue;
+			//if(!regionBorderCriteria(imgj,backshift_seed,-2,0.75)) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[0]) < 0.75) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[1]) < 0.75) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[3]) < 0.75) continue;
 
 			//if(i==159) {
 				//cout << i << endl;
@@ -1046,7 +1120,8 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 		Mat subimg = img(win);
 		Mat subseed = seedimg(win).clone();
 
-		if(regsizes.at(l) > 50 && regionBorderCriteria(subimg,subseed,l,0.50)) continue;
+		//if(regsizes.at(l) > 50 && regionBorderCriteria(subimg,subseed,l,0.50)) continue;
+		if(regsizes.at(l) > 50 ) continue;
 
 		//display(zpnum(l,1),overlay(subseed,subimg,0.5,l));
 
@@ -1213,6 +1288,9 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 			for(int j=0;j<regions.size();j++)
 				if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
 			//if(!regionBorderCriteria(subimg,subseedt,-2,0.66)) admissible=false;
+			
+			for(int j=0;j<regions.size();j++)
+				if(regionBorderCriteria(subimg,subseedt,-2,regions.at(j)) < 0.66) admissible=false;
 
 			//if(i==429) {
 				//if(admissible) {

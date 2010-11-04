@@ -35,6 +35,7 @@ Mat regionsAdj(Mat regions, int num_regions);
 int regionNum(Mat regions);
 Mat regionCompact(Mat regionsin);
 Mat regionClean(Mat regionsin);
+float regionBorderCriteria(Mat img, Mat regions, int region, int compregion);
 vector<int> getAdj(Mat adj,int region);
 vector<int> regionSizes(Mat regions);
 int regionSize(Mat regions,int region);
