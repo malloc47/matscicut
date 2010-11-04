@@ -923,7 +923,7 @@ Mat shiftBackSubregion(Mat seedimg, Mat newseedimg, vector<int> regions) {/*{{{*
 	return new_shifted_seed;
 }	/*}}}*/
 Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
-	cout << "@localgcj" << endl;
+	cout << "@localgcj \t\\" << flush;
 	Mat seedout = seedimg.clone();
 	int num_regions = mat_max(seedimg)+1;
 	vector<int> sizes = regionSizes(seedimg);
@@ -937,6 +937,8 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 
 	int numbernew = 0; // Step through junctions, processing each
 	for(int i=0;i<junctions.size();i++) {
+		cout << "\b" << flush;
+		cout << bar[i%4] << flush;
 		//if(i!=159) continue;
 		// Setup variables
 		Point center(junctions[i][0],junctions[i][1]);
@@ -1014,8 +1016,8 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			}
 		}
 	}
-
-	cout << "New: " << numbernew << endl;
+	cout << "\b" << flush;
+	cout << numbernew << endl;
 
 	return seedout;
 
@@ -1078,6 +1080,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	int lengththresh = 4;
 	int num_labels = mat_max(seedimg)+1;
 	int num_regions = mat_max(seedimg)+1;
+	int number_new = 0;
 	Mat seedout = seedimg.clone();
 	Mat adj = regionsAdj(seedimg,num_labels);
 	vector<int> sizes = regionSizes(seedimg);
@@ -1215,6 +1218,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 			//}
 
 			if(admissible) {
+				number_new++;
 				int new_label = num_labels++;
 				//Map region back to whole label matrix
 				FORxyM(subseedt) {
@@ -1240,6 +1244,9 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 
 		//}
 	}
+
+	cout << "\b" << flush;
+	cout << number_new << endl;
 
 	return seedout;
 
