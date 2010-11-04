@@ -1066,9 +1066,9 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			if(regionSize(backshift_seed,regions[1]) < sizes[regions[1]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[2]) < sizes[regions[2]]/3 ) continue;
 			//if(!regionBorderCriteria(imgj,backshift_seed,-2,0.75)) continue;
-			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[0]) < 0.75) continue;
-			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[1]) < 0.75) continue;
-			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[3]) < 0.75) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[0]) < 0.66) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[1]) < 0.66) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[3]) < 0.66) continue;
 
 			//if(i==159) {
 				//cout << i << endl;
