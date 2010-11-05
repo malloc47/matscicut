@@ -136,9 +136,10 @@ Mat regionCompact(Mat regionsin) {/*{{{*/
 			if(regionSize(regions,i)<1) { // If it's too small
 				FORxyM(regions) { // Visit all regs
 					if(regions.at<int>(y,x)>i) { // If they're bigger than the current reg
-						if(boundsCheck(regions,Point(x,y)))
-						regions.at<int>(y,x)--; // Decrement by one
-						clean=false;
+						if(boundsCheck(regions,Point(x,y))) {
+							regions.at<int>(y,x)--; // Decrement by one
+							clean=false;
+						}
 					}
 				}
 				if(!clean) break;
@@ -991,12 +992,14 @@ Mat shiftBackSubregion(Mat seedimg, Mat newseedimg, vector<int> regions) {/*{{{*
 		int origval=seedimg.at<int>(y,x);
 		int newval=newseedimg.at<int>(y,x);
 		if(origval != -1) { // Only change stuff inside the boundary
-			if(newval < regions.size()+1 && newval > 0)
+			if(newval < regions.size()+1 && newval > 0) {
 				if(boundsCheck(new_shifted_seed,Point(x,y)))
 					new_shifted_seed.at<int>(y,x) = regions[newval-1];
-			else if(newval == 0)
+			}
+			else if(newval == 0) {
 				if(boundsCheck(new_shifted_seed,Point(x,y)))
 					new_shifted_seed.at<int>(y,x) = -1;
+			}
 			else {
 				// Use -2 to represent new region
 				if(boundsCheck(new_shifted_seed,Point(x,y)))
@@ -1096,12 +1099,14 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			//Map region back to whole label matrix
 			FORxyM(backshift_seed) {
 				if(backshift_seed.at<int>(y,x)==-1) continue; //Not bg
-				if(backshift_seed.at<int>(y,x)==-2)
+				if(backshift_seed.at<int>(y,x)==-2) {
 					if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
 						seedout.at<int>(y+win.y,x+win.x) = new_label;
-				else
+				}
+				else {
 					if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
 						seedout.at<int>(y+win.y,x+win.x) = backshift_seed.at<int>(y,x);
+				}
 			}
 		}
 	}
@@ -1153,9 +1158,10 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 
 		FORxyM(subseed) {
 			if(subseed.at<int>(y,x)==-1) continue; //Not bg
-			else
+			else {
 				if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
 					seedout.at<int>(y+win.y,x+win.x) = subseed.at<int>(y,x);
+			}
 		}
 	}
 
@@ -1323,12 +1329,14 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				//Map region back to whole label matrix
 				FORxyM(subseedt) {
 					if(subseedt.at<int>(y,x)==-1) continue; //Not bg
-					if(subseedt.at<int>(y,x)==-2)
+					if(subseedt.at<int>(y,x)==-2) {
 						if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
 							seedout.at<int>(y+win.y,x+win.x) = new_label;
-					else 
+					}
+					else  {
 						if(boundsCheck(seedout,Point(x+win.x,y+win.y)))
 							seedout.at<int>(y+win.y,x+win.x) = subseedt.at<int>(y,x);
+					}
 				}
 			}
 		}
