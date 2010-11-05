@@ -1431,6 +1431,10 @@ int main(int argc, char **argv) {/*{{{*/
 	Mat map = imread(filemap,0);
 
 	Mat imgblend = combine(img,map);
+	double meanVal = 0;
+	
+	cv::mean(img).convertTo(&meanVal,1);
+	cout << "-mean: \t" << meanVal << endl;
 
 	//Mat img = imread(fileb1,0);
 
@@ -1460,18 +1464,18 @@ int main(int argc, char **argv) {/*{{{*/
 	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	//Delete unneeded grains 
-	Mat seedimg2 = processDelete(img,seedimg1);	
+	Mat seedimg2 = processDelete(imgblend,seedimg1);	
 	seedimg2 = regionClean(seedimg2);
 
 	//Add in missed junctions
-	Mat seedimg3 = processJunctions(img,seedimg2);
+	Mat seedimg3 = processJunctions(imgblend,seedimg2);
 	seedimg3 = regionClean(seedimg3);
 
 	//writeMat("tmp.labels",seedimg3);
 	//Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Add in grains created at edges 
-	Mat seedimg4 = processEdges(img,seedimg3);
+	Mat seedimg4 = processEdges(imgblend,seedimg3);
 	seedimg4 = regionClean(seedimg4);
 
 	//display("tmp",overlay(new_seed,img,0.5));
