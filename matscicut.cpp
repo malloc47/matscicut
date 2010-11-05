@@ -1,5 +1,6 @@
 #include "matscicut.h"
 #include "BlobResult.h"
+int meanthresh = 0;
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
@@ -307,7 +308,7 @@ Point vectorCentroid(vector<Point> edge) {/*{{{*/
 }[>}}}<]*/
 float regionBorderCriteria(Mat img, Mat regions, int region, int compregion) {/*{{{*/
 	float total_border=0.0,total_thresh=0.0;
-	const int thresh = 32;
+	const int thresh = int(double(meanthresh)*0.75);
 	
 	// Horizontal, including first, exluding last column
 	for(int x=0;x<regions.size().width-1;x++) {
@@ -1436,6 +1437,8 @@ int main(int argc, char **argv) {/*{{{*/
 	cv::mean(img).convertTo(&meanVal,1);
 	cout << "-mean: \t" << meanVal << endl;
 
+	meanthresh = int(meanVal)*2;
+
 	//Mat img = imread(fileb1,0);
 
 	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
@@ -1464,18 +1467,18 @@ int main(int argc, char **argv) {/*{{{*/
 	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	//Delete unneeded grains 
-	Mat seedimg2 = processDelete(imgblend,seedimg1);	
+	Mat seedimg2 = processDelete(img,seedimg1);	
 	seedimg2 = regionClean(seedimg2);
 
 	//Add in missed junctions
-	Mat seedimg3 = processJunctions(imgblend,seedimg2);
+	Mat seedimg3 = processJunctions(img,seedimg2);
 	seedimg3 = regionClean(seedimg3);
 
 	//writeMat("tmp.labels",seedimg3);
 	//Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
 
 	// Add in grains created at edges 
-	Mat seedimg4 = processEdges(imgblend,seedimg3);
+	Mat seedimg4 = processEdges(img,seedimg3);
 	seedimg4 = regionClean(seedimg4);
 
 	//display("tmp",overlay(new_seed,img,0.5));
