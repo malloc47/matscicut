@@ -9,6 +9,7 @@ for imgnum = imgnums
 	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
 	img2 = imhmin(img,20);
 	labels = watershed(img2);
+	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
 	imwrite(Lrgb,[outputpath 'region/image' sprintf('%04d',imgnum) '.png'],'png');
 	
