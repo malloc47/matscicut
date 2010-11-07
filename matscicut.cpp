@@ -1462,6 +1462,8 @@ int main(int argc, char **argv) {/*{{{*/
 	//Process global
 	Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
 	seedimg1 = regionClean(seedimg1);
+
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-g.labels",seedimg1);
 	
 	//writeMat("tmp.labels",seedimg1);
 	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
@@ -1470,9 +1472,13 @@ int main(int argc, char **argv) {/*{{{*/
 	Mat seedimg2 = processDelete(img,seedimg1);	
 	seedimg2 = regionClean(seedimg2);
 
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-d.labels",seedimg2);
+
 	//Add in missed junctions
 	Mat seedimg3 = processJunctions(img,seedimg2);
 	seedimg3 = regionClean(seedimg3);
+
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-j.labels",seedimg3);
 
 	//writeMat("tmp.labels",seedimg3);
 	//Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
@@ -1480,6 +1486,8 @@ int main(int argc, char **argv) {/*{{{*/
 	// Add in grains created at edges 
 	Mat seedimg4 = processEdges(img,seedimg3);
 	seedimg4 = regionClean(seedimg4);
+
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-e.labels",seedimg4);
 
 	//display("tmp",overlay(new_seed,img,0.5));
 
