@@ -1,13 +1,17 @@
-function ncuts_eval(imgnums)
+function watershed_eval(imgnums,supress)
+
+	if(nargin < 2)
+		supress = 20;
+	end
 
 for imgnum = imgnums
 
 	series = 1;
 	datapath = 'data/old/scaled/';
-	outputpath = 'outputn/';
+	outputpath = 'outputw/';
 
 	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
-	img2 = imhmin(img,20);
+	img2 = imhmin(img,supress);
 	labels = watershed(img2);
 	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
