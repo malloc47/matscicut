@@ -1,25 +1,28 @@
-function watershed_eval(imgnums,supress)
+function ncuts_eval(imgnums)
 
-	if(nargin < 2)
-		supress = 20;
-	end
+	%addpath('../../programs/normalized-cuts/ncut_multiscale_1_6/');
+
+	init
 
 for imgnum = imgnums
 
 	series = 1;
-	datapath = 'data/old/scaled/';
-	outputpath = 'outputw/';
+	datapath = '~/src/projects/matscicut/data/old/scaled/';
+	outputpath = '~/src/projects/matscicut/outputn/';
+
+	ground = logical(imread(['~/src/projects/matscicut/data/old/scaled/ground/' 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+	ground_label = bwlabel(~ground,4);
+	ground_num = max(max(ground_label))
 
 	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
-	img2 = imhmin(img,supress);
-	labels = watershed(img2);
+	%img2 = imhmin(img,20);
+	[labels,X,lambda,Xr,W,C,timing] = ncut_multiscale(img,ground_num);
+	%labels = watershed(img2);
 	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
 	imwrite(Lrgb,[outputpath 'region/image' sprintf('%04d',imgnum) '.png'],'png');
 	
 	groundbmp = seg2bmap(labels);
-	groundbmp = bwmorph(groundbmp,'thin',Inf);
-	groundbmp = imdilate(groundbmp,strel('disk',2));
 
 	output(:,:,1) = img;
 	output(:,:,2) = img;

@@ -34,6 +34,8 @@ labels = reshape(labels,size(img));
 % labels = readSeg(['evaluation/groundtruth/' sprintf('%04d',imgnum) '.seg']);
 
 groundbmp = seg2bmap(labels);
+groundbmp = bwmorph(groundbmp,'thin',Inf);
+groundbmp = imdilate(groundbmp,strel('disk',2));
 
 % figure; imshow(overlay(img,label2rgb(labels,'jet','w','shuffle'),0.5));
 
