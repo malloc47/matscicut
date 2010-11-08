@@ -75,6 +75,7 @@ hold all
 plot(wshed,'g+-');
 leg = legend('Our Method','Watershed');
 set(leg,'Location','SouthEast');
+set(leg,'FontSize',12);
 xlabel('Serial Slice');
 ylabel('F-measure');
 print('-depsc2', 'g.eps');
@@ -109,6 +110,7 @@ hold all
 plot(wshed,'g+-');
 leg = legend('Our Method','Watershed');
 set(leg,'Location','SouthEast');
+set(leg,'FontSize',12);
 xlabel('Serial Slice');
 ylabel('Precision');
 print('-depsc2', 'g2.eps');
@@ -143,6 +145,7 @@ hold all
 plot(wshed,'g+-');
 leg = legend('Our Method','Watershed');
 set(leg,'Location','SouthEast');
+set(leg,'FontSize',12);
 xlabel('Serial Slice');
 ylabel('Recall');
 print('-depsc2', 'g3.eps');
@@ -177,6 +180,7 @@ for i = ['e','j','d','g']
 end
 leg = legend('e+j+d+g','j+d+g','d+g','g');
 set(leg,'Location','NorthEast');
+set(leg,'FontSize',12);
 print('-depsc2', 'h.eps');
 
 
@@ -212,6 +216,7 @@ plot(wshed,'g+-');
 %plot(groundnum,'bs-');
 leg = legend('Our Method','Watershed');
 set(leg,'Location','SouthEast');
+set(leg,'FontSize',12);
 xlabel('Serial Slice');
 ylabel('Number of labels');
 print('-depsc2', 'j.eps');
