@@ -16,13 +16,16 @@ for imgnum = imgnums
 
 	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
 	%img2 = imhmin(img,20);
-	[labels,X,lambda,Xr,W,C,timing] = ncut_multiscale(img,ground_num);
+	%[labels,X,lambda,Xr,W,C,timing] = ncut_multiscale(img,ground_num);
 	%labels = watershed(img2);
+	labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
 	imwrite(Lrgb,[outputpath 'region/image' sprintf('%04d',imgnum) '.png'],'png');
 	
 	groundbmp = seg2bmap(labels);
+	groundbmp = bwmorph(groundbmp,'thin',Inf);
+	groundbmp = imdilate(groundbmp,strel('disk',2));
 
 	output(:,:,1) = img;
 	output(:,:,2) = img;

@@ -3,6 +3,7 @@ function evaluate(imgnums)
 datapath = 'data/old/scaled/ground/';
 ourpath = 'output2/';
 wshedpath = 'outputw/';
+ncutpath = 'outputn/';
 d=2;
 
 %wshedscore = [];
@@ -47,6 +48,7 @@ watershed_eval(imgnums,idx);
 
 ours  = [];
 wshed = [];
+ncut = [];
 
 for imgnum = imgnums
 
@@ -56,14 +58,17 @@ for imgnum = imgnums
 
 	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
 	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
 	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
+	ncut_edge = bwmorph(logical(seg2bmap(ncut_label)),'thin',Inf);
 	%figure; imshow(wshed_edge);
 	%pause;
 
 	ours = [ours fmeasure(ground,ours_edge)];
 	wshed= [wshed fmeasure(ground,wshed_edge)];
+	ncut= [ncut fmeasure(ground,ncut_edge)];
 
 end
 
@@ -73,7 +78,8 @@ fig = figure('visible','off');
 plot(ours,'r.-'); 
 hold all
 plot(wshed,'g+-');
-leg = legend('Our Method','Watershed');
+plot(ncut,'b*-');
+leg = legend('Our Method','Watershed','Normalized Cut');
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
 xlabel('Serial Slice');
@@ -82,6 +88,7 @@ print('-depsc2', 'g.eps');
 
 ours  = [];
 wshed = [];
+ncut = [];
 
 for imgnum = imgnums
 
@@ -91,14 +98,17 @@ for imgnum = imgnums
 
 	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
 	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
 	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
+	ncut_edge = bwmorph(logical(seg2bmap(ncut_label)),'thin',Inf);
 	%figure; imshow(wshed_edge);
 	%pause;
 
 	ours = [ours precision(ground,ours_edge)];
 	wshed= [wshed precision(ground,wshed_edge)];
+	ncut= [ncut precision(ground,ncut_edge)];
 
 end
 
@@ -108,7 +118,8 @@ fig = figure('visible','off');
 plot(ours,'r.-'); 
 hold all
 plot(wshed,'g+-');
-leg = legend('Our Method','Watershed');
+plot(ncut,'b*-');
+leg = legend('Our Method','Watershed','Normalized Cut');
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
 xlabel('Serial Slice');
@@ -117,6 +128,7 @@ print('-depsc2', 'g2.eps');
 
 ours  = [];
 wshed = [];
+ncut = [];
 
 for imgnum = imgnums
 
@@ -126,14 +138,17 @@ for imgnum = imgnums
 
 	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
 	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
 	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
+	ncut_edge = bwmorph(logical(seg2bmap(ncut_label)),'thin',Inf);
 	%figure; imshow(wshed_edge);
 	%pause;
 
 	ours = [ours recall(ground,ours_edge)];
 	wshed= [wshed recall(ground,wshed_edge)];
+	ncut= [ncut recall(ground,ncut_edge)];
 
 end
 
@@ -143,7 +158,8 @@ fig = figure('visible','off');
 plot(ours,'r.-'); 
 hold all
 plot(wshed,'g+-');
-leg = legend('Our Method','Watershed');
+plot(ncut,'b*-');
+leg = legend('Our Method','Watershed','Normalized Cut');
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
 xlabel('Serial Slice');
