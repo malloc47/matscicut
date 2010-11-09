@@ -4,7 +4,7 @@ datapath = 'data/old/scaled/ground/';
 ourpath = 'output2/';
 wshedpath = 'outputw/';
 ncutpath = 'outputn/';
-d=2;
+d=3;
 
 %wshedscore = [];
 
@@ -194,7 +194,9 @@ for i = ['e','j','d','g']
 	end
 	plot(ours,[colors(index) style(index) '-']);
 end
-leg = legend('e+j+d+g','j+d+g','d+g','g');
+%leg = legend('e+j+d+g','j+d+g','d+g','g');
+leg = legend('Edge+Junctions+Deletion+Global','Junctions+Deletion+Global','Deletion+Global','Global');
+leg = legend('Strategy III + Strategy II + Strategy I + Global','Strategy II + Strategy I + Global','Strategy I + Global','Global');
 set(leg,'Location','NorthEast');
 set(leg,'FontSize',12);
 print('-depsc2', 'h.eps');
@@ -260,7 +262,7 @@ function num = fp(gt,ev)
 end
 
 function num = fn(gt,ev)
-	d=2;
+	d=3;
 	%num = sum(sum( bwmorph(gt,'thin',Inf) & ~(imdilate(ev,strel('disk',5))) ));
 	num = sum(sum( bwmorph(gt,'thin',Inf) & ~(imdilate(ev,strel('disk',d))) ));
 end
