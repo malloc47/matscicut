@@ -178,7 +178,7 @@ colors = ['m','g','b','r'];
 style = ['o','*','d','s'];
 index = 0;
 %for i = ['g','d','j','e']
-for i = ['e','j','d','g']
+for i = ['e','j','d','g', 'e-d']
 	index = index + 1;
 	ours = [];
 	for imgnum = imgnums
@@ -195,8 +195,8 @@ for i = ['e','j','d','g']
 	plot(ours,[colors(index) style(index) '-']);
 end
 %leg = legend('e+j+d+g','j+d+g','d+g','g');
-leg = legend('Edge+Junctions+Deletion+Global','Junctions+Deletion+Global','Deletion+Global','Global');
-leg = legend('Strategy III + Strategy II + Strategy I + Global','Strategy II + Strategy I + Global','Strategy I + Global','Global');
+%leg = legend('Edge+Junctions+Deletion+Global','Junctions+Deletion+Global','Deletion+Global','Global');
+leg = legend('Strategy III + Strategy II + Strategy I + Global','Strategy II + Strategy I + Global','Strategy I + Global','Global','Global + Strategy II + Strategy III');
 set(leg,'Location','NorthEast');
 set(leg,'FontSize',12);
 print('-depsc2', 'h.eps');
