@@ -1,6 +1,10 @@
 function new_labels = conditionlabels(labels)
 
+counter=0;
+
 new_labels = labels;
+
+while(min(min(new_labels) < 1) || counter > 50)
 
 for i = 1:size(labels,1)
     for j = 1:size(labels,2)
@@ -18,4 +22,8 @@ for i = 1:size(labels,1)
             end
         end
     end
+end
+
+counter = counter+1;
+
 end
