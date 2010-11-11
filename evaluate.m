@@ -4,7 +4,7 @@ datapath = 'data/old/scaled/ground/';
 ourpath = 'output2/';
 wshedpath = 'outputw/';
 ncutpath = 'outputn/';
-d=2;
+d=4;
 
 %wshedscore = [];
 
@@ -62,7 +62,7 @@ for imgnum = imgnums
 	ground = bwmorph(ground,'thin',Inf);
 	ground = imdilate(ground,strel('disk',d));
 
-	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) 'gdje.labels'],' ');
 	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
@@ -234,7 +234,7 @@ for i = 1:8
 
 		our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) str{1,i} '.labels'],' ');
 		our_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
-		ours_edge = imdilate(ours_edge,strel('disk',d));
+		our_edge = imdilate(our_edge,strel('disk',d));
 	
 		ours = [ours fmeasure(ground,our_edge)];
 	end
@@ -260,42 +260,42 @@ set(leg,'FontSize',12);
 print('-depsc2', 'h.eps');
 
 
-ours  = [];
-wshed = [];
-%groundnum = [];
+%ours  = [];
+%wshed = [];
+%%groundnum = [];
 
-for imgnum = imgnums
+%for imgnum = imgnums
 
-	ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
-	ground = bwmorph(ground,'thin',Inf);
-	ground = imdilate(ground,strel('disk',d));
+	%ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+	%ground = bwmorph(ground,'thin',Inf);
+	%ground = imdilate(ground,strel('disk',d));
 
-	ground_label = bwlabel(~ground,4);
-	ground_num = max(max(ground_label));
+	%ground_label = bwlabel(~ground,4);
+	%ground_num = max(max(ground_label));
 
-	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+	%our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+	%wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
-	our_num = max(max(our_label));
-	wshed_num = max(max(wshed_label));
+	%our_num = max(max(our_label));
+	%wshed_num = max(max(wshed_label));
 
-	ours = [ours abs(our_num-ground_num) ];
-	wshed= [wshed abs(wshed_num-ground_num) ];
-	%groundnum = [groundnum max(max(ground_label))];
+	%ours = [ours abs(our_num-ground_num) ];
+	%wshed= [wshed abs(wshed_num-ground_num) ];
+	%%groundnum = [groundnum max(max(ground_label))];
 
-end
+%end
 
-fig = figure('visible','off'); 
-plot(yax,ours,'r.-'); 
-hold all
-plot(yax,wshed,'g+-');
-%plot(yax,groundnum,'bs-');
-leg = legend('Proposed Method','Watershed');
-set(leg,'Location','SouthEast');
-set(leg,'FontSize',12);
-xlabel('Serial Slice');
-ylabel('Number of labels');
-print('-depsc2', 'j.eps');
+%fig = figure('visible','off'); 
+%plot(yax,ours,'r.-'); 
+%hold all
+%plot(yax,wshed,'g+-');
+%%plot(yax,groundnum,'bs-');
+%leg = legend('Proposed Method','Watershed');
+%set(leg,'Location','SouthEast');
+%set(leg,'FontSize',12);
+%xlabel('Serial Slice');
+%ylabel('Number of labels');
+%print('-depsc2', 'j.eps');
 
 end
 
@@ -322,5 +322,6 @@ end
 function num = fn(gt,ev)
 	d=2;
 	%num = sum(sum( bwmorph(gt,'thin',Inf) & ~(imdilate(ev,strel('disk',5))) ));
-	num = sum(sum( bwmorph(gt,'thin',Inf) & ~(imdilate(ev,strel('disk',d))) ));
+	%num = sum(sum( bwmorph(gt,'thin',Inf) & ~(imdilate(ev,strel('disk',d))) ));
+	num = sum(sum( gt & (~ev) ));
 end
