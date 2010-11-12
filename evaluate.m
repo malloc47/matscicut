@@ -89,9 +89,12 @@ fig = figure('visible','off');
 %set(fig, 'PaperUnits', 'inches');
 %set(fig, 'PaperSize', [1 1]);
 plot(yax,ours,'r.-'); 
+dlmwrite('ours-f.dat', [yax' ours'],' ');
 hold all
 plot(yax,wshed,'g+-');
+dlmwrite('wshed-f.dat', [yax' wshed'],' ');
 plot(yax,ncut,'b*-');
+dlmwrite('ncut-f.dat', [yax' ncut'],' ');
 leg = legend('Proposed Method','Watershed','Normalized Cut');
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
