@@ -1416,7 +1416,7 @@ int main(int argc, char **argv) {/*{{{*/
 	// Read files/*{{{*/
 	
 	// Read previous label matrix for propagation 
-	string seedfile=labelpath+prefix+zpnum(framenum-1,FNAMELEN)+postfix+".labels";
+	string seedfile=labelpath+prefix+zpnum(framenum-1,FNAMELEN)+postfix+"."+labeltype;
 string imgfile=datapath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+imgtype;
 	//string filemap=outputpath + "maps/image" + zpnum(framenum,4) + ".tif";
 
@@ -1461,7 +1461,7 @@ string imgfile=datapath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+imgtype;
 
 	//display("tmp",overlay(seedimg,img,0.5));
 	
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+postfix+".labels",seedimg);
+	writeMat(labelpath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+labeltype,seedimg);
 
 	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
 

@@ -18,7 +18,7 @@ using namespace cv;
 using namespace std;
 
 const string datapath="img/";
-const string outputpath="output/";
+//const string outputpath="output/";
 const string labelpath = "labels/";
 const string imgtype = "png";
 const string labeltype = "label";

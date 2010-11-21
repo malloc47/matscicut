@@ -4,18 +4,23 @@ for imgnum = imgnums
 
 series = 1;
 
-%datapath = 'data/new/raw/';
-datapath = 'data/old/scaled/';
-%outputpath = 'output/';
-outputpath = 'output2/';
+datapath = 'data/new/raw/';
+%datapath = 'data/old/scaled/';
+%datapath = 'img/';
+labelpath = 'labels/';
+outputpath = 'output/';
+labeltype = 'label';
+prefix = 'image';
+%outputpath = 'output2/';
 
-%img = imread([datapath num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
-img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
+img = imread([datapath num2str(series+3) '000_Series/' num2str(series+3) '000_image' sprintf('%04d',imgnum) '.tif']);
+%img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
 
 % ground = readSeg(['evaluation/groundtruth/' sprintf('%04d',imgnum) '.seg']);
 % groundbmp = seg2bmap(ground);
 
-labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+%labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+labels = dlmread([labelpath prefix sprintf('%04d',imgnum) '.' labeltype],' ');
 
 disp([int2str(imgnum) ':' int2str(length(unique(labels)))]);
 
@@ -61,7 +66,7 @@ output(:,:,3) = outputb;
 
 % figure; imshow(output);
 
-imwrite(output,[outputpath 'overlay/image' sprintf('%04d',imgnum) '.png'],'png');
+imwrite(output,[outputpath prefix sprintf('%04d',imgnum) '.png'],'png');
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
 
