@@ -1,31 +1,43 @@
+OBJ = obj
+INC = include
+SRC = src
+GCOPATH = ~/src/programs/gco/
+BLOBPATH = ~/src/programs/cvblobslib/src/
 CXX = g++
 #CCFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
-CCFLAGS = -L. -I. -L /usr/local/lib `pkg-config --cflags --libs opencv` -lm
+CCFLAGS = -L. -I. -I${INC} -I${SRC} -L /usr/local/lib `pkg-config --cflags --libs opencv` -lm
 
 all: matscicut 
 
-matscicut: matscicut.o matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o
-	#${CXX} ${CCFLAGS} -o matscicut matutil.o GCoptimization.o maxflow.o graph.o LinkedBlockList.o matscicut.o
-	${CXX} ${CCFLAGS} -o matscicut *.o 
+matscicut: ${OBJ}/matscicut.o ${OBJ}/matutil.o ${OBJ}/GCoptimization.o ${OBJ}/maxflow.o ${OBJ}/graph.o ${OBJ}/LinkedBlockList.o
+	#${CXX} ${CCFLAGS} -o matscicut ${OBJ}/matutil.o ${OBJ}/GCoptimization.o ${OBJ}/maxflow.o ${OBJ}/graph.o ${OBJ}/LinkedBlockList.o ${OBJ}/matscicut.o
+	${CXX} ${CCFLAGS} -o matscicut ${OBJ}/*.o 
 
-matscicut.o: matscicut.cpp matscicut.h 
-	${CXX} ${CCFLAGS} -c matscicut.cpp
+${OBJ}/matscicut.o: ${SRC}/matscicut.cpp ${INC}/matscicut.h 
+	${CXX} ${CCFLAGS} -c ${SRC}/matscicut.cpp -o ${OBJ}/matscicut.o
 
-matutil.o: matutil.cpp matutil.h
-	${CXX} ${CCFLAGS} -c matutil.cpp
+${OBJ}/matutil.o: ${SRC}/matutil.cpp ${INC}/matutil.h
+	${CXX} ${CCFLAGS} -c ${SRC}/matutil.cpp -o ${OBJ}/matutil.o
 	
-GCOptimization.o: GCoptimization.cpp GCoptimization.h LinkedBlockList.h energy.h graph.cpp maxflow.cpp
-	${CXX} ${CCFLAGS} -c GCOptimization.cpp
+${OBJ}/GCoptimization.o: ${SRC}/GCoptimization.cpp ${INC}/GCoptimization.h ${INC}/LinkedBlockList.h ${INC}/energy.h ${SRC}/graph.cpp ${SRC}/maxflow.cpp
+	${CXX} ${CCFLAGS} -c ${SRC}/GCoptimization.cpp -o ${OBJ}/GCoptimization.o
 
-maxflow.o: maxflow.cpp graph.h
-	${CXX} ${CCFLAGS} -c maxflow.cpp
+${OBJ}/maxflow.o: ${SRC}/maxflow.cpp ${OBJ}/graph.o 
+	${CXX} ${CCFLAGS} -c ${SRC}/maxflow.cpp -o ${OBJ}/maxflow.o
 
-LinkedBlockList.o: LinkedBlockList.cpp LinkedBlockList.h
-	${CXX} ${CCFLAGS} -c LinkedBlockList.cpp
+${OBJ}/LinkedBlockList.o: ${SRC}/LinkedBlockList.cpp ${INC}/LinkedBlockList.h
+	${CXX} ${CCFLAGS} -c ${SRC}/LinkedBlockList.cpp -o ${OBJ}/LinkedBlockList.o
 
-graph.o: graph.h graph.cpp block.h
-	${CXX} ${CCFLAGS} -c graph.cpp
+${OBJ}/graph.o: ${INC}/graph.h ${SRC}/graph.cpp ${INC}/block.h
+	${CXX} ${CCFLAGS} -c ${SRC}/graph.cpp -o ${OBJ}/graph.o
 
+init:
+	mkdir obj
+	-ln -s ${BLOBPATH}/*.o ${OBJ}/
+	-ln -s ${BLOBPATH}/*.h ${INC}/
+	-ln -s ${GCOPATH}/*.cpp  ${SRC}/
+	-ln -s ${GCOPATH}/*.h ${INC}/
 clean:
-	-rm *.o
+	-rm ${OBJ}/*.o
 	-rm matscicut 
+#	for f in `ls ${BLOBPATH}/*.o` do ; rm 
