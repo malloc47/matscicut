@@ -1,7 +1,6 @@
 CXX = g++
 #CCFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
-CCFLAGS = -L. -I. -L /usr/local/lib `pkg-config --cflags --libs opencv` -lm -g
-
+CCFLAGS = -L. -I. -L /usr/local/lib `pkg-config --cflags --libs opencv` -lm
 
 all: matscicut 
 

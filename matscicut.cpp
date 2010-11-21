@@ -1,6 +1,5 @@
 #include "matscicut.h"
 #include "BlobResult.h"
-int meanthresh = 0;
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
 	int num_labels = extra->num_labels;
@@ -1415,23 +1414,16 @@ int main(int argc, char **argv) {/*{{{*/
 	cout << "-dilate: \t" << dilate_amount << endl;/*}}}*/
 
 	// Read files/*{{{*/
-	string filea1=datapath + "4000_Series/4000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";/*{{{*/
-	string filea2=datapath + "5000_Series/5000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
-	string filea3=datapath + "6000_Series/6000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
-	string filea4=datapath + "7000_Series/7000_image" + zpnum(framenum-1,FNAMELEN) + ".tif";
-	string fileb1=datapath + "4000_Series/4000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string fileb2=datapath + "5000_Series/5000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string fileb3=datapath + "6000_Series/6000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string fileb4=datapath + "7000_Series/7000_image" + zpnum(framenum,FNAMELEN) + ".tif";
-	string seedfile=outputpath + "labels/image" + zpnum(framenum-1,FNAMELEN)+".labels";
+	
+	// Read previous label matrix for propagation 
+	string seedfile=labelpath+prefix+zpnum(framenum-1,FNAMELEN)+postfix+".labels";
+string imgfile=datapath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+imgtype;
+	//string filemap=outputpath + "maps/image" + zpnum(framenum,4) + ".tif";
 
-	string filenew=datapath + "stfl" + zpnum(framenum,2) + "alss1.tif";
-	string filemap=outputpath + "maps/image" + zpnum(framenum,4) + ".tif";/*}}}*/
+	Mat img = imread(imgfile,0);
+	//Mat map = imread(filemap,0);
 
-	Mat img = imread(filenew,0);
-	Mat map = imread(filemap,0);
-
-	Mat imgblend = combine(img,map);
+	//Mat imgblend = combine(img,map);
 	double meanVal = 0;
 	
 	cv::mean(img).convertTo(&meanVal,1);
@@ -1439,75 +1431,39 @@ int main(int argc, char **argv) {/*{{{*/
 
 	meanthresh = int(meanVal)*2;
 
-	//Mat img = imread(fileb1,0);
-
 	Mat seedimg = loadMat(seedfile,img.size().width,img.size().height);
 
 	/*}}}*/
 
 	// Processing /*{{{*/
-	
-	//Mat new_seed = processJunctions(img,seedimg);
 
-
-	//for(int l=0;l<mat_max(seedimg)+1;l++) {
-		//cout << l << endl;
-		//display("tmp",overlay(seedimg,img,0.5,l));
-	//}
-	
-	
-	// Clean first
 	seedimg = regionClean(seedimg);
 
-	//Process global
-	Mat seedimg1 = globalGraphCut(imgblend,seedimg,dilate_amount);
-	seedimg1 = regionClean(seedimg1);
+	seedimg = globalGraphCut(img,seedimg,dilate_amount);
+	seedimg = regionClean(seedimg);
 
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-g.labels",seedimg1);
-	
-	//writeMat("tmp.labels",seedimg1);
-	//Mat seedimg1 = loadMat("tmp.labels",img.size().width,img.size().height);
+	seedimg = processDelete(img,seedimg);	
+	seedimg = regionClean(seedimg);
 
-	//Delete unneeded grains 
-	Mat seedimg2 = processDelete(img,seedimg1);	
-	seedimg2 = regionClean(seedimg2);
+	seedimg = processJunctions(img,seedimg);
+	seedimg = regionClean(seedimg);
 
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-d.labels",seedimg2);
-
-	//Add in missed junctions
-	Mat seedimg3 = processJunctions(img,seedimg2);
-	seedimg3 = regionClean(seedimg3);
-
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-j.labels",seedimg3);
-
-	//writeMat("tmp.labels",seedimg3);
-	//Mat seedimg3 = loadMat("tmp.labels",img.size().width,img.size().height);
-
-	// Add in grains created at edges 
-	Mat seedimg4 = processEdges(img,seedimg3);
-	seedimg4 = regionClean(seedimg4);
-
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+"-e.labels",seedimg4);
-
-	//display("tmp",overlay(new_seed,img,0.5));
-
+	seedimg = processEdges(img,seedimg);
+	seedimg = regionClean(seedimg);
 
 /*}}}*/
 
 	// Output/*{{{*/
 
-	Mat composite = overlay(seedimg4,img,0.5);
-	//Mat composite2 = overlay(seedimg,img,0.5);
+	//Mat composite = overlay(seedimg,img,0.5);
 
-	cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png" << endl;
+	//cout << ">writing \t" << outputpath << "overlay/image" << zpnum(framenum,FNAMELEN) << ".png" << endl;
 
 	//display("tmp",overlay(seedimg,img,0.5));
-	//display("tmp",overlay(new_seed,img,0.5));
 	
-	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+".labels",seedimg4);
+	writeMat(outputpath+"labels/image"+zpnum(framenum,FNAMELEN)+postfix+".labels",seedimg);
 
 	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+".png",composite);
-	//imwrite(outputpath+"overlay/image"+zpnum(framenum,FNAMELEN)+"old.png",composite2);*/
 
 	return 0;//*}}}*/
 }
