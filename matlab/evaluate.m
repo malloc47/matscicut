@@ -263,6 +263,56 @@ set(leg,'FontSize',12);
 print('-depsc2', 'h.eps');
 
 
+%%% Self comparision
+
+disp('Self2');
+
+fig = figure('visible','off'); 
+%set(fig, 'PaperUnits', 'inches');
+%set(fig, 'PaperSize', [1 1]);
+hold all
+xlabel('Serial Slice');
+ylabel('F-measure');
+%colors = ['r','b','g','m'];
+%colors = ['m','g','b','r'];
+%colors = ['m','g','b','r','y','c','k','w'];
+%style = ['s','d','*','o'];
+style = ['o','*','d','s','+','.','x','^','v','>','<','p','h'];
+index = 0;
+%for i = ['g','d','j','e']
+%for i = ['gdje','gde','gje','gdj', 'gd','gj','ge','g']
+%str = {'gdje' 'gde' 'gje' 'gdj' 'gd' 'gj' 'ge' 'g'};
+str = {'gdje' 'g'};
+for i = 1:2 
+	%index = index + 1;
+	ours = [];
+	for imgnum = imgnums
+
+		ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+		ground = bwmorph(ground,'thin',Inf);
+		ground = imdilate(ground,strel('disk',d));
+
+		our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) str{1,i} '.labels'],' ');
+		our_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
+		our_edge = imdilate(our_edge,strel('disk',d));
+	
+		ours = [ours fmeasure(ground,our_edge)];
+	end
+	%plot(ours,[colors(index) style(index) '-']);
+	%plot(ours,[colors(i) style(i) '-']);
+	plot(yax,ours,[style(i) '-']);
+end
+%leg = legend('e+j+d+g','j+d+g','d+g','g');
+%leg = legend('Edge+Junctions+Deletion+Global','Junctions+Deletion+Global','Deletion+Global','Global');
+%leg = legend('Strategy III + Strategy II + Strategy I + Global','Strategy II + Strategy I + Global','Strategy I + Global','Global','Global + Strategy II + Strategy III');
+%leg = legend('Strategy I + Strategy II + Strategy III','Strategy I + Strategy III','Strategy II + Strategy III','Strategy I','Strategy II','Strategy III','Global');
+leg = legend('Global+Local', ...
+		'Global');
+%set(leg,'Location','NorthEast');
+set(leg,'Location','SouthWest');
+set(leg,'FontSize',12);
+print('-depsc2', 'r.eps');
+
 %ours  = [];
 %wshed = [];
 %%groundnum = [];
