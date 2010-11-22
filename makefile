@@ -1,8 +1,8 @@
 OBJ = obj
 INC = include
 SRC = src
-GCOPATH = ~/src/programs/gco/
-BLOBPATH = ~/src/programs/cvblobslib/src/
+GCOPATH = ~/src/programs/gco
+BLOBPATH = ~/src/programs/cvblobslib/src
 CXX = g++
 #CCFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
 CCFLAGS = -L. -I. -I${INC} -I${SRC} -L /usr/local/lib `pkg-config --cflags --libs opencv` -lm
@@ -32,7 +32,7 @@ ${OBJ}/graph.o: ${INC}/graph.h ${SRC}/graph.cpp ${INC}/block.h
 	${CXX} ${CCFLAGS} -c ${SRC}/graph.cpp -o ${OBJ}/graph.o
 
 init:
-	mkdir obj
+	-mkdir obj
 	-ln -s ${BLOBPATH}/*.o ${OBJ}/
 	-ln -s ${BLOBPATH}/*.h ${INC}/
 	-ln -s ${GCOPATH}/*.cpp  ${SRC}/
@@ -40,4 +40,7 @@ init:
 clean:
 	-rm ${OBJ}/*.o
 	-rm matscicut 
-#	for f in `ls ${BLOBPATH}/*.o` do ; rm 
+	-for f in `ls ${BLOBPATH}/*.h` ; do rm ${INC}/`basename $$f` ; done
+	#-for f in `ls ${BLOBPATH}/*.cpp` ; do rm ${SRC}/`basename $$f` ; done
+	-for f in `ls ${GCOPATH}/*.cpp` ; do rm ${SRC}/`basename $$f` ; done
+	-for f in `ls ${GCOPATH}/*.h` ; do rm ${INC}/`basename $$f` ; done
