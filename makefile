@@ -5,13 +5,14 @@ GCOPATH = ~/src/programs/gco
 BLOBPATH = ~/src/programs/cvblobslib/src
 CXX = g++
 #CCFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
-CCFLAGS = -L. -I. -I${INC} -I${SRC} -L /usr/local/lib `pkg-config --cflags --libs opencv` -lm
+CCFLAGS = `pkg-config --cflags opencv` -I. -I${INC} -I${SRC}  
+LDFLAGS = `pkg-config --libs opencv` -L. -L /usr/local/lib -L ${BLOBPATH} -lm -lblob
 
 all: matscicut 
 
 matscicut: ${OBJ}/matscicut.o ${OBJ}/matutil.o ${OBJ}/GCoptimization.o ${OBJ}/maxflow.o ${OBJ}/graph.o ${OBJ}/LinkedBlockList.o
 	#${CXX} ${CCFLAGS} -o matscicut ${OBJ}/matutil.o ${OBJ}/GCoptimization.o ${OBJ}/maxflow.o ${OBJ}/graph.o ${OBJ}/LinkedBlockList.o ${OBJ}/matscicut.o
-	${CXX} ${CCFLAGS} -o matscicut ${OBJ}/*.o 
+	${CXX} ${OBJ}/*.o ${CCFLAGS} ${LDFLAGS} -o matscicut
 
 ${OBJ}/matscicut.o: ${SRC}/matscicut.cpp ${INC}/matscicut.h 
 	${CXX} ${CCFLAGS} -c ${SRC}/matscicut.cpp -o ${OBJ}/matscicut.o
@@ -33,14 +34,14 @@ ${OBJ}/graph.o: ${INC}/graph.h ${SRC}/graph.cpp ${INC}/block.h
 
 init:
 	-mkdir obj
-	-ln -s ${BLOBPATH}/*.o ${OBJ}/
+	#-ln -s ${BLOBPATH}/*.o ${OBJ}/
 	-ln -s ${BLOBPATH}/*.h ${INC}/
 	-ln -s ${GCOPATH}/*.cpp  ${SRC}/
 	-ln -s ${GCOPATH}/*.h ${INC}/
 clean:
 	-rm ${OBJ}/*.o
 	-rm matscicut 
-	-for f in `ls ${BLOBPATH}/*.h` ; do rm ${INC}/`basename $$f` ; done
+	#-for f in `ls ${BLOBPATH}/*.h` ; do rm ${INC}/`basename $$f` ; done
 	#-for f in `ls ${BLOBPATH}/*.cpp` ; do rm ${SRC}/`basename $$f` ; done
 	-for f in `ls ${GCOPATH}/*.cpp` ; do rm ${SRC}/`basename $$f` ; done
 	-for f in `ls ${GCOPATH}/*.h` ; do rm ${INC}/`basename $$f` ; done
