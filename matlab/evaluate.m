@@ -307,10 +307,11 @@ end
 %leg = legend('Strategy III + Strategy II + Strategy I + Global','Strategy II + Strategy I + Global','Strategy I + Global','Global','Global + Strategy II + Strategy III');
 %leg = legend('Strategy I + Strategy II + Strategy III','Strategy I + Strategy III','Strategy II + Strategy III','Strategy I','Strategy II','Strategy III','Global');
 leg = legend('Global+Local', ...
-		'Global');
+		'Global Only');
 %set(leg,'Location','NorthEast');
 set(leg,'Location','SouthWest');
 set(leg,'FontSize',12);
+box on;
 print('-depsc2', 'r.eps');
 
 %ours  = [];
