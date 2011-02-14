@@ -3,48 +3,53 @@ function evaluate(imgnums)
 datapath = 'data/old/scaled/ground/';
 ourpath = 'output2/';
 wshedpath = 'outputw/';
+wshed2path = 'outputw2/';
 ncutpath = 'outputn/';
 d=4;
 
-%wshedscore = [];
-
-%for i = 1:50
-%disp(['Watershed run ' num2str(i)]);
-%ours  = [];
-%wshed = [];
-%watershed_eval(imgnums,i);
-%for imgnum = imgnums
-
-	%ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
-	%ground = bwmorph(ground,'thin',Inf);
-	%ground = imdilate(ground,strel('disk',d));
-
-	%our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	%wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-
-	%ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
-	%wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
-	%%figure; imshow(wshed_edge);
-	%%pause;
-
-	%ours = [ours fmeasure(ground,ours_edge)];
-	%wshed= [wshed fmeasure(ground,wshed_edge)];
-
-%end
-
-%wshedscore = [wshedscore mean(wshed)];
-
-
-%end
-
-%[m,idx] = max(wshedscore);
-
-%disp(['Max score    : ' num2str(m)]);
-%disp(['Max score idx: ' num2str(idx)]);
+% wshedscore = [];
+% 
+% for i = 1:50
+% disp(['Watershed run ' num2str(i)]);
+% ours  = [];
+% wshed = [];
+% watershed_eval2(imgnums,i);
+% for imgnum = imgnums
+% 
+% 	ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+% 	ground = bwmorph(ground,'thin',Inf);
+% 	ground = imdilate(ground,strel('disk',d));
+% 
+% 	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+% 	wshed_label = dlmread([wshed2path 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+% 
+% 	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
+% 	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
+% 	%figure; imshow(wshed_edge);
+% 	%pause;
+% 
+% 	ours = [ours fmeasure(ground,ours_edge)];
+% 	wshed= [wshed fmeasure(ground,wshed_edge)];
+% 
+% end
+% 
+% wshedscore = [wshedscore mean(wshed)];
+% 
+% end
+% 
+% [m,idx] = max(wshedscore);
+% 
+% disp(['Max score    : ' num2str(m)]);
+% disp(['Max score idx: ' num2str(idx)]);
+% 
+% return;
+% 
+% %%%%%%%%%%
 
 idx = 18;
 
 watershed_eval(imgnums,idx);
+watershed_eval2(imgnums,3);
 
 yax = 2:11;
 
@@ -52,6 +57,7 @@ yax = 2:11;
 
 ours  = [];
 wshed = [];
+wshed2 = [];
 ncut = [];
 
 disp('F-measure');
@@ -64,23 +70,28 @@ for imgnum = imgnums
 
 	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) 'gdje.labels'],' ');
 	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+    wshed2_label = dlmread([wshed2path 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 
 	wshed_label = conditionlabels(wshed_label);
+    wshed2_label = conditionlabels(wshed2_label);
 	ncut_label  = conditionlabels(ncut_label);
 
 	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
 	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
+    wshed2_edge = bwmorph(logical(seg2bmap(wshed2_label)),'thin',Inf);
 	ncut_edge = bwmorph(logical(seg2bmap(ncut_label)),'thin',Inf);
 
 	ours_edge = imdilate(ours_edge,strel('disk',d));
 	wshed_edge= imdilate(wshed_edge,strel('disk',d));
+    wshed2_edge= imdilate(wshed2_edge,strel('disk',d));
 	ncut_edge= imdilate(ncut_edge,strel('disk',d));
 	%figure; imshow(wshed_edge);
 	%pause;
 
 	ours = [ours fmeasure(ground,ours_edge)];
 	wshed= [wshed fmeasure(ground,wshed_edge)];
+    wshed2= [wshed2 fmeasure(ground,wshed2_edge)];
 	ncut= [ncut fmeasure(ground,ncut_edge)];
 
 end
@@ -91,11 +102,13 @@ fig = figure('visible','off');
 plot(yax,ours,'r.-'); 
 dlmwrite('ours-f.dat', [yax' ours'],' ');
 hold all
+plot(yax,wshed2,'m*-');
+dlmwrite('wshed2-f.dat', [yax' wshed2'],' ');
 plot(yax,wshed,'g+-');
 dlmwrite('wshed-f.dat', [yax' wshed'],' ');
 plot(yax,ncut,'b*-');
 dlmwrite('ncut-f.dat', [yax' ncut'],' ');
-leg = legend('Proposed Method','Watershed','Normalized Cut');
+leg = legend('Proposed Method','Watershed','Propagated Watershed','Normalized Cut');
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
 xlabel('Serial Slice');

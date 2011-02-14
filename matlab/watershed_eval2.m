@@ -1,26 +1,30 @@
-function watershed_eval(imgnums,supress)
+function watershed_eval2(imgnums,supress)
 
 	if(nargin < 2)
-		supress = 20;
-	end
+		supress = 3;
+    end
 
+	ground = logical(imread(['~/src/projects/matsci/matscicut/data/old/scaled/ground/' 'stfl' sprintf('%02d',90) 'alss1th.tif']));
+    ground_fg = imerode(~bwmorph(ground,'thin',Inf),strel('disk',10));
+%     ground_bg = bwmorph(ground,'thin',Inf);
+    
 for imgnum = imgnums
 
 	series = 1;
 	datapath = 'data/old/scaled/';
-	outputpath = 'outputw/';
-
-	ground = logical(imread(['~/src/projects/matsci/matscicut/data/old/scaled/ground/' 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+	outputpath = 'outputw2/';
 
 	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
 	img2 = imhmin(img,supress);
-	labels = watershed(img2);
+    img3 = imimposemin(img2, ground_fg);
+	labels = watershed(img3);
 	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
 	imwrite(Lrgb,[outputpath 'region/image' sprintf('%04d',imgnum) '.png'],'png');
 	
 	groundbmp = seg2bmap(labels);
 	groundbmp = bwmorph(groundbmp,'thin',Inf);
+    ground_fg = imerode(~groundbmp,strel('disk',10));
 	groundbmp = imdilate(groundbmp,strel('disk',2));
 
 	output(:,:,1) = img;
