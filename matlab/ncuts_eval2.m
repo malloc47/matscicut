@@ -1,4 +1,4 @@
-function ncuts_eval(imgnums)
+function ncuts_eval2(imgnums)
 
 	%addpath('../../programs/normalized-cuts/ncut_multiscale_1_6/');
 
@@ -8,7 +8,7 @@ for imgnum = imgnums
 
 	series = 1;
 	datapath = '~/src/projects/matsci/matscicut/data/old/scaled/';
-	outputpath = '~/src/projects/matsci/matscicut/outputn/';
+	outputpath = '~/src/projects/matsci/matscicut/outputn2/';
 
 	ground = logical(imread(['~/src/projects/matsci/matscicut/data/old/scaled/ground/' 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
 	ground_label = bwlabel(~ground,4);
@@ -16,9 +16,9 @@ for imgnum = imgnums
 
 	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
 	%img2 = imhmin(img,20);
-	%[labels,X,lambda,Xr,W,C,timing] = ncut_multiscale(img,ground_num);
+	[labels,X,lambda,Xr,W,C,timing] = ncut_multiscale(img,ground_num);
 	%labels = watershed(img2);
-	labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
+	%labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
 	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
 	imwrite(Lrgb,[outputpath 'region/image' sprintf('%04d',imgnum) '.png'],'png');

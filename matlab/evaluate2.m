@@ -1,4 +1,4 @@
-function evaluate(imgnums)
+function evaluate2(imgnums)
 
 datapath = 'data/old/scaled/ground/';
 ourpath = 'output2/';
@@ -8,116 +8,27 @@ ncutpath = 'outputn/';
 ncut2path = 'outputn2/';
 d=4;
 
-% wshedscore = [];
-% 
-% for i = 1:50
-% disp(['Watershed run ' num2str(i)]);
-% ours  = [];
-% wshed = [];
-% watershed_eval2(imgnums,i);
-% for imgnum = imgnums
-% 
-% 	ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
-% 	ground = bwmorph(ground,'thin',Inf);
-% 	ground = imdilate(ground,strel('disk',d));
-% 
-% 	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-% 	wshed_label = dlmread([wshed2path 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-% 
-% 	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
-% 	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
-% 	%figure; imshow(wshed_edge);
-% 	%pause;
-% 
-% 	ours = [ours fmeasure(ground,ours_edge)];
-% 	wshed= [wshed fmeasure(ground,wshed_edge)];
-% 
-% end
-% 
-% wshedscore = [wshedscore mean(wshed)];
-% 
-% end
-% 
-% [m,idx] = max(wshedscore);
-% 
-% disp(['Max score    : ' num2str(m)]);
-% disp(['Max score idx: ' num2str(idx)]);
-% 
-% return;
-% 
-% %%%%%%%%%%
-
-idx = 18;
-
-watershed_eval(imgnums,idx);
-watershed_eval2(imgnums,3);
-
 yax = 2:11;
 
 %%% F-measure 
 
-ours  = [];
-wshed = [];
-wshed2 = [];
-ncut = [];
-ncut2 = [];
+load('dat/edge-images.mat');
 
 disp('F-measure');
 
-for imgnum = imgnums
-
-	ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
-	ground = bwmorph(ground,'thin',Inf);
-	ground = imdilate(ground,strel('disk',d));
-
-	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) 'gdje.labels'],' ');
-	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-    wshed2_label = dlmread([wshed2path 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-    ncut2_label = dlmread([ncut2path 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-
-	wshed_label = conditionlabels(wshed_label);
-    wshed2_label = conditionlabels(wshed2_label);
-	ncut_label  = conditionlabels(ncut_label);
-	ncut2_label  = conditionlabels(ncut2_label);
-
-	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
-	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
-    wshed2_edge = bwmorph(logical(seg2bmap(wshed2_label)),'thin',Inf);
-	ncut_edge = bwmorph(logical(seg2bmap(ncut_label)),'thin',Inf);
-    ncut2_edge = bwmorph(logical(seg2bmap(ncut2_label)),'thin',Inf);
-
-	ours_edge = imdilate(ours_edge,strel('disk',d));
-	wshed_edge= imdilate(wshed_edge,strel('disk',d));
-    wshed2_edge= imdilate(wshed2_edge,strel('disk',d));
-	ncut_edge= imdilate(ncut_edge,strel('disk',d));
-	ncut2_edge= imdilate(ncut2_edge,strel('disk',d));
-	%figure; imshow(wshed_edge);
-	%pause;
-
-	ours = [ours fmeasure(ground,ours_edge)];
-	wshed= [wshed fmeasure(ground,wshed_edge)];
-    wshed2= [wshed2 fmeasure(ground,wshed2_edge)];
-	ncut= [ncut fmeasure(ground,ncut_edge)];
-    ncut2= [ncut2 fmeasure(ground,ncut2_edge)];
-
-end
+names = {'Proposed Method','Propagated Watershed','Watershed','Normalized Cut 2','Normalized Cut'};
+style = {'r.-','m*-','g+-','b*-','cx-'};
 
 fig = figure('visible','off'); 
-%set(fig, 'PaperUnits', 'inches');
-%set(fig, 'PaperSize', [1 1]);
-plot(yax,ours,'r.-'); 
-dlmwrite('ours-f.dat', [yax' ours'],' ');
-hold all
-plot(yax,wshed2,'m*-');
-dlmwrite('wshed2-f.dat', [yax' wshed2'],' ');
-plot(yax,wshed,'g+-');
-dlmwrite('wshed-f.dat', [yax' wshed'],' ');
-plot(yax,ncut,'b*-');
-dlmwrite('ncut-f.dat', [yax' ncut'],' ');
-plot(yax,ncut2,'cx-');
-dlmwrite('ncut2-f.dat', [yax' ncut2'],' ');
-leg = legend('Proposed Method','Propagated Watershed','Watershed','Normalized Cut','Normalized Cut 2');
+hold all;
+for i = 2:size(data,1)
+    list = [];
+    for j=1:size(data,2)
+        list = [list fmeasure(data{1,j},data{i,j})];
+    end
+    plot(yax,list,style{1,i-1}); 
+end
+leg = legend(names);
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
 xlabel('Serial Slice');
@@ -126,102 +37,36 @@ print('-depsc2', 'g.eps');
 
 %%% Precision  
 
-ours  = [];
-wshed = [];
-ncut = [];
-
 disp('Precision');
 
-for imgnum = imgnums
-
-	ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
-	ground = bwmorph(ground,'thin',Inf);
-	ground = imdilate(ground,strel('disk',d));
-
-	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-
-	wshed_label = conditionlabels(wshed_label);
-	ncut_label  = conditionlabels(ncut_label);
-
-	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
-	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
-	ncut_edge = bwmorph(logical(seg2bmap(ncut_label)),'thin',Inf);
-
-	ours_edge = imdilate(ours_edge,strel('disk',d));
-	wshed_edge= imdilate(wshed_edge,strel('disk',d));
-	ncut_edge= imdilate(ncut_edge,strel('disk',d));
-
-	%figure; imshow(wshed_edge);
-	%pause;
-
-	ours = [ours precision(ground,ours_edge)];
-	wshed= [wshed precision(ground,wshed_edge)];
-	ncut= [ncut precision(ground,ncut_edge)];
-
-end
-
 fig = figure('visible','off'); 
-%set(fig, 'PaperUnits', 'inches');
-%set(fig, 'PaperSize', [1 1]);
-plot(yax,ours,'r.-'); 
-hold all
-plot(yax,wshed,'g+-');
-plot(yax,ncut,'b*-');
-leg = legend('Proposed Method','Watershed','Normalized Cut');
+hold all;
+for i = 2:size(data,1)
+    list = [];
+    for j=1:size(data,2)
+        list = [list precision(data{1,j},data{i,j})];
+    end
+    plot(yax,list,style{1,i-1}); 
+end
+leg = legend(names);
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
 xlabel('Serial Slice');
 ylabel('Precision');
 print('-depsc2', 'g2.eps');
 
-
 %%% Recall
-
-ours  = [];
-wshed = [];
-ncut = [];
-
-disp('Recall');
-
-for imgnum = imgnums
-
-	ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
-	ground = bwmorph(ground,'thin',Inf);
-	ground = imdilate(ground,strel('disk',d));
-
-	our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	wshed_label = dlmread([wshedpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	ncut_label = dlmread([ncutpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-
-	wshed_label = conditionlabels(wshed_label);
-	ncut_label  = conditionlabels(ncut_label);
-
-	ours_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
-	wshed_edge = bwmorph(logical(seg2bmap(wshed_label)),'thin',Inf);
-	ncut_edge = bwmorph(logical(seg2bmap(ncut_label)),'thin',Inf);
-
-	ours_edge = imdilate(ours_edge,strel('disk',d));
-	wshed_edge= imdilate(wshed_edge,strel('disk',d));
-	ncut_edge= imdilate(ncut_edge,strel('disk',d));
-	%figure; imshow(wshed_edge);
-	%pause;
-
-	ours = [ours recall(ground,ours_edge)];
-	wshed= [wshed recall(ground,wshed_edge)];
-	ncut= [ncut recall(ground,ncut_edge)];
-
-end
-
 fig = figure('visible','off'); 
-%set(fig, 'PaperUnits', 'inches');
-%set(fig, 'PaperSize', [1 1]);
-plot(yax,ours,'r.-'); 
-hold all
-plot(yax,wshed,'g+-');
-plot(yax,ncut,'b*-');
-leg = legend('Proposed Method','Watershed','Normalized Cut');
+hold all;
+for i = 2:size(data,1)
+    list = [];
+    for j=1:size(data,2)
+        list = [list recall(data{1,j},data{i,j})];
+    end
+    plot(yax,list,style{1,i-1}); 
+end
+leg = legend(names);
+
 set(leg,'Location','SouthEast');
 set(leg,'FontSize',12);
 xlabel('Serial Slice');
