@@ -1,4 +1,5 @@
 #include "matscicut.h"
+#include <time.h>
 #include "BlobResult.h"
 int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	ForSmoothFn *extra = (ForSmoothFn *) extraData;
@@ -451,6 +452,9 @@ int regionSize(Mat regions,int region) {/*{{{*/
 vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
 	// Stores x,y at junctions[i][0..1] and the
 	// remaining three regions in junctions[i][2..4]
+	time_t start,end;
+	double dif;
+	time(&start);
 	vector< vector<int> > junctions;
 
 	for(int y=0;y<regions.size().height-1;y++) for(int x=0;x<regions.size().width-1;x++) {
@@ -473,7 +477,9 @@ vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
 		}
 	}
 
+	time(&end);
 
+	cout << endl << "# " << difftime(end,start) << endl;
 
 	return junctions;
 		
@@ -1189,6 +1195,9 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	vector<int> sizes = regionSizes(seedimg);
 	vector< pair<int,int> > regionpair;
 
+	time_t start,end;
+	time(&start);
+
 	//Add all normal pairs of regions
 	for(int l1=0;l1<num_labels;l1++) for(int l2=0;l2<num_labels;l2++) {
 		if(!adj.at<int>(l1,l2)) continue;
@@ -1235,6 +1244,10 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 			regionpair.push_back(make_pair(*it,-4));
 	//cout<<boundaries.size() <<endl;
 	boundaries.clear();
+
+	time(&end);
+
+	cout << endl << "# " << difftime(end,start) << endl;
 
 	cout << "@edges \t\\" << flush;
 

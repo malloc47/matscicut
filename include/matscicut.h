@@ -17,9 +17,9 @@
 using namespace cv;
 using namespace std;
 
-const string datapath="img/";
+const string datapath="seq2/img/";
 //const string outputpath="output/";
-const string labelpath = "labels/";
+const string labelpath = "seq2/labels/";
 const string imgtype = "png";
 const string labeltype = "label";
 
@@ -41,7 +41,9 @@ Mat regionsAdj(Mat regions, int num_regions);
 int regionNum(Mat regions);
 Mat regionCompact(Mat regionsin);
 Mat regionClean(Mat regionsin);
+Point regionCentroid(Mat seedimg, int region);
 float regionBorderCriteria(Mat img, Mat regions, int region, int compregion);
+vector<Point> regionEdge(Mat regions,int l1,int l2);
 vector<int> getAdj(Mat adj,int region);
 vector<int> regionSizes(Mat regions);
 int regionSize(Mat regions,int region);

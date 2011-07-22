@@ -16,12 +16,12 @@ load('dat/edge-images.mat');
 
 disp('F-measure');
 
-names = {'Proposed Method','Propagated Watershed','Watershed','Normalized Cut 2','Normalized Cut'};
+names = {'Proposed Method','Propagated Watershed','Watershed','Normalized Cut','Normalized Cut 1'};
 style = {'r.-','m*-','g+-','b*-','cx-'};
 
 fig = figure('visible','off'); 
 hold all;
-for i = 2:size(data,1)
+for i = 2:size(data,1)-1
     list = [];
     for j=1:size(data,2)
         list = [list fmeasure(data{1,j},data{i,j})];
@@ -41,7 +41,7 @@ disp('Precision');
 
 fig = figure('visible','off'); 
 hold all;
-for i = 2:size(data,1)
+for i = 2:size(data,1)-1
     list = [];
     for j=1:size(data,2)
         list = [list precision(data{1,j},data{i,j})];
@@ -58,7 +58,7 @@ print('-depsc2', 'g2.eps');
 %%% Recall
 fig = figure('visible','off'); 
 hold all;
-for i = 2:size(data,1)
+for i = 2:size(data,1)-1
     list = [];
     for j=1:size(data,2)
         list = [list recall(data{1,j},data{i,j})];
