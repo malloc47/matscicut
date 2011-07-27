@@ -6,23 +6,23 @@ function watershed_eval2(imgnums,supress)
 		supress = 3;
     end
 
-	ground = logical(imread(['~/src/projects/matsci/matscicut/' volume 'data/old/scaled/ground/' 'stfl' sprintf('%02d',90) 'alss1th.tif']));
+	ground = logical(imread([groundimgpath prefix sprintf('%04d',0) postfix '.' imgtype]));
     ground_fg = imerode(~bwmorph(ground,'thin',Inf),strel('disk',10));
 %     ground_bg = bwmorph(ground,'thin',Inf);
     
 for imgnum = imgnums
 
-	series = 1;
-	datapath = 'data/old/scaled/';
-	outputpath = 'outputw2/';
+% 	series = 1;
+% 	datapath = 'data/old/scaled/';
+% 	outputpath = 'outputw2/';
 
-	img = imread([volume datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
+	img = imread([rawpath prefix sprintf('%04d',imgnum) postfix '.' inputimgtype]);
 	img2 = imhmin(img,supress);
     img3 = imimposemin(img2, ground_fg);
 	labels = watershed(img3);
-	dlmwrite([volume outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
+	dlmwrite([labelpath prefix sprintf('%04d',imgnum) '.' labeltype],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
-	imwrite(Lrgb,[volume outputpath 'region/image' sprintf('%04d',imgnum) '.png'],'png');
+	imwrite(Lrgb,[regionpath prefix sprintf('%04d',imgnum) '.' imgtype],imgtype);
 	
 	groundbmp = seg2bmap(labels);
 	groundbmp = bwmorph(groundbmp,'thin',Inf);
@@ -45,7 +45,7 @@ for imgnum = imgnums
 	output(:,:,2) = outputg;
 	output(:,:,3) = outputb;
 
-	imwrite(output,[volume outputpath 'edge/image' sprintf('%04d',imgnum) '.png'],'png');
+	imwrite(output,[edgepath prefix sprintf('%04d',imgnum) '.' imgtype],imgtype);
 
 end
 
