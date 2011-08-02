@@ -7,14 +7,19 @@ function ncuts_eval2(imgnums)
 for imgnum = imgnums
 
 	series = 1;
-	datapath = '~/src/projects/matsci/matscicut/data/old/scaled/';
-	outputpath = '~/src/projects/matsci/matscicut/outputn2/';
+% 	datapath = '~/src/projects/matsci/matscicut/data/old/scaled/';
+% 	outputpath = '~/src/projects/matsci/matscicut/outputn2/';
+	datapath = '~/src/projects/matsci/matscicut/seq2/img/';
+	outputpath = '~/src/projects/matsci/matscicut/seq2/nc/';
 
-	ground = logical(imread(['~/src/projects/matsci/matscicut/data/old/scaled/ground/' 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+
+% 	ground = logical(imread(['~/src/projects/matsci/matscicut/data/old/scaled/ground/' 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+	ground = logical(imread(['~/src/projects/matsci/matscicut/seq2/ground/img/' 'image' sprintf('%04d',imgnum) '.png']));
 	ground_label = bwlabel(~ground,4);
 	ground_num = max(max(ground_label))
 
-	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
+% 	img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
+    img = imread([datapath 'image' sprintf('%04d',imgnum) '.png']);
 	%img2 = imhmin(img,20);
 	[labels,X,lambda,Xr,W,C,timing] = ncut_multiscale(img,ground_num);
 	%labels = watershed(img2);
@@ -43,6 +48,7 @@ for imgnum = imgnums
 	output(:,:,2) = outputg;
 	output(:,:,3) = outputb;
 
+% 	imwrite(output,[outputpath 'edge/image' sprintf('%04d',imgnum) '.png'],'png');
 	imwrite(output,[outputpath 'edge/image' sprintf('%04d',imgnum) '.png'],'png');
 
 end

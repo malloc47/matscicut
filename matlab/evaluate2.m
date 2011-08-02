@@ -1,6 +1,8 @@
 function evaluate2(imgnums)
+    
+source
 
-datapath = 'data/old/scaled/ground/';
+%groundimgpath = 'data/old/scaled/ground/';
 ourpath = 'output2/';
 wshedpath = 'outputw/';
 wshed2path = 'outputw2/';
@@ -101,11 +103,12 @@ for i = 1:8
 	ours = [];
 	for imgnum = imgnums
 
-		ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+		ground = logical(imread([groundimgpath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
 		ground = bwmorph(ground,'thin',Inf);
 		ground = imdilate(ground,strel('disk',d));
 
-		our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) str{1,i} '.labels'],' ');
+                %our_label = dlmread([ourpath 'labels/image' sprintf('%04d',imgnum) str{1,i} '.labels'],' ');
+		our_label = dlmread([labelpath '/image' sprintf('%04d',imgnum) str{1,i} '.labels'],' ');
 		our_edge = bwmorph(logical(seg2bmap(our_label)),'thin',Inf);
 		our_edge = imdilate(our_edge,strel('disk',d));
 	
@@ -158,7 +161,7 @@ for i = 1:2
 	ours = [];
 	for imgnum = imgnums
 
-		ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+		ground = logical(imread([groundimgpath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
 		ground = bwmorph(ground,'thin',Inf);
 		ground = imdilate(ground,strel('disk',d));
 
@@ -190,7 +193,7 @@ print('-depsc2', 'r.eps');
 
 %for imgnum = imgnums
 
-	%ground = logical(imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
+	%ground = logical(imread([groundimgpath 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
 	%ground = bwmorph(ground,'thin',Inf);
 	%ground = imdilate(ground,strel('disk',d));
 

@@ -20,9 +20,9 @@ for imgnum = imgnums
 	img2 = imhmin(img,supress);
     img3 = imimposemin(img2, ground_fg);
 	labels = watershed(img3);
-	dlmwrite([labelpath prefix sprintf('%04d',imgnum) '.' labeltype],labels,' ');
+	dlmwrite([w1labelpath prefix sprintf('%04d',imgnum) '.' labeltype],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
-	imwrite(Lrgb,[regionpath prefix sprintf('%04d',imgnum) '.' imgtype],imgtype);
+	imwrite(Lrgb,[w1regionpath prefix sprintf('%04d',imgnum) '.' imgtype],imgtype);
 	
 	groundbmp = seg2bmap(labels);
 	groundbmp = bwmorph(groundbmp,'thin',Inf);
@@ -45,7 +45,7 @@ for imgnum = imgnums
 	output(:,:,2) = outputg;
 	output(:,:,3) = outputb;
 
-	imwrite(output,[edgepath prefix sprintf('%04d',imgnum) '.' imgtype],imgtype);
+	imwrite(output,[w1edgepath prefix sprintf('%04d',imgnum) '.' imgtype],imgtype);
 
 end
 
