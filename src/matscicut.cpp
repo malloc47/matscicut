@@ -11,10 +11,12 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	if(!adj.at<int>(l1,l2)) { return INF; }
 	
-	//return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
+	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 	//return int( 1/(double(sites[s1]+sites[s2])/2) * N );
 	//return int( N - int(double(sites[s1]+sites[s2])/2));
-	return int( 1/(max(double(sites[s1]),double(sites[s2]))+1) * N );
+
+	// return int( 1/(max(double(sites[s1]),double(sites[s2]))+1) * N );
+
 	//return int( 1/(min(double(sites[s1]),double(sites[s2]))+1) * N );
 }/*}}}*/
 Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
@@ -530,7 +532,16 @@ Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/
 	}
 	return seedimg;
 }/*}}}*/
-int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
+void gaussian(Mat img, Mat mask, double& meanVal, double& stdDev) {/*{{{*/
+  Scalar meanVal_s, stdDev_s;
+  meanStdDev(img,meanVal_s,stdDev_s,mask);
+  meanVal_s.convertTo(&meanVal,1);
+  stdDev_s.convertTo(&stdDev,1);
+}/*}}}*/
+bool fitGaussian(int val, int dist, double meanVal, double stdDev) {/*{{{*/
+  return ((val > meanVal-dist*stdDev) && (val < meanVal+dist*stdDev));
+}/*}}}*/
+int * globalDataTerm(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 
 	cout << "@data term" << flush;
 
@@ -545,17 +556,30 @@ int * globalDataTerm(Mat seedimg,int dilate_amount) {/*{{{*/
 	for(int l=0;l<num_labels;l++) {
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
+		Mat erosion = layer.clone();
+		Mat final_selection = layer.clone();
+		
+		double meanVal, stdDev;
+		gaussian(img,layer,meanVal,stdDev);
+
 		cout << "\b" << flush;
 		cout << bar[l%4] << flush;
-
+		
 		// Don't bother if no dilation
-		if(dilate_amount > 0)
-			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		if(dilate_amount > 0) {
+		  dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		  erode(layer,erosion,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		}
+
+		FORxyM(seedimg)
+		  if(int(dilation.at<unsigned char>(y,x)) == 255 &&
+		     int(erosion.at<unsigned char>(y,x)) != 255)
+		    final_selection.at<unsigned char>(y,x) = fitGaussian(img.at<unsigned char>(y,x),1,meanVal,stdDev) ? 255 : 0;
 
 		//display("tmp",dilation);
 
-		for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++) 
-			data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(y,x)) == 255 ? 0 : INF);
+		for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++)
+			data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(final_selection.at<unsigned char>(y,x)) == 255 ? 0 : INF);
 	}
 	cout << "\b" << flush;
 	cout << "Done" << endl;
@@ -822,7 +846,7 @@ Mat globalGraphCut(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	cout << "@adjacency" << endl;
 	Mat adj = regionsAdj(seedimg,num_labels);
 
-	int *data = globalDataTerm(seedimg,dilate_amount);
+	int *data = globalDataTerm(img,seedimg,dilate_amount);
 
 	cout << "@sites" << endl;
 	int *sites = toLinear(img);
@@ -844,7 +868,7 @@ Mat deleteGraphCut(Mat img, Mat seedimgin, vector<int> regions, int delreg) {/*{
 	Mat seedimg = seedimgin.clone();
 	Mat adj(num_labels,num_labels,CV_32S,1); // Everything adjacent
 
-	int *data = deleteDataTerm(seedimg,regions,20);
+	int *data = deleteDataTerm(seedimg,regions,DEL_DILATE);
 
 	int *sites = toLinear(img);
 
@@ -871,7 +895,7 @@ Mat junctionGraphCut(Mat img, Mat seedimgin, Point center, vector<int> regions, 
 	if(boundsCheck(seedimg,seed))
 		seedimg.at<int>(seed)=regions.size()+1;
 	
-	int *data = junctionDataTerm(seedimg,center,regions,seed,20);
+	int *data = junctionDataTerm(seedimg,center,regions,seed,JNT_DILATE);
 
 	int *sites = toLinear(img);
 
@@ -903,7 +927,7 @@ Mat edgeGraphCut(Mat img, Mat seedimgin, Mat edge, vector<int> regions, Point se
 	if(boundsCheck(seedimg,Point(seed.x+1,seed.y+1)))
 		seedimg.at<int>(Point(seed.x+1,seed.y+1))=regions.size()+1;
 
-	int *data = edgeDataTerm(seedimg,edge,regions,seed,40);
+	int *data = edgeDataTerm(seedimg,edge,regions,seed,EDG_DILATE);
 
 	int *sites = toLinear(img);
 
@@ -1075,9 +1099,9 @@ Mat processJunctions(Mat img, Mat seedimg) {/*{{{*/
 			if(regionSize(backshift_seed,regions[1]) < sizes[regions[1]]/3 ) continue;
 			if(regionSize(backshift_seed,regions[2]) < sizes[regions[2]]/3 ) continue;
 			//if(!regionBorderCriteria(imgj,backshift_seed,-2,0.75)) continue;
-			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[0]) < 0.66) continue;
-			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[1]) < 0.66) continue;
-			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[3]) < 0.66) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[0]) < BORDER_CORRELATION) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[1]) < BORDER_CORRELATION) continue;
+			if(regionBorderCriteria(imgj,backshift_seed,-2,regions[3]) < BORDER_CORRELATION) continue;
 
 			//if(i==159) {
 				//cout << i << endl;
@@ -1134,7 +1158,7 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 		cout << "\b" << flush;
 		cout << bar[l%4] << flush;
 
-		if(regsizes.at(l) > 200 || regsizes.at(l) < 1) continue;
+		if(regsizes.at(l) > DEL_UPPER || regsizes.at(l) < 1) continue;
 
 		//cout << l << ": " << regsizes.at(l) << endl;
 
@@ -1147,7 +1171,7 @@ Mat processDelete(Mat img, Mat seedimg) {/*{{{*/
 		Mat subseed = seedimg(win).clone();
 
 		//if(regsizes.at(l) > 50 && regionBorderCriteria(subimg,subseed,l,0.50)) continue;
-		if(regsizes.at(l) > 50 ) continue;
+		if(regsizes.at(l) > DEL_LOWER ) continue;
 
 		//display(zpnum(l,1),overlay(subseed,subimg,0.5,l));
 
@@ -1185,8 +1209,8 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	// -2 -> bottom boundary
 	// -3 -> left boundary
 	// -4 -> right boundary
-	int sizethresh = 300;
-	int lengththresh = 4;
+	int sizethresh = EDG_SIZE;
+	int lengththresh = EDG_LENGTH;
 	int num_labels = mat_max(seedimg)+1;
 	int num_regions = mat_max(seedimg)+1;
 	int number_new = 0;
@@ -1327,7 +1351,7 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 				if(regionSize(subseedt,regions.at(j)) < sizes[regions.at(j)]/3 ) admissible=false;
 			// Intensity threshold
 			for(int j=0;j<regions.size();j++)
-				if(regionBorderCriteria(subimg,subseedt,-2,regions.at(j)) < 0.66) admissible=false;
+				if(regionBorderCriteria(subimg,subseedt,-2,regions.at(j)) < BORDER_CORRELATION) admissible=false;
 
 			//if(i==429) {
 				//if(admissible) {
@@ -1430,7 +1454,7 @@ int main(int argc, char **argv) {/*{{{*/
 	
 	// Read previous label matrix for propagation 
 	string seedfile=labelpath+prefix+zpnum(framenum-1,FNAMELEN)+postfix+"."+labeltype;
-string imgfile=datapath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+imgtype;
+	string imgfile=datapath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+imgtype;
 	//string filemap=outputpath + "maps/image" + zpnum(framenum,4) + ".tif";
 
 	Mat img = imread(imgfile,0);
@@ -1455,14 +1479,14 @@ string imgfile=datapath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+imgtype;
 	seedimg = globalGraphCut(img,seedimg,dilate_amount);
 	seedimg = regionClean(seedimg);
 
-	seedimg = processDelete(img,seedimg);	
-	seedimg = regionClean(seedimg);
+//	seedimg = processDelete(img,seedimg);	
+//	seedimg = regionClean(seedimg);
 
-	seedimg = processJunctions(img,seedimg);
-	seedimg = regionClean(seedimg);
+//	seedimg = processJunctions(img,seedimg);
+//	seedimg = regionClean(seedimg);
 
-	seedimg = processEdges(img,seedimg);
-	seedimg = regionClean(seedimg);
+//	seedimg = processEdges(img,seedimg);
+//	seedimg = regionClean(seedimg);
 
 /*}}}*/
 
