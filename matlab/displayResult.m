@@ -60,7 +60,7 @@ output(:,:,3) = outputb;
 
 % figure; imshow(output);
 
-imwrite(output,[outputpath 'image' sprintf('%04d',imgnum) '.png'],'png');
+imwrite(output,[outputpath 'image' sprintf('%04d',imgnum) '.' imgtype],imgtype);
 
 % imwrite(label2rgb(labels,'jet','w','shuffle'),'weird.png','.png');
 

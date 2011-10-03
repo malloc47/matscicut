@@ -7,9 +7,22 @@
 //#define DILATE_AMOUNT 10 
 #define N 255
 #define LTHRESH 10
-#define FNAMELEN 4
+// Window sizes for junctions
 #define ADDWIN 30 
 #define WINTHRESH 25 
+// Size limits for delete
+#define DEL_UPPER 200
+#define DEL_LOWER 50
+#define DEL_DILATE 20
+// Variables for edge processing
+#define EDG_SIZE 300
+#define EDG_LENGTH 4
+#define EDG_DILATE 40
+// Variables for junction processing
+#define JNT_DILATE 20
+
+// The percentage of pixels that should fall on high intensity edges
+#define BORDER_CORRELATION 0.10
 
 #define FORxy(a,b) for(int y=0;y<(a);y++) for(int x=0;x<(b);x++)
 #define FORxyM(m) for(int y=0;y<(m).size().height;y++) for(int x=0;x<(m).size().width;x++)
@@ -17,12 +30,18 @@
 using namespace cv;
 using namespace std;
 
-const string datapath="seq2/img/";
-//const string outputpath="output/";
-const string labelpath = "seq2/labels/";
+// #define FNAMELEN 4
+// const string datapath="seq2/img/";
+// //const string outputpath="output/";
+// const string labelpath = "seq2/labels/";
+// const string imgtype = "png";
+// const string labeltype = "label";
+
+#define FNAMELEN 4
+const string datapath="seq3/img/";
+const string labelpath = "seq3/labels/";
 const string imgtype = "png";
 const string labeltype = "label";
-
 string postfix = "";
 string prefix  = "image";
 
@@ -51,7 +70,9 @@ vector< vector<int> > junctionRegions(Mat regions);
 Rect getWindow(vector<int> regions, Mat labels);
 Mat selectRegion(Mat seedimg, int region);
 Mat clearRegions(Mat seedimg, vector<int> regions);
-int * globalDataTerm(Mat seedimg,int dilate_amount);
+void gaussian(Mat img, Mat mask, double& meanVal, double& stdDev);
+bool fitGaussian(int val, int dist, double meanVal, double stdDev);
+int * globalDataTerm(Mat img, Mat seedimg,int dilate_amount);
 int * junctionDataTerm(Mat seedimg,Point center,vector<int> regions,Point seed);
 int * graphCut(int* data, int* sites, Mat seedimg, Mat adj, int num_labels, bool initialize=true);
 Mat globalGraphCut(Mat img, Mat seedimg);

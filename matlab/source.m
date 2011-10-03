@@ -1,10 +1,11 @@
 series = 1;
 
-volume = 'seq2/';
+%volume = 'seq2/';
+volume = 'seq3/';
 
 % rawpath = [volume 'data/new/raw/4000_Series/'];
 % rawpath = [volume 'data/old/scaled/'];
-rawpath = [volume 'img/'];
+rawpath = [volume 'orig/'];
 datapath = [volume 'img/'];
 %datapath = 'data/old/scaled/';
 %datapath = 'img/';
@@ -12,7 +13,8 @@ labelpath = [volume 'labels/'];
 regionpath = [volume 'region/'];
 edgepath = [volume 'edge/'];
 outputpath = [volume 'output/'];
-groundpath = [volume 'ground/'];
+%groundpath = [volume 'ground/'];
+groundpath = [volume 'img/ground/'];
 groundimgpath = [groundpath 'img/'];
 labeltype = 'label';
 inputimgtype = 'png';
@@ -22,12 +24,14 @@ prefix = 'image';
 postfix = '';
 
 w1path = 'watershed/';
+%w1path = 'outputw/';
 w1labelpath = [volume w1path 'labels/'];
 w1regionpath = [volume w1path 'region/'];
 w1edgepath = [volume w1path 'edge/'];
 w1outputpath = [volume w1path 'output/'];
 
 w2path = 'watershed2/';
+%w2path = 'outputw2/';
 w2labelpath = [volume w2path 'labels/'];
 w2regionpath = [volume w2path 'region/'];
 w2edgepath = [volume w2path 'edge/'];

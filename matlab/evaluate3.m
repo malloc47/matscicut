@@ -39,9 +39,9 @@ data(3).recall = [];
 
 for imgnum = imgnums
     disp(imgnum);
-    
-    ground = logical(seg2bmap(dlmread([groundpath prefix sprintf('%04d',imgnum) ...
-                      postfix '.' labeltype],' ')));
+    ground = logical(imread([groundpath prefix sprintf('%04d',imgnum) postfix '.' imgtype]));
+%    ground = logical(seg2bmap(dlmread([groundpath prefix sprintf('%04d',imgnum) ...
+%                      postfix '.' labeltype],' ')));
     ground = bwmorph(ground,'thin',Inf);
     ground = imdilate(ground,strel('disk',d));
 
