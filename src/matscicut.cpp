@@ -535,8 +535,10 @@ Mat clearRegions(Mat seedimg, vector<int> regions) {/*{{{*/
 void gaussian(Mat img, Mat mask, double& meanVal, double& stdDev) {/*{{{*/
   Scalar meanVal_s, stdDev_s;
   meanStdDev(img,meanVal_s,stdDev_s,mask);
-  meanVal_s.convertTo(&meanVal,1);
-  stdDev_s.convertTo(&stdDev,1);
+  //meanVal_s.convertTo(&meanVal,1);
+  //stdDev_s.convertTo(&stdDev,1);
+  meanVal = meanVal_s[0];
+  stdDev = stdDev_s[0];
 }/*}}}*/
 bool fitGaussian(int val, int dist, double meanVal, double stdDev) {/*{{{*/
   return ((val > meanVal-dist*stdDev) && (val < meanVal+dist*stdDev));
@@ -1461,9 +1463,9 @@ int main(int argc, char **argv) {/*{{{*/
 	//Mat map = imread(filemap,0);
 
 	//Mat imgblend = combine(img,map);
-	double meanVal = 0;
+	const double meanVal = cv::mean(img)[0];
 	
-	cv::mean(img).convertTo(&meanVal,1);
+	//cv::mean(img).convertTo(&meanVal,1);
 	cout << "-mean: \t" << meanVal << endl;
 
 	meanthresh = int(meanVal)*2;
