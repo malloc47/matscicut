@@ -5,7 +5,7 @@ counter=0;
 new_labels = labels;
 
 while(min(min(new_labels) < 1) || counter > 50)
-
+counter
 for i = 1:size(labels,1)
     for j = 1:size(labels,2)
         if labels(i,j) == 0
