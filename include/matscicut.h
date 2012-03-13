@@ -22,7 +22,7 @@
 #define JNT_DILATE 20
 
 // The percentage of pixels that should fall on high intensity edges
-#define BORDER_CORRELATION 0.10
+#define BORDER_CORRELATION 0.66
 
 #define FORxy(a,b) for(int y=0;y<(a);y++) for(int x=0;x<(b);x++)
 #define FORxyM(m) for(int y=0;y<(m).size().height;y++) for(int x=0;x<(m).size().width;x++)
@@ -38,8 +38,15 @@ using namespace std;
 // const string labeltype = "label";
 
 #define FNAMELEN 4
-const string datapath="seq3/img/";
-const string labelpath = "seq3/labels/";
+//const string datapath="seq3/img/";
+//const string labelpath = "seq3/labels/";
+//const string imgtype = "png";
+//const string labeltype = "label";
+//string postfix = "";
+//string prefix  = "image";
+
+const string datapath="seq1/img/";
+const string labelpath = "seq1/labels/";
 const string imgtype = "png";
 const string labeltype = "label";
 string postfix = "";

@@ -11,11 +11,11 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 
 	if(!adj.at<int>(l1,l2)) { return INF; }
 	
-	return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
+	//return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 	//return int( 1/(double(sites[s1]+sites[s2])/2) * N );
 	//return int( N - int(double(sites[s1]+sites[s2])/2));
 
-	// return int( 1/(max(double(sites[s1]),double(sites[s2]))+1) * N );
+	return int( 1/(max(double(sites[s1]),double(sites[s2]))+1) * N );
 
 	//return int( 1/(min(double(sites[s1]),double(sites[s2]))+1) * N );
 }/*}}}*/
@@ -558,30 +558,33 @@ int * globalDataTerm(Mat img, Mat seedimg,int dilate_amount) {/*{{{*/
 	for(int l=0;l<num_labels;l++) {
 		Mat layer = selectRegion(seedimg,l);
 		Mat dilation = layer.clone();
-		Mat erosion = layer.clone();
-		Mat final_selection = layer.clone();
+		//Mat erosion = layer.clone();
+		//Mat final_selection = layer.clone();
 		
-		double meanVal, stdDev;
-		gaussian(img,layer,meanVal,stdDev);
+		//double meanVal, stdDev;
+		//gaussian(img,layer,meanVal,stdDev);
 
 		cout << "\b" << flush;
 		cout << bar[l%4] << flush;
 		
 		// Don't bother if no dilation
-		if(dilate_amount > 0) {
-		  dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
-		  erode(layer,erosion,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
-		}
+		//if(dilate_amount > 0) {
+		  //dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		  //erode(layer,erosion,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
+		//}
+        if(dilate_amount > 0)
+			dilate(layer,dilation,getStructuringElement(MORPH_ELLIPSE,Size(dilate_amount,dilate_amount)));
 
-		FORxyM(seedimg)
-		  if(int(dilation.at<unsigned char>(y,x)) == 255 &&
-		     int(erosion.at<unsigned char>(y,x)) != 255)
-		    final_selection.at<unsigned char>(y,x) = fitGaussian(img.at<unsigned char>(y,x),1,meanVal,stdDev) ? 255 : 0;
+
+		//FORxyM(seedimg)
+		  //if(int(dilation.at<unsigned char>(y,x)) == 255 &&
+			 //int(erosion.at<unsigned char>(y,x)) != 255)
+			//final_selection.at<unsigned char>(y,x) = fitGaussian(img.at<unsigned char>(y,x),1,meanVal,stdDev) ? 255 : 0;
 
 		//display("tmp",dilation);
 
 		for(int y=0;y<seedimg.size().height;y++) for(int x=0;x<seedimg.size().width;x++)
-			data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(final_selection.at<unsigned char>(y,x)) == 255 ? 0 : INF);
+			data[ ( x+y*seedimg.size().width) * num_labels + l ] = (int(dilation.at<unsigned char>(y,x)) == 255 ? 0 : INF);
 	}
 	cout << "\b" << flush;
 	cout << "Done" << endl;
@@ -1481,14 +1484,14 @@ int main(int argc, char **argv) {/*{{{*/
 	seedimg = globalGraphCut(img,seedimg,dilate_amount);
 	seedimg = regionClean(seedimg);
 
-//	seedimg = processDelete(img,seedimg);	
-//	seedimg = regionClean(seedimg);
+	seedimg = processDelete(img,seedimg);	
+	seedimg = regionClean(seedimg);
 
-//	seedimg = processJunctions(img,seedimg);
-//	seedimg = regionClean(seedimg);
+	seedimg = processJunctions(img,seedimg);
+	seedimg = regionClean(seedimg);
 
-//	seedimg = processEdges(img,seedimg);
-//	seedimg = regionClean(seedimg);
+	seedimg = processEdges(img,seedimg);
+	seedimg = regionClean(seedimg);
 
 /*}}}*/
 

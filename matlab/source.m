@@ -1,11 +1,12 @@
 series = 1;
 
 %volume = 'seq2/';
-volume = 'seq3/';
+%volume = 'seq3/';
+volume = 'seq1/';
 
 % rawpath = [volume 'data/new/raw/4000_Series/'];
 % rawpath = [volume 'data/old/scaled/'];
-rawpath = [volume 'orig/'];
+rawpath = [volume 'img/'];
 datapath = [volume 'img/'];
 %datapath = 'data/old/scaled/';
 %datapath = 'img/';

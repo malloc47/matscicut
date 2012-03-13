@@ -1,15 +1,21 @@
-function displayResult(imgnums)
+function displayGround(imgnums)
+
+source
 
 for imgnum = imgnums
 
 series = 1;
 
-datapath = 'data/old/scaled/';
-datapath2 = 'data/old/scaled/ground/';
-outputpath = 'outputg/';
+%datapath = 'data/old/scaled/';
+%datapath2 = 'data/old/scaled/ground/';
+%outputpath = 'outputg/';
 
-img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
-gt = imread([datapath2 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']);
+img = imread([rawpath prefix sprintf('%04d',imgnum) postfix '.' inputimgtype]);
+
+gt = imread([groundpath prefix sprintf('%04d',imgnum) postfix '.' inputimgtype]);
+
+%img = imread([datapath 'stfl' sprintf('%02d',imgnum) 'alss1.tif']);
+%gt = imread([datapath2 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']);
 
 groundbmp = bwmorph(gt,'thin',Inf);
 groundbmp = imdilate(groundbmp,strel('disk',2));
@@ -30,7 +36,7 @@ output(:,:,1) = outputr;
 output(:,:,2) = outputg;
 output(:,:,3) = outputb;
 
-imwrite(output,[outputpath 'edge/image' sprintf('%04d',imgnum) '.png'],'png');
+imwrite(output,[outputpath 'ground/image' sprintf('%04d',imgnum) '.png'],'png');
 
 
 end
