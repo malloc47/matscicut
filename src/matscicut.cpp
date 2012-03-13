@@ -14,9 +14,7 @@ int smoothFn(int s1, int s2, int l1, int l2, void *extraData) {/*{{{*/
 	//return int((1.0/double((abs(sites[s1]-sites[s2]) < LTHRESH ? LTHRESH : abs(sites[s1]-sites[s2]))+1)) * N);
 	//return int( 1/(double(sites[s1]+sites[s2])/2) * N );
 	//return int( N - int(double(sites[s1]+sites[s2])/2));
-
 	return int( 1/(max(double(sites[s1]),double(sites[s2]))+1) * N );
-
 	//return int( 1/(min(double(sites[s1]),double(sites[s2]))+1) * N );
 }/*}}}*/
 Mat regionsAdj(Mat regions, int num_regions) {/*{{{*/
@@ -454,9 +452,9 @@ int regionSize(Mat regions,int region) {/*{{{*/
 vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
 	// Stores x,y at junctions[i][0..1] and the
 	// remaining three regions in junctions[i][2..4]
-	time_t start,end;
-	double dif;
-	time(&start);
+	//time_t start,end;
+	//double dif;
+	//time(&start);
 	vector< vector<int> > junctions;
 
 	for(int y=0;y<regions.size().height-1;y++) for(int x=0;x<regions.size().width-1;x++) {
@@ -479,9 +477,9 @@ vector< vector<int> > junctionRegions(Mat regions) {/*{{{*/
 		}
 	}
 
-	time(&end);
+	//time(&end);
 
-	cout << endl << "# " << difftime(end,start) << endl;
+	//cout << endl << "# " << difftime(end,start) << endl;
 
 	return junctions;
 		
@@ -1224,8 +1222,8 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	vector<int> sizes = regionSizes(seedimg);
 	vector< pair<int,int> > regionpair;
 
-	time_t start,end;
-	time(&start);
+	//time_t start,end;
+	//time(&start);
 
 	//Add all normal pairs of regions
 	for(int l1=0;l1<num_labels;l1++) for(int l2=0;l2<num_labels;l2++) {
@@ -1274,9 +1272,9 @@ Mat processEdges(Mat img, Mat seedimg) {/*{{{*/
 	//cout<<boundaries.size() <<endl;
 	boundaries.clear();
 
-	time(&end);
+	//time(&end);
 
-	cout << endl << "# " << difftime(end,start) << endl;
+	//cout << endl << "# " << difftime(end,start) << endl;
 
 	cout << "@edges \t\\" << flush;
 
@@ -1408,6 +1406,7 @@ int main(int argc, char **argv) {/*{{{*/
 	// Read in cmd line args/*{{{*/
 	int dilate_amount = 20;
 	int framenum = 1;
+	int prevframenum = 0;
 	int cmdargs;
 	static struct option long_options[] = {
 		{"dilate", 1, 0, 'd'},
@@ -1436,9 +1435,13 @@ int main(int argc, char **argv) {/*{{{*/
 	}
 
 	if (optind < argc) {
-		while (optind < argc)
-			framenum = atoi(argv[optind++]);
-	}/*}}}*/
+		prevframenum = atoi(argv[optind++]);
+	}
+	
+	if (optind < argc) {
+		framenum = atoi(argv[optind++]);
+	}
+	/*}}}*/
 
 	// Sanity checks on input/*{{{*/
 	if(framenum < 1) {
@@ -1458,7 +1461,7 @@ int main(int argc, char **argv) {/*{{{*/
 	// Read files/*{{{*/
 	
 	// Read previous label matrix for propagation 
-	string seedfile=labelpath+prefix+zpnum(framenum-1,FNAMELEN)+postfix+"."+labeltype;
+	string seedfile=labelpath+prefix+zpnum(prevframenum,FNAMELEN)+postfix+"."+labeltype;
 	string imgfile=datapath+prefix+zpnum(framenum,FNAMELEN)+postfix+"."+imgtype;
 	//string filemap=outputpath + "maps/image" + zpnum(framenum,4) + ".tif";
 
