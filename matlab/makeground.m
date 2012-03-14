@@ -12,13 +12,6 @@ ground_thin = imdilate(ground_thin,strel('disk',1));
 
 ground_labels = bwlabel(~ground_thin,4);
 
-disp('Condition 1');
-ground_labels = conditionlabels(ground_labels);
-disp('Condition 2');
-ground_labels = conditionlabels(ground_labels);
-disp('Condition 3');
-ground_labels = conditionlabels(ground_labels);
-disp('Condition 4');
 ground_labels = conditionlabels(ground_labels);
 
 min(min(ground_labels))
