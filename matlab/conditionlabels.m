@@ -1,7 +1,6 @@
 function new_labels = conditionlabels(labels)
 
 new_labels = labels;
-size(labels)
 [dm,dm_idx] = bwdist(labels>0);
 
 for i=1:size(labels,1)
