@@ -21,62 +21,61 @@ for i = imgnums
     counter = counter + 1;
 end
 
-meanf = [];
-stdf = [];
-meanp = [];
-stdp = [];
-meanr = [];
-stdr = [];
-
-for imgnum = imgnums
-    disp(imgnum);
-    ground = logical(imread([groundpath prefix sprintf('%04d',imgnum) ...
-                        postfix '.' imgtype]));
-%    ground = logical(seg2bmap(dlmread([groundpath prefix sprintf('%04d',imgnum) ...
-%                      postfix '.' labeltype],' ')));
-    ground = bwmorph(ground,'thin',Inf);
-    ground = imdilate(ground,strel('disk',d));
-
-    vf = [];
-    vp = [];
-    vr = [];
+counter = 1;
+for i = imgnums
+    data_w(counter).name = [int2str(i) ' as GT'];
+    data_w(counter).style = [style(counter) '-'];
+    data_w(counter).path = [volume 'watershed/' int2str(i) '/'];
+    data_w(counter).fmeasure = [];
+    data_w(counter).precision = [];
+    data_w(counter).recall = [];
+    data_w(counter).skip = i;
+    data_w(counter).y = [];
     
-    for i = 1:length(data)
-        if imgnum == data(i).skip
-            continue;
-        end
-        label = conditionlabels(dlmread([data(i).path prefix ...
-                            sprintf('%04d',imgnum) postfix '.' ...
-                            labeltype],' '));
-        edge = imdilate(bwmorph(logical(seg2bmap(label)), ...
-                                'thin',Inf),strel('disk',d));
-        data(i).fmeasure = [data(i).fmeasure fmeasure(ground, edge)];
-        data(i).precision = [data(i).precision precision(ground,edge)];
-        data(i).recall = [data(i).recall recall(ground,edge)];
-        data(i).y = [data(i).y imgnum];
-        vf = [vf fmeasure(ground, edge)];
-        vp = [vp precision(ground,edge)];
-        vr = [vr recall(ground,edge)];
-    end
-    meanf = [meanf mean(vf)];
-    stdf = [stdf std(vf)];
-    meanp = [meanp mean(vp)];
-    stdp = [stdp std(vp)];
-    meanr = [meanr mean(vr)];
-    stdr = [stdr std(vr)];
+    counter = counter + 1;
 end
 
-% save temp.mat
-% load temp.mat
+data = fill_data(data,imgnums,d);
+data_w = fill_data(data_w,imgnums,d);
+
+save temp.mat
+% $$$ load temp.mat
 
 plot_data(data,'fmeasure');
 plot_data(data,'precision');
 plot_data(data,'recall');
 
-plot_meanstd(meanf,stdf,'fmeasure');
-plot_meanstd(meanp,stdp,'precision');
-plot_meanstd(meanr,stdr,'recall');
+plot_meanstd({data,data_w},{'Proposed','Watershed'},'fmeasure');
+plot_meanstd({data,data_w},{'Proposed','Watershed'},'precision');
+plot_meanstd({data,data_w},{'Proposed','Watershed'},'recall');
 
+end
+
+function data_out=fill_data(data,imgnums,d)
+    source
+    data_out = data;
+    for imgnum = imgnums
+        disp(imgnum);
+        ground = logical(imread([groundpath prefix sprintf('%04d',imgnum) ...
+                            postfix '.' imgtype]));
+        ground = bwmorph(ground,'thin',Inf);
+        ground = imdilate(ground,strel('disk',d));
+
+        for i = 1:length(data_out)
+            if imgnum == data_out(i).skip
+                continue;
+            end
+            label = conditionlabels(dlmread([data_out(i).path prefix ...
+                                sprintf('%04d',imgnum) postfix '.' ...
+                                labeltype],' '));
+            edge = imdilate(bwmorph(logical(seg2bmap(label)), ...
+                                    'thin',Inf),strel('disk',d));
+            data_out(i).fmeasure = [data_out(i).fmeasure fmeasure(ground, edge)];
+            data_out(i).precision = [data_out(i).precision precision(ground,edge)];
+            data_out(i).recall = [data_out(i).recall recall(ground,edge)];
+            data_out(i).y = [data_out(i).y imgnum];
+        end
+    end
 end
 
 function plot_data(data,field)
@@ -95,15 +94,32 @@ function plot_data(data,field)
     print('-depsc2', [field '.eps']);
 end
 
-function plot_meanstd(m,s,field)
+function plot_meanstd(datas,labels,field)
     fig = figure('visible','off'); 
     hold all;
-    eb = errorbar(1:length(m),m,s); 
-    set(eb                            , ...
-        'LineWidth'       , 2         , ...
-        'Marker'          , 'o'       , ...
-        'MarkerSize'      , 6         , ...      
-        'MarkerFaceColor' , [.7 .7 .7]);
+    
+    for d = 1:length(datas)
+        m = [];
+        s = [];
+        for i = 1:length(datas{d}(1).fmeasure)
+            tmp_score = [];
+            for j = 1:length(datas{d})
+                tmp_score = [tmp_score datas{d}(j).(field)(i)];
+            end
+            m = [m mean(tmp_score)];
+            s = [s std(tmp_score)];
+        end
+        
+        eb = errorbar(1:length(m),m,s); 
+        set(eb                            , ...
+            'LineWidth'       , 2         , ...
+            'Marker'          , 'o'       , ...
+            'MarkerSize'      , 6         , ...      
+            'MarkerFaceColor' , [.7 .7 .7]);
+    end
+    leg = legend(labels);
+    set(leg,'Location','SouthEast');
+    set(leg,'FontSize',12);
     xlabel('Serial Slice');
     ylabel(field);
     print('-depsc2', [field '-mean.eps']);
