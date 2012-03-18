@@ -128,7 +128,7 @@ function plot_meanstd(datas,labels,field)
     fig = figure('visible','off'); 
     hold all;
     
-    for d = 1:length(datas)
+    for d = find(~cellfun('isempty',datas))
         m = [];
         s = [];
         for i = 1:length(datas{d}(1).fmeasure)
