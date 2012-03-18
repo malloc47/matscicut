@@ -147,7 +147,15 @@ function plot_meanstd(datas,labels,field)
             'MarkerSize'      , 6         , ...      
             'MarkerFaceColor' , [.7 .7 .7]);
     end
-    leg = legend(labels);
+    
+    c=1;
+    new_labels={};
+    for l=find(~cellfun('isempty',datas))
+        new_labels{c} = labels{l};
+        c=c+1;
+    end
+    
+    leg = legend(new_labels);
     set(leg,'Location','SouthEast');
     set(leg,'FontSize',12);
     xlabel('Serial Slice');
