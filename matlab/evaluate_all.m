@@ -1,53 +1,78 @@
-function evaluate_all(imgnums)
+function evaluate_all(imgnums,dists)
     
 source;
-d=5;
+
+if(nargin<2)
+    dists=3;
+end
 
 disp('Creating data');
 
 style = ['o','*','d','s','+','.','x','^','v','>','<','p','h'];
 
-counter = 1;
-for i = imgnums
-    data(counter).name = [int2str(i) ' as GT'];
-    data(counter).style = [style(counter) '-'];
-    data(counter).path = [volume int2str(i) '/'];
-    data(counter).fmeasure = [];
-    data(counter).precision = [];
-    data(counter).recall = [];
-    data(counter).skip = i;
-    data(counter).y = [];
+datas = {};
+datas_w = {};
+
+for d=dists
+    counter = 1;
+    for i = imgnums
+        data(counter).name = [int2str(i) ' as GT'];
+        data(counter).style = [style(counter) '-'];
+        data(counter).path = [volume int2str(i) '/'];
+        data(counter).fmeasure = [];
+        data(counter).precision = [];
+        data(counter).recall = [];
+        data(counter).skip = i;
+        data(counter).y = [];
+        
+        counter = counter + 1;
+    end
+
+    counter = 1;
+    for i = imgnums
+        data_w(counter).name = [int2str(i) ' as GT'];
+        data_w(counter).style = [style(counter) '-'];
+        data_w(counter).path = [volume 'watershed/' int2str(i) '/'];
+        data_w(counter).fmeasure = [];
+        data_w(counter).precision = [];
+        data_w(counter).recall = [];
+        data_w(counter).skip = i;
+        data_w(counter).y = [];
+        
+        counter = counter + 1;
+    end
+
+    data = fill_data(data,imgnums,d);
+    data_w = fill_data(data_w,imgnums,d);
     
-    counter = counter + 1;
+    datas{d} = data;
+    datas_w{d} = data_w;
+
 end
 
-counter = 1;
-for i = imgnums
-    data_w(counter).name = [int2str(i) ' as GT'];
-    data_w(counter).style = [style(counter) '-'];
-    data_w(counter).path = [volume 'watershed/' int2str(i) '/'];
-    data_w(counter).fmeasure = [];
-    data_w(counter).precision = [];
-    data_w(counter).recall = [];
-    data_w(counter).skip = i;
-    data_w(counter).y = [];
-    
-    counter = counter + 1;
+labels = {};
+labels_w = {};
+for d=dists
+    labels{d} = ['P d=' int2str(d)];
 end
 
-data = fill_data(data,imgnums,d);
-data_w = fill_data(data_w,imgnums,d);
+for d=dists
+    labels_w{d} = ['W d=' int2str(d)];
+end
 
 save temp.mat
 % $$$ load temp.mat
 
-plot_data(data,'fmeasure');
-plot_data(data,'precision');
-plot_data(data,'recall');
+plot_data(datas{1},'fmeasure');
+plot_data(datas{1},'precision');
+plot_data(datas{1},'recall');
 
-plot_meanstd({data,data_w},{'Proposed','Watershed'},'fmeasure');
-plot_meanstd({data,data_w},{'Proposed','Watershed'},'precision');
-plot_meanstd({data,data_w},{'Proposed','Watershed'},'recall');
+% $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'fmeasure');
+% $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'precision');
+% $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'recall');
+plot_meanstd([datas datas_w],[labels labels_w],'fmeasure');
+plot_meanstd([datas datas_w],[labels labels_w],'precision');
+plot_meanstd([datas datas_w],[labels labels_w],'recall');
 
 end
 
@@ -59,7 +84,7 @@ function data_out=fill_data(data,imgnums,d)
         ground = logical(imread([groundpath prefix sprintf('%04d',imgnum) ...
                             postfix '.' imgtype]));
         ground = bwmorph(ground,'thin',Inf);
-        ground = imdilate(ground,strel('disk',d));
+% $$$         ground = imdilate(ground,strel('disk',d));
 
         for i = 1:length(data_out)
             if imgnum == data_out(i).skip
@@ -68,11 +93,16 @@ function data_out=fill_data(data,imgnums,d)
             label = conditionlabels(dlmread([data_out(i).path prefix ...
                                 sprintf('%04d',imgnum) postfix '.' ...
                                 labeltype],' '));
-            edge = imdilate(bwmorph(logical(seg2bmap(label)), ...
-                                    'thin',Inf),strel('disk',d));
-            data_out(i).fmeasure = [data_out(i).fmeasure fmeasure(ground, edge)];
-            data_out(i).precision = [data_out(i).precision precision(ground,edge)];
-            data_out(i).recall = [data_out(i).recall recall(ground,edge)];
+% $$$             edge = imdilate(bwmorph(logical(seg2bmap(label)), ...
+% $$$                                     'thin',Inf),strel('disk',d));
+            edge = bwmorph(logical(seg2bmap(label)),'thin',Inf);
+            [fm,p,r] = score(ground,edge,d);
+% $$$             data_out(i).fmeasure = [data_out(i).fmeasure fmeasure(ground, edge)];
+% $$$             data_out(i).precision = [data_out(i).precision precision(ground,edge)];
+% $$$             data_out(i).recall = [data_out(i).recall recall(ground,edge)];
+            data_out(i).fmeasure = [data_out(i).fmeasure fm];
+            data_out(i).precision = [data_out(i).precision p];
+            data_out(i).recall = [data_out(i).recall r];
             data_out(i).y = [data_out(i).y imgnum];
         end
     end
@@ -125,29 +155,14 @@ function plot_meanstd(datas,labels,field)
     print('-depsc2', [field '-mean.eps']);
 end
 
-function num = fmeasure(gt,ev)
-	num = 2*((precision(gt,ev) * recall(gt,ev)) / (precision(gt,ev) + recall(gt,ev)));
-end
-
-function num = precision(gt,ev)
-	num = tp(gt,ev)/(tp(gt,ev)+fp(gt,ev));
-end
-
-function num = recall(gt,ev)
-	num = tp(gt,ev)/(tp(gt,ev)+fn(gt,ev));
-end
-
-function num = tp(gt,ev)
-	num = sum(sum( gt & ev ));
-end
-
-function num = fp(gt,ev)
-	num = sum(sum( ~gt & ev ));
-end
-
-function num = fn(gt,ev)
-	d=2;
-	%num = sum(sum( bwmorph(gt,'thin',Inf) & ~(imdilate(ev,strel('disk',5))) ));
-	%num = sum(sum( bwmorph(gt,'thin',Inf) & ~(imdilate(ev,strel('disk',d))) ));
-	num = sum(sum( gt & (~ev) ));
+function [fm,p,r] = score(gt,t,d)
+   dt = bwdist(gt);
+   dt2 = bwdist(t);
+   tp = sum(dt(t)<=d);
+   fp = sum(dt(t)>d);
+   fn = sum(dt2(gt)>d);
+% $$$    fn = length(dt(t));
+   p = tp/(tp+fp);
+   r = tp/(tp+fn);
+   fm = 2*(p*r) / (p+r);
 end
