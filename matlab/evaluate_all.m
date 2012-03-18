@@ -50,6 +50,26 @@ for d=dists
 
 end
 
+data_o(1).name = 'Watershed';
+data_o(1).style = '*-';
+data_o(1).path = w2labelpath;
+data_o(1).fmeasure = [];
+data_o(1).precision = [];
+data_o(1).recall = [];
+data_o(1).skip = 90;
+data_o(1).y = [];
+
+data_o(2).name = 'Normalized Cut';
+data_o(2).style = '*-';
+data_o(2).path = n2labelpath;
+data_o(2).fmeasure = [];
+data_o(2).precision = [];
+data_o(2).recall = [];
+data_o(2).skip = 90;
+data_o(2).y = [];
+
+data_o = fill_data(data_o,imgnums,d);
+
 labels = {};
 labels_w = {};
 for d=dists
@@ -70,9 +90,9 @@ plot_data(datas{min(dists)},'recall');
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'fmeasure');
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'precision');
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'recall');
-plot_meanstd([datas datas_w],[labels labels_w],'fmeasure');
-plot_meanstd([datas datas_w],[labels labels_w],'precision');
-plot_meanstd([datas datas_w],[labels labels_w],'recall');
+plot_meanstd([datas datas_w],[labels labels_w],'fmeasure',imgnums);
+plot_meanstd([datas datas_w],[labels labels_w],'precision',imgnums);
+plot_meanstd([datas datas_w],[labels labels_w],'recall',imgnums);
 
 end
 
@@ -87,7 +107,12 @@ function data_out=fill_data(data,imgnums,d)
 % $$$         ground = imdilate(ground,strel('disk',d));
 
         for i = 1:length(data_out)
-            if imgnum == data_out(i).skip
+            if ismember(imgnum,data_out(i).skip)
+                % pad in zeros
+% $$$                 data_out(i).fmeasure = [data_out(i).fmeasure 0];
+% $$$                 data_out(i).precision = [data_out(i).precision 0];
+% $$$                 data_out(i).recall = [data_out(i).recall 0];
+% $$$                 data_out(i).y = [data_out(i).y imgnum];
                 continue;
             end
             label = conditionlabels(dlmread([data_out(i).path prefix ...
@@ -96,7 +121,7 @@ function data_out=fill_data(data,imgnums,d)
 % $$$             edge = imdilate(bwmorph(logical(seg2bmap(label)), ...
 % $$$                                     'thin',Inf),strel('disk',d));
             edge = bwmorph(logical(seg2bmap(label)),'thin',Inf);
-            [fm,p,r] = score(ground,edge,d);
+            [fm,p,r] = fmeasure(ground,edge,d);
 % $$$             data_out(i).fmeasure = [data_out(i).fmeasure fmeasure(ground, edge)];
 % $$$             data_out(i).precision = [data_out(i).precision precision(ground,edge)];
 % $$$             data_out(i).recall = [data_out(i).recall recall(ground,edge)];
@@ -124,16 +149,16 @@ function plot_data(data,field)
     print('-depsc2', [field '.eps']);
 end
 
-function plot_meanstd(datas,labels,field)
+function plot_meanstd(datas,labels,field,imgnums,opt)
     fig = figure('visible','off'); 
     hold all;
     
     for d = find(~cellfun('isempty',datas))
         m = [];
         s = [];
-        for i = 1:length(datas{d}(1).fmeasure)
+        for i = 1:length(datas{d}(1).fmeasure) % imgnums %  1:length(datas{d}(1).fmeasure)
             tmp_score = [];
-            for j = 1:length(datas{d})
+            for j = 1:length(datas{d}(i).(field)) % 1:length(datas{d}(i).(field)))
                 tmp_score = [tmp_score datas{d}(j).(field)(i)];
             end
             m = [m mean(tmp_score)];
@@ -155,22 +180,19 @@ function plot_meanstd(datas,labels,field)
         c=c+1;
     end
     
+    if(nargin>4)
+        for i = 1:length(opt)
+% $$$             plot(opt(i).y,opt(i).(field),opt(i).style); 
+            plot(1:length(opt(i).(field)),opt(i).(field),opt(i).style); 
+            new_labels{c} = opt(i).name;
+            c=c+1;
+        end
+    end
+    
     leg = legend(new_labels);
     set(leg,'Location','SouthEast');
     set(leg,'FontSize',12);
     xlabel('Serial Slice');
     ylabel(field);
     print('-depsc2', [field '-mean.eps']);
-end
-
-function [fm,p,r] = score(gt,t,d)
-   dt = bwdist(gt);
-   dt2 = bwdist(t);
-   tp = sum(dt(t)<=d);
-   fp = sum(dt(t)>d);
-   fn = sum(dt2(gt)>d);
-% $$$    fn = length(dt(t));
-   p = tp/(tp+fp);
-   r = tp/(tp+fn);
-   fm = 2*(p*r) / (p+r);
 end
