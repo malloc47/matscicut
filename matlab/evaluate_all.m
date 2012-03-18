@@ -63,9 +63,9 @@ end
 save temp.mat
 % $$$ load temp.mat
 
-plot_data(datas{1},'fmeasure');
-plot_data(datas{1},'precision');
-plot_data(datas{1},'recall');
+plot_data(datas{min(dists)},'fmeasure');
+plot_data(datas{min(dists)},'precision');
+plot_data(datas{min(dists)},'recall');
 
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'fmeasure');
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'precision');
