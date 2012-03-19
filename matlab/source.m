@@ -18,6 +18,7 @@ outputpath = [volume 'output/'];
 groundpath = [volume 'img/ground/'];
 groundimgpath = [groundpath 'img/'];
 labeltype = 'label';
+scoretype = 'score';
 inputimgtype = 'png';
 imgtype = 'png';
 % prefix = '4000_image';

@@ -1,12 +1,15 @@
-function evaluate_file(ground_file,file,outfile,d)
-
+function evaluate_file(ground_file,file,outfile,dists)
     if(nargin < 4)
-        d=3;
+        dists=3;
+    end    
+    result = [];
+    ground = read_file(ground_file);
+    img = read_file(file);
+    for d = dists
+        [f,p,r] = fmeasure(ground,img,d);
+        result = [result; f p r];
     end
-    
-    [f,p,r] = fmeasure(read_file(ground_file),read_file(file),d);
-    
-    dlmwrite(outfile,[f,p,r],',');
+    dlmwrite(outfile,result,',');
 end
 
 function img = read_file(input)

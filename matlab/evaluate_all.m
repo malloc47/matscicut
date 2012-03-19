@@ -90,9 +90,10 @@ plot_data(datas{min(dists)},'recall');
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'fmeasure');
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'precision');
 % $$$ plot_meanstd([datas datas_w],{'Proposed','Watershed'},'recall');
-plot_meanstd([datas datas_w],[labels labels_w],'fmeasure',imgnums);
-plot_meanstd([datas datas_w],[labels labels_w],'precision',imgnums);
-plot_meanstd([datas datas_w],[labels labels_w],'recall',imgnums);
+
+% $$$ plot_meanstd([datas datas_w],[labels labels_w],'fmeasure',imgnums);
+% $$$ plot_meanstd([datas datas_w],[labels labels_w],'precision',imgnums);
+% $$$ plot_meanstd([datas datas_w],[labels labels_w],'recall',imgnums);
 
 end
 
@@ -101,33 +102,15 @@ function data_out=fill_data(data,imgnums,d)
     data_out = data;
     for imgnum = imgnums
         disp(imgnum);
-        ground = logical(imread([groundpath prefix sprintf('%04d',imgnum) ...
-                            postfix '.' imgtype]));
-        ground = bwmorph(ground,'thin',Inf);
-% $$$         ground = imdilate(ground,strel('disk',d));
-
         for i = 1:length(data_out)
             if ismember(imgnum,data_out(i).skip)
-                % pad in zeros
-% $$$                 data_out(i).fmeasure = [data_out(i).fmeasure 0];
-% $$$                 data_out(i).precision = [data_out(i).precision 0];
-% $$$                 data_out(i).recall = [data_out(i).recall 0];
-% $$$                 data_out(i).y = [data_out(i).y imgnum];
                 continue;
             end
-            label = conditionlabels(dlmread([data_out(i).path prefix ...
-                                sprintf('%04d',imgnum) postfix '.' ...
-                                labeltype],' '));
-% $$$             edge = imdilate(bwmorph(logical(seg2bmap(label)), ...
-% $$$                                     'thin',Inf),strel('disk',d));
-            edge = bwmorph(logical(seg2bmap(label)),'thin',Inf);
-            [fm,p,r] = fmeasure(ground,edge,d);
-% $$$             data_out(i).fmeasure = [data_out(i).fmeasure fmeasure(ground, edge)];
-% $$$             data_out(i).precision = [data_out(i).precision precision(ground,edge)];
-% $$$             data_out(i).recall = [data_out(i).recall recall(ground,edge)];
-            data_out(i).fmeasure = [data_out(i).fmeasure fm];
-            data_out(i).precision = [data_out(i).precision p];
-            data_out(i).recall = [data_out(i).recall r];
+            fm = dlmread([data_out(i).path prefix sprintf('%04d',imgnum) ...
+                          postfix '.' scoretype],',');
+            data_out(i).fmeasure = [data_out(i).fmeasure fm(1)];
+            data_out(i).precision = [data_out(i).precision fm(2)];
+            data_out(i).recall = [data_out(i).recall fm(3)];
             data_out(i).y = [data_out(i).y imgnum];
         end
     end
