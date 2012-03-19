@@ -108,9 +108,9 @@ function data_out=fill_data(data,imgnums,d)
             end
             fm = dlmread([data_out(i).path prefix sprintf('%04d',imgnum) ...
                           postfix '.' scoretype],',');
-            data_out(i).fmeasure = [data_out(i).fmeasure fm(1)];
-            data_out(i).precision = [data_out(i).precision fm(2)];
-            data_out(i).recall = [data_out(i).recall fm(3)];
+            data_out(i).fmeasure = [data_out(i).fmeasure fm(d,1)];
+            data_out(i).precision = [data_out(i).precision fm(d,2)];
+            data_out(i).recall = [data_out(i).recall fm(d,3)];
             data_out(i).y = [data_out(i).y imgnum];
         end
     end
