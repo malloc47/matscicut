@@ -31,8 +31,10 @@ This project requires
 
 The research nature of this code did not mandate a large amount of
 flexibility. You will have to manually configure
+
 * the makefile, to point to gco and cvblobslib, both compiled into
   statically-linked libraries
+  
 * various configuration options in `include/matscicut.h`, which
   control various parameters and data locations
 
