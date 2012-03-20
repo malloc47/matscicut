@@ -37,13 +37,16 @@ data_o(3).y = [];
 data_o = fill_data(data_o,imgnums,d);
 
 plot_meanstd({frame,frame_w},{'Proposed','Extended Watershed',['Baseline ' ...
-                    '' 'Watershed'],'Extended NC','NC'},'fmeasure',data_o);
+                    '' '' ']Watershed'],'Extended NC','NC'}, ...
+             'fmeasure',imgnums,data_o);
 
 plot_meanstd({frame,frame_w},{'Proposed','Extended Watershed',['Baseline ' ...
-                    '' 'Watershed'],'Extended NC','NC'},'precision',data_o);
+                    '' '' ']Watershed'],'Extended NC','NC'}, ...
+             'precision',imgnums,data_o);
 
 plot_meanstd({frame,frame_w},{'Proposed','Extended Watershed',['Baseline ' ...
-                    '' 'Watershed'],'Extended NC','NC'},'recall',data_o);
+                    '' '' ']Watershed'],'Extended NC','NC'}, ...
+             'recall',imgnums,data_o);
 
 end
 
@@ -96,7 +99,7 @@ function data_out=fill_data(data,imgnums,d)
     end
 end
 
-function plot_meanstd(frm,labels,field,opt)
+function plot_meanstd(frm,labels,field,imgnums,opt)
     fig = figure('visible','off'); 
     hold all;
     for fr = 1:length(frm)
@@ -112,7 +115,7 @@ function plot_meanstd(frm,labels,field,opt)
             l{f} = int2str(frames(f).number);
         end
         
-        eb = errorbar(1:length(m),m,s); 
+        eb = errorbar(imgnums,m,s); 
         set(eb                            , ...
             'LineWidth'       , 2         , ...
             'Marker'          , 'o'       , ...
@@ -120,11 +123,9 @@ function plot_meanstd(frm,labels,field,opt)
             'MarkerFaceColor' , [.7 .7 .7]);
     end
     
-    if(nargin>3)
-% $$$         c=length(labels
+    if(nargin>4)
         for i = 1:length(opt)
-            pl = plot(1:length(opt(i).(field)),opt(i).(field), ...
-                      opt(i).style);
+            pl = plot(opt(i).y,opt(i).(field), opt(i).style);
             
             set(pl, ...
                 'LineWidth'       , 2         , ...

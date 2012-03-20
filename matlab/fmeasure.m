@@ -9,3 +9,7 @@ function [fm,p,r] = fmeasure(gt,t,d)
    r = tp/(tp+fn);
    fm = 2*(p*r) / (p+r);
 end
+
+function n = normimg(im)
+    n = uint8(im/max(max(im))*255);
+end
