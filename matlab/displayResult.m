@@ -1,6 +1,10 @@
-function displayResult(imgnums)
+function displayResult(imgnums,path)
 
 source
+
+if(nargin < 2)
+	path = rawpath;
+end
 
 for imgnum = imgnums
 
@@ -14,7 +18,7 @@ img = imread([rawpath prefix sprintf('%04d',imgnum) postfix '.' inputimgtype]);
 % groundbmp = seg2bmap(ground);
 
 %labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-labels = dlmread([labelpath 'image' sprintf('%04d',imgnum) '.' labeltype],' ');
+labels = dlmread([path 'image' sprintf('%04d',imgnum) '.' labeltype],' ');
 
 disp([int2str(imgnum) ':' int2str(length(unique(labels)))]);
 
