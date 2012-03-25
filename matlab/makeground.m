@@ -1,23 +1,42 @@
-function makeground(num)
+function makeground(num,supressback)
 
-ground = imread(['seq1/img/ground/stfl' int2str(num) 'alss1th.tif']);
+source
 
-%ground = imresize(ground,[525 750]);
+if(nargin<2)
+	supressback = true;
+end
 
-ground_thin = bwmorph(ground,'thin',Inf);
+ground = logical(rgb2gray(imread([groundpath prefix sprintf('%04d',num) postfix '.' imgtype])));
 
-ground_thin = imdilate(ground_thin,strel('disk',1));
+if(supressback)
+	ground_thin = bwmorph(ground,'thin',Inf);
+	ground_thin = imdilate(ground_thin,strel('disk',1));
+	ground_labels = bwlabel(~ground_thin,4);
+else
+	ground_labels = bwlabel(ground,4);
+end
 
-%figure; imshow(ground_thin);
+%ground_labels = conditionlabels(ground_labels);
 
-ground_labels = bwlabel(~ground_thin,4);
+sizes = [];
 
-ground_labels = conditionlabels(ground_labels);
+for i = 0:max(max(ground_labels))
+	fprintf('%g ',sum(sum(ground_labels == i)))
+	sizes = [sizes sum(sum(ground_labels == i))];
+end
+
+min(sizes)
+max(sizes)
 
 min(min(ground_labels))
+max(max(ground_labels))
 
 %figure; imshow(label2rgb(ground_labels,'jet','w','shuffle'));
 
-dlmwrite(['seq1/ground/image00' int2str(num) '.labels'],ground_labels-1,'delimiter',' ');
+if(supressback)
+	dlmwrite([volume 'ground/' prefix sprintf('%04d',num) postfix '.' labeltype],ground_labels-1,'delimiter',' ');
+else
+	dlmwrite([volume 'ground/' prefix sprintf('%04d',num) postfix '.' labeltype],ground_labels,'delimiter',' ');
+end
 
 end
