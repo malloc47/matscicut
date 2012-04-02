@@ -8,6 +8,16 @@ function [fm,p,r] = fmeasure(gt,t,d)
    p = tp/(tp+fp);
    r = tp/(tp+fn);
    fm = 2*(p*r) / (p+r);
+   % Zero out if scores come back as NaN
+   if isnan(fm)
+       fm = 0;
+   end
+   if isnan(p)
+       p = 0;
+   end
+   if isnan(r)
+       r = 0;
+   end
 end
 
 function n = normimg(im)
