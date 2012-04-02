@@ -1,24 +1,16 @@
 function mean_figure_seq9(imgnums,d)
 source;
 
-frame_w = placeholders([volume 'watershed/'],imgnums);
+frame_w = placeholders(['seq9/' 'watershed/'],imgnums);
 
 frame_w = fill_frame(frame_w,imgnums,d);
 
-data_o(1).name = 'Proposed Method';
-data_o(1).style = 'o-';
-data_o(1).path = labelpath;
-data_o(1).fmeasure = [];
-data_o(1).precision = [];
-data_o(1).recall = [];
-data_o(1).skip = 44;
-data_o(1).y = [];
-
+data_o = single_placeholders('seq9/labels/',44);
 data_o = fill_data(data_o,imgnums,d);
 
-plot_meanstd({frame_w},{'Extended Watershed','Proposed'},'fmeasure',imgnums,data_o);
-plot_meanstd({frame_w},{'Extended Watershed','Proposed'},'precision',imgnums,data_o);
-plot_meanstd({frame_w},{'Extended Watershed','Proposed'},'recall',imgnums,data_o);
+plot_meanstd({frame_w},{'Extended Watershed','Proposed'},'fmeasure',imgnums,'seq9-f.eps',data_o);
+plot_meanstd({frame_w},{'Extended Watershed','Proposed'},'precision',imgnums,'seq9-p.eps',data_o);
+plot_meanstd({frame_w},{'Extended Watershed','Proposed'},'recall',imgnums,'seq9-r.eps',data_o);
 
 end
 
@@ -35,6 +27,17 @@ function frame = placeholders(path,imgnums)
         frame(c).skip = c;
         c = c + 1;
     end    
+end
+
+function data_o = single_placeholders(path,skip)
+% $$$     style = ['o','*','d','s','+','.','x','^','v','>','<','p','h'];
+    data_o(1).style = 'o-';
+    data_o(1).path = path;
+    data_o(1).fmeasure = [];
+    data_o(1).precision = [];
+    data_o(1).recall = [];
+    data_o(1).skip = 44;
+    data_o(1).y = [];
 end
 
 function frame_out=fill_frame(frame,imgnums,d)
@@ -71,7 +74,7 @@ function data_out=fill_data(data,imgnums,d)
     end
 end
 
-function plot_meanstd(frm,labels,field,imgnums,opt)
+function plot_meanstd(frm,labels,field,imgnums,output,opt)
     fig = figure('visible','off'); 
     hold all;
     for fr = 1:length(frm)
@@ -114,5 +117,5 @@ function plot_meanstd(frm,labels,field,imgnums,opt)
     set(leg,'FontSize',12);
     xlabel('Serial Slice');
     ylabel(field);
-    print('-depsc2', [field '-mean.eps']);
+    print('-depsc2', output);
 end
