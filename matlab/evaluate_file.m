@@ -13,5 +13,6 @@ function evaluate_file(ground_file,file,outfile,dists)
 end
 
 function img = read_file(input)
-    img = bwmorph(logical(seg2bmap(conditionlabels(dlmread(input,' ')))),'thin',Inf);
+% $$$     img = bwmorph(logical(seg2bmap(conditionlabels(dlmread(input,' ')))),'thin',Inf);
+    img = bwmorph(logical(seg2bmap(dlmread(input,' '))),'thin',Inf);
 end
