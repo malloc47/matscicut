@@ -24,8 +24,7 @@ This project requires
 
 * [cvblobslib](http://opencv.willowgarage.com/wiki/cvBlobsLib) 
 
-  Developed with v6 in mind, which can be patched to work with OpenCV
-  > 2.1.
+  Developed with v6 in mind, which can be patched to work with OpenCV > 2.1.
 
 ## Usage
 
