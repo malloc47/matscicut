@@ -1,4 +1,8 @@
 function new_labels = conditionlabels(labels)
+% eliminate the "background" labels entirely
+% presently only usefull for materials that
+% are made up of entirely adjacent structures
+% (Ti-26)
 
 new_labels = labels;
 [dm,dm_idx] = bwdist(labels>0);

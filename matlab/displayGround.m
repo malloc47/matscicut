@@ -6,10 +6,6 @@ for imgnum = imgnums
 
 series = 1;
 
-%datapath = 'data/old/scaled/';
-%datapath2 = 'data/old/scaled/ground/';
-%outputpath = 'outputg/';
-
 img = imread([rawpath prefix sprintf('%04d',imgnum) postfix '.' inputimgtype]);
 
 gt = imread([groundpath prefix sprintf('%04d',imgnum) postfix '.' inputimgtype]);
@@ -20,7 +16,7 @@ gt = imread([groundpath prefix sprintf('%04d',imgnum) postfix '.' inputimgtype])
 groundbmp = bwmorph(gt,'thin',Inf);
 groundbmp = imdilate(groundbmp,strel('disk',2));
 
-output(:,:,1) = img; %label2rgb(labels,'jet','w','shuffle');
+output(:,:,1) = img;
 output(:,:,2) = img;
 output(:,:,3) = img;
 
