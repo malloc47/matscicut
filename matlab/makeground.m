@@ -3,10 +3,11 @@ function makeground(num,supressback)
 source
 
 if(nargin<2)
-	supressback = true;
+	supressback = false;
 end
 
-ground = logical(rgb2gray(imread([groundpath prefix sprintf('%04d',num) postfix '.' imgtype])));
+%ground = logical(rgb2gray(imread([groundpath prefix sprintf('%04d',num) postfix '.' imgtype])));
+ground = logical(imread([groundpath prefix sprintf('%04d',num) postfix '.' imgtype]));
 
 if(supressback)
 	ground_thin = bwmorph(ground,'thin',Inf);
