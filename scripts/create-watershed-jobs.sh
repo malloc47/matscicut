@@ -1,7 +1,7 @@
 #!/bin/bash
 
 j=0
-seq=seq9
+seq=$3
 seqpath=/home/malloc47/src/projects/matsci/matscicut/$seq/watershed
 labelpath=/home/malloc47/src/projects/matsci/matscicut/$seq/watershed/labels
 groundpath=/home/malloc47/src/projects/matsci/matscicut/$seq/ground
