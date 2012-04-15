@@ -1,20 +1,24 @@
-function watershed_eval3_intensity(src,target,supress)
+function watershed_eval3_intensity(src,target,d,supress)
 
 	source
 
 	if(nargin < 3)
+		d = 10;
+    end
+
+	if(nargin < 4)
 		supress = 3;
     end
 
 	%ground = logical(imread([w1labelpath prefix sprintf('%04d',src) postfix '.' imgtype]));
 	ground_labels = dlmread([w1labelpath prefix sprintf('%04d',src) postfix '.' labeltype]);
 	groundbmp = seg2bmap(ground_labels);
-    ground_fg = imerode(~bwmorph(groundbmp,'thin',Inf),strel('disk',10));
+    ground_fg = imerode(~bwmorph(groundbmp,'thin',Inf),strel('disk',d));
 	groundbmp = imdilate(groundbmp,strel('disk',2));
 
 	img = imread([rawpath prefix sprintf('%04d',target) postfix '.' inputimgtype]);
 	img2 = imhmin(compute_grad_mag(img),supress);
-        img3 = imimposemin(img2, ground_fg);
+    img3 = imimposemin(img2, ground_fg);
 	labels = watershed(img3);
 	dlmwrite([w1labelpath prefix sprintf('%04d',target) '.' labeltype],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
