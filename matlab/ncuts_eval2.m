@@ -4,7 +4,7 @@ function ncuts_eval2(imgnums)
 	init
 % $$$         source
 
-        seqpath = 'seq9';
+        seqpath = 'seq12';
         
 for imgnum = imgnums
 
@@ -16,7 +16,8 @@ for imgnum = imgnums
 
 
 % 	ground = logical(imread(['~/src/projects/matsci/matscicut/data/old/scaled/ground/' 'stfl' sprintf('%02d',imgnum) 'alss1th.tif']));
-	ground = logical(rgb2gray(imread(['~/src/projects/matsci/matscicut/' seqpath '/img/ground/' 'image' sprintf('%04d',imgnum) '.png'])));
+	disp(['~/src/projects/matsci/matscicut/' seqpath '/ground/' 'image' sprintf('%04d',imgnum) '.png']);
+	ground = logical(imread(['~/src/projects/matsci/matscicut/' seqpath '/ground/' 'image' sprintf('%04d',imgnum) '.png']));
 	ground_label = bwlabel(ground,4);
 	ground_num = max(max(ground_label))
 
@@ -26,7 +27,7 @@ img = imread([datapath 'image' sprintf('%04d',imgnum) '.png']);
 	[labels,X,lambda,Xr,W,C,timing] = ncut_multiscale(img,ground_num);
 	%labels = watershed(img2);
 	%labels = dlmread([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],' ');
-	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.labels'],labels,' ');
+	dlmwrite([outputpath 'labels/image' sprintf('%04d',imgnum) '.label'],labels,' ');
 	Lrgb = label2rgb(labels,'jet','w','shuffle');
 	imwrite(Lrgb,[outputpath 'region/image' sprintf('%04d',imgnum) '.png'],'png');
 	
