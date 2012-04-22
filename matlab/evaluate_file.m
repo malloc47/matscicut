@@ -5,9 +5,15 @@ function evaluate_file(ground_file,file,outfile,dists)
     result = [];
     ground = read_file(ground_file);
     img = read_file(file);
+% $$$     unique(dlmread(ground_file,' '))
+% $$$     length(unique(dlmread(ground_file,' ')))
+% $$$     unique(dlmread(file,' '))
+% $$$     length(unique(dlmread(file,' ')))
+    size_diff = length(unique(dlmread(ground_file,' '))) - ...
+        length(unique(dlmread(file,' ')));
     for d = dists
         [f,p,r] = fmeasure(ground,img,d);
-        result = [result; f p r];
+        result = [result; f p r size_diff];
     end
     dlmwrite(outfile,result,',');
 end
