@@ -13,6 +13,7 @@ t_color  = [1 1 0];
 %% Seq1: Ti-26
 
 imgnums = 90:100;
+subtr = 89;
 d=3;
 frame = placeholders('seq1/global-20/',imgnums);
 frame_w = placeholders('seq1/watershed/',imgnums);
@@ -24,11 +25,13 @@ data_o = single_placeholders(90,w2labelpath,n2labelpath);
 data_o = fill_data(data_o,imgnums,d);
 data_o(1).color = w2_color;
 data_o(2).color = n_color;
-titles = {'Proposed','Propagated Watershed','Baseline Watershed','Intensity-based NC'};
-fstart(); plot_meanstd({frame,frame_w},'fmeasure',imgnums,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
-fstart(); plot_meanstd({frame,frame_w},'precision', imgnums,data_o); fend(titles,'fig/seq1-p.eps','precision');
-fstart(); plot_meanstd({frame,frame_w},'recall',imgnums,data_o); fend(titles,'fig/seq1-r.eps','recall');
-fstart(); plot_meanstd({frame,frame_w},'numdiff',imgnums,data_o); fend(titles,'fig/seq1-n.eps','numdiff');
+data_o(1).y = data_o(1).y - subtr ;
+data_o(2).y = data_o(2).y - subtr;
+titles = {'Proposed','Propagated Watershed','Baseline Watershed','Edge-based NC'};
+fstart(); plot_meanstd({frame,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
+fstart(); plot_meanstd({frame,frame_w},'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
+fstart(); plot_meanstd({frame,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq1-r.eps','recall');
+fstart(); plot_meanstd({frame,frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq1-n.eps','numdiff');
 data_s = single_placeholders([90,95,100,90,95,100] , ...
                              ['seq1/global-20/90/'] , ...
                              ['seq1/global-20/95/'] , ...
@@ -46,6 +49,13 @@ data_s = set_field(data_s,'color', ...
                     w2_color; ...
                     w3_color; ...
                     n_color]);
+data_s(1).y = data_s(1).y-subtr;
+data_s(2).y = data_s(2).y-subtr;
+data_s(3).y = data_s(3).y-subtr;
+data_s(4).y = data_s(4).y-subtr;
+data_s(5).y = data_s(5).y-subtr;
+data_s(6).y = data_s(6).y-subtr;
+data_s(7).y = data_s(7).y-subtr;
 fstart(); 
 plot_single_curve(data_s,'fmeasure'); 
 fend({'90 Proposed'  , ...
@@ -54,12 +64,13 @@ fend({'90 Proposed'  , ...
       '90 Watershed' , ...
       '95 Watershed' , ...
       '100 Watershed', ...
-      'Intensity-based NC'}, ...
+      'Edge-based NC'}, ...
      'fig/seq1-s.eps','fmeasure');
 
 %% Seq9: Cotylendon
 
 imgnums = 23:60;
+subtr = 22;
 d=3;
 frame_w = placeholders(['seq9/' 'watershed/'],imgnums);
 frame_w = fill_frame(frame_w,imgnums,d);
@@ -69,15 +80,16 @@ frame_w(1).color = w_color;
 data_o = single_placeholders(-1,'seq9/nc/');
 data_o = fill_data(data_o,imgnums,d);
 data_o(1).color = n_color;
+data_o(1).y = data_o(1).y - subtr;
 frame = placeholders('seq9/',imgnums);
 frame = fill_frame(frame,imgnums,d,[38 44]);
 frame(1).color = p_color;
 % $$$ titles = {'Propagated Watershed','Proposed','NC'};
-titles = {'Proposed','Propagated Watershed','Gradient-based NC'};
-fstart(); plot_meanstd({frame frame_w},'fmeasure',imgnums,data_o); fend(titles,'fig/seq9-f.eps','fmeasure');
-fstart(); plot_meanstd({frame frame_w},'precision',imgnums,data_o); fend(titles,'fig/seq9-p.eps','precision');
-fstart(); plot_meanstd({frame frame_w},'recall',imgnums,data_o); fend(titles,'fig/seq9-r.eps','recall');
-fstart(); plot_meanstd({frame frame_w},'numdiff',imgnums,data_o); fend(titles,'fig/seq9-n.eps','numdiff');
+titles = {'Proposed','Propagated Watershed','Intensity-based NC'};
+fstart(); plot_meanstd({frame frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq9-f.eps','fmeasure');
+fstart(); plot_meanstd({frame frame_w},'precision',imgnums-subtr,data_o); fend(titles,'fig/seq9-p.eps','precision');
+fstart(); plot_meanstd({frame frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq9-r.eps','recall');
+fstart(); plot_meanstd({frame frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq9-n.eps','numdiff');
 data_s = single_placeholders([38,44,50,38,44,50], ...
                              ['seq9/38/'], ...
                              ['seq9/44/'], ...
@@ -95,6 +107,13 @@ data_s = set_field(data_s,'color', ...
                     w2_color; ...
                     w3_color; ...
                     n_color]);
+data_s(1).y = data_s(1).y-subtr;
+data_s(2).y = data_s(2).y-subtr;
+data_s(3).y = data_s(3).y-subtr;
+data_s(4).y = data_s(4).y-subtr;
+data_s(5).y = data_s(5).y-subtr;
+data_s(6).y = data_s(6).y-subtr;
+data_s(7).y = data_s(7).y-subtr;
 fstart(); 
 plot_single_curve(data_s,'fmeasure'); 
 fend({'38 Proposed' , ...
@@ -103,13 +122,14 @@ fend({'38 Proposed' , ...
       '38 Watershed', ...
       '44 Watershed', ...
       '50 Watershed', ...
-      'Gradient-based NC'}, ...
+      'Intensity-based NC'}, ...
      'fig/seq9-s.eps', ...
      'fmeasure');
 
 %% Seq3: Steel Martensite
 
 imgnums = 40:50;
+subtr = 39;
 d=7;
 frame_w = placeholders(['seq3/' 'watershed/'],imgnums);
 frame_w = fill_frame(frame_w,imgnums,d);
@@ -121,10 +141,10 @@ frame_o = placeholders(['seq3/' 'global/'],imgnums);
 frame_o = fill_frame(frame_o,imgnums,d);
 frame_o(1).color = p2_color;
 titles = {'Propagated Watershed', 'Proposed','Proposed w/o Shape'};
-fstart(); plot_meanstd({frame_w,frame,frame_o},'fmeasure',imgnums); fend(titles,'fig/seq3-f.eps','fmeasure');
-fstart(); plot_meanstd({frame_w,frame,frame_o},'precision',imgnums); fend(titles,'fig/seq3-p.eps','precision');
-fstart(); plot_meanstd({frame_w,frame,frame_o},'recall',imgnums); fend(titles,'fig/seq3-r.eps','recall');
-fstart(); plot_meanstd({frame_w,frame,frame_o},'numdiff',imgnums); fend(titles,'fig/seq3-n.eps','numdiff');
+fstart(); plot_meanstd({frame_w,frame,frame_o},'fmeasure',imgnums-subtr); fend(titles,'fig/seq3-f.eps','fmeasure');
+fstart(); plot_meanstd({frame_w,frame,frame_o},'precision',imgnums-subtr); fend(titles,'fig/seq3-p.eps','precision');
+fstart(); plot_meanstd({frame_w,frame,frame_o},'recall',imgnums-subtr); fend(titles,'fig/seq3-r.eps','recall');
+fstart(); plot_meanstd({frame_w,frame,frame_o},'numdiff',imgnums-subtr); fend(titles,'fig/seq3-n.eps','numdiff');
 
 data_s = single_placeholders([40,45,50,40,45,50], ...
                              ['seq3/skel/40/']     , ...
@@ -141,6 +161,12 @@ data_s = set_field(data_s,'color', ...
                     w2_color; ...
                     w3_color]);
 data_s = fill_data(data_s,imgnums,d);
+data_s(1).y = data_s(1).y-subtr;
+data_s(2).y = data_s(2).y-subtr;
+data_s(3).y = data_s(3).y-subtr;
+data_s(4).y = data_s(4).y-subtr;
+data_s(5).y = data_s(5).y-subtr;
+data_s(6).y = data_s(6).y-subtr;
 fstart(); 
 plot_single_curve(data_s,'fmeasure'); 
 fend({'40 Proposed' , ...
@@ -171,6 +197,7 @@ fend({'40 Proposed' , ...
 
 imgnums = 769:780;
 evalnums = imgnums;
+subtr = 768;
 d=4;
 frame_w = placeholders(['seq12/' 'watershed-15/'],imgnums);
 frame_w = fill_frame(frame_w,imgnums,d,evalnums);
@@ -187,15 +214,17 @@ data_o = single_placeholders(0,'seq12/threshold/','seq12/nc/labels/');
 data_o = fill_data(data_o,imgnums,d);
 data_o(1).color = t_color;
 data_o(2).color = n_color;
+data_o(1).y = data_o(1).y - subtr;
+data_o(2).y = data_o(2).y - subtr;
 titles = {'Proposed'               , ...
           'Proposed w/o Appearance', ...
           'Propagated Watershed'   , ...
           'Threshold'              , ...
-          'Intensity-based NC'};
-fstart(); plot_meanstd({frame,frame_o,frame_w},'fmeasure',imgnums,data_o); fend(titles,'fig/seq12-f.eps','fmeasure');
-fstart(); plot_meanstd({frame,frame_o,frame_w},'precision',imgnums,data_o); fend(titles,'fig/seq12-p.eps','precision');
-fstart(); plot_meanstd({frame,frame_o,frame_w},'recall',imgnums,data_o); fend(titles,'fig/seq12-r.eps','recall');
-fstart(); plot_meanstd({frame,frame_o,frame_w},'numdiff',imgnums,data_o); fend(titles,'fig/seq12-n.eps','numdiff');
+          'Edge-based NC'};
+fstart(); plot_meanstd({frame,frame_o,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq12-f.eps','fmeasure');
+fstart(); plot_meanstd({frame,frame_o,frame_w},'precision',imgnums-subtr,data_o); fend(titles,'fig/seq12-p.eps','precision');
+fstart(); plot_meanstd({frame,frame_o,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq12-r.eps','recall');
+fstart(); plot_meanstd({frame,frame_o,frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq12-n.eps','numdiff');
 data_s = single_placeholders(     ...
     [769,775,780,769,775,780]   , ...
     ['seq12/gauss-50-15-2/769/'], ...
@@ -216,6 +245,14 @@ data_s = set_field(data_s,'color', ...
                     w3_color; ...
                     t_color ; ...
                     n_color]);
+data_s(1).y = data_s(1).y-subtr;
+data_s(2).y = data_s(2).y-subtr;
+data_s(3).y = data_s(3).y-subtr;
+data_s(4).y = data_s(4).y-subtr;
+data_s(5).y = data_s(5).y-subtr;
+data_s(6).y = data_s(6).y-subtr;
+data_s(7).y = data_s(7).y-subtr;
+data_s(8).y = data_s(8).y-subtr;
 fstart(); 
 plot_single_curve(data_s,'fmeasure'); 
 fend({'769 Proposed' , ...
@@ -225,7 +262,7 @@ fend({'769 Proposed' , ...
       '775 Watershed', ...
       '780 Watershed', ...
       'Threshold'    , ...
-      'Intensity-based NC'}, ...
+      'Edge-based NC'}, ...
      'fig/seq12-s.eps', ...
      'fmeasure');
 
@@ -385,8 +422,9 @@ end
 function fend(labels,output,field)
     leg = legend(labels);
     set(leg,'Location','SouthEast');
-    set(leg,'FontSize',12);
+    set(leg,'FontSize',20);
     xlabel('Serial Slice');
     ylabel(field);
+	set(findobj('type','axes'),'fontsize',20) 
     print('-depsc2', output);
 end
