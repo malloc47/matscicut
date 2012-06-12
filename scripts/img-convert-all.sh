@@ -1,7 +1,7 @@
 #!/bin/bash
 echo -n "" > jobs
 path=/home/malloc47/src/projects/matsci/matsciskel
-for f in $(find $1 -maxdepth 3 -name \*.label | grep -v ^./ground) ; do
+for f in $(find $1 -name \*.label) ; do
 	if [[ ! -f ${f%.*}.png  ]] && [[ -f ./img/$(basename ${f%.*}.png) ]] || [[ -f ./img/$(basename ${f%.*}.tif) ]] ; then
 	[[ -f ./img/$(basename ${f%.*}.png) ]] && type=png
 	[[ -f ./img/$(basename ${f%.*}.tif) ]] && type=tif
