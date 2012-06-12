@@ -16,9 +16,12 @@ imgnums = 90:100;
 subtr = 89;
 d=3;
 frame = placeholders('seq1/global-20/',imgnums);
+frame_c = placeholders('seq1/global-no-local-20/',imgnums);
 frame_w = placeholders('seq1/watershed/',imgnums);
 frame = fill_frame(frame,imgnums,d);
 frame(1).color = p_color;
+frame_c = fill_frame(frame_c,imgnums,d);
+frame_c(1).color = p2_color;
 frame_w = fill_frame(frame_w,imgnums,d);
 frame_w(1).color = w_color;
 data_o = single_placeholders(90,w2labelpath,n2labelpath);
@@ -27,11 +30,11 @@ data_o(1).color = w2_color;
 data_o(2).color = n_color;
 data_o(1).y = data_o(1).y - subtr ;
 data_o(2).y = data_o(2).y - subtr;
-titles = {'Proposed','Propagated Watershed','Baseline Watershed','Edge-based NC'};
-fstart(); plot_meanstd({frame,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
-fstart(); plot_meanstd({frame,frame_w},'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
-fstart(); plot_meanstd({frame,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq1-r.eps','recall');
-fstart(); plot_meanstd({frame,frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq1-n.eps','numdiff');
+titles = {'Proposed Global+Local','Proposed Global','Propagated Watershed','Baseline Watershed','Edge-based NC'};
+fstart(); plot_meanstd({frame,frame_c,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
+fstart(); plot_meanstd({frame,frame_c,frame_w},'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
+fstart(); plot_meanstd({frame,frame_c,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq1-r.eps','recall');
+fstart(); plot_meanstd({frame,frame_c,frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq1-n.eps','numdiff');
 data_s = single_placeholders([90,95,100,90,95,100] , ...
                              ['seq1/global-20/90/'] , ...
                              ['seq1/global-20/95/'] , ...
