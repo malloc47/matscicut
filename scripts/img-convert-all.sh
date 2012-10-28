@@ -7,6 +7,6 @@ for f in $(find $1 -name \*.label) ; do
 	[[ -f ./img/$(basename ${f%.*}.tif) ]] && type=tif
 	#if [ ! -f ${f%.*}.png -a -f ./img/$(basename ${f%.*}.$type) ]; then
 		#echo "../scripts/label-to-img.sh $f ./img/$(basename ${f%.*}.$type) ${f%.*}.png" >> jobs
-		echo "$path/render_labels.py $f ${f%.*}.png ./img/$(basename ${f%.*}.$type)" >> jobs
+		echo "$path/render_labels.py ./img/$(basename ${f%.*}.$type) $f ${f%.*}.png" >> jobs
     fi
 done
