@@ -9,6 +9,8 @@ w2_color = [0 1 0];
 w3_color = [0.5 1 0.5];
 n_color  = [1 0 1];
 t_color  = [1 1 0];
+cl_color  = [1 1 0];
+cl2_color  = [0.5 0.5 0];
 
 %% Seq1: Ti-26
 
@@ -18,23 +20,34 @@ d=3;
 frame = placeholders('seq1/global-20/',imgnums);
 frame_c = placeholders('seq1/global-no-local-20/',imgnums);
 frame_w = placeholders('seq1/watershed/',imgnums);
+frame_cl = placeholders('seq1/clique-local/',imgnums);
+frame_cl2 = placeholders('seq1/clique-local-2/',imgnums);
 frame = fill_frame(frame,imgnums,d);
 frame(1).color = p_color;
 frame_c = fill_frame(frame_c,imgnums,d);
 frame_c(1).color = p2_color;
 frame_w = fill_frame(frame_w,imgnums,d);
 frame_w(1).color = w_color;
+
+frame_cl = fill_frame(frame_cl,imgnums,d);
+frame_cl(1).color = cl_color;
+frame_cl2 = fill_frame(frame_cl2,imgnums,d);
+frame_cl2(1).color = cl2_color;
+
 data_o = single_placeholders(90,w2labelpath,n2labelpath);
 data_o = fill_data(data_o,imgnums,d);
 data_o(1).color = w2_color;
 data_o(2).color = n_color;
 data_o(1).y = data_o(1).y - subtr ;
 data_o(2).y = data_o(2).y - subtr;
-titles = {'Proposed Global+Local','Proposed Global','Propagated Watershed','Baseline Watershed','Edge-based NC'};
-fstart(); plot_meanstd({frame,frame_c,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
-fstart(); plot_meanstd({frame,frame_c,frame_w},'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
-fstart(); plot_meanstd({frame,frame_c,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq1-r.eps','recall');
-fstart(); plot_meanstd({frame,frame_c,frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq1-n.eps','numdiff');
+titles = {'Local+Local < 3','New Local+Local','Proposed Global+Local','Proposed Global','Propagated Watershed','Baseline Watershed','Edge-based NC'};
+%fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
+
+fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c},'fmeasure',imgnums-subtr); fend(titles,'fig/seq1-f.eps','fmeasure');
+
+fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
+fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq1-r.eps','recall');
+fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq1-n.eps','numdiff');
 data_s = single_placeholders([90,95,100,90,95,100] , ...
                              ['seq1/global-20/90/'] , ...
                              ['seq1/global-20/95/'] , ...
@@ -69,6 +82,8 @@ fend({'90 Proposed'  , ...
       '100 Watershed', ...
       'Edge-based NC'}, ...
      'fig/seq1-s.eps','fmeasure');
+
+return
 
 %% Seq9: Cotylendon
 
