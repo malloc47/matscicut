@@ -8,6 +8,7 @@ source $seq.sh
 
 c=0
 echo "#!/bin/bash" > $seq/$j.sh
+echo "source /home/malloc47/src/programs/django-1.4/bin/activate" > $seq/$j.sh
 for (( s=$1; s<=$2; s++ )) ; do
 	echo "#!/bin/bash" > $seq/$s-b.sh
 	echo "mkdir $seq/$s" >> $seq/$j.sh
@@ -34,5 +35,6 @@ for (( s=$1; s<=$2; s++ )) ; do
 		c=0	
 		j=$((j+1))
 		echo "#!/bin/bash" > $seq/$j.sh
+		echo "source /home/malloc47/src/programs/django-1.4/bin/activate" > $seq/$j.sh
 	fi
 done
