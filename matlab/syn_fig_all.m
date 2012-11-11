@@ -9,8 +9,10 @@ w2_color = [0 1 0];
 w3_color = [0.5 1 0.5];
 n_color  = [1 0 1];
 t_color  = [1 1 0];
-cl_color  = [1 1 0];
-cl2_color  = [0.5 0.5 0];
+%cl_color  = [1 1 0];
+%cl2_color  = [0.5 0.5 0];
+cl_color  = [1 0 0];
+cl2_color  = [0.5 0 0];
 
 %% Synthetic evaluation
 
@@ -22,13 +24,13 @@ frame3 = placeholders('syn/d1s2/global-local-5/',imgnums);
 frame4 = placeholders('syn/d1s2/local-local-5/',imgnums);
 
 frame1 = fill_frame(frame1,imgnums,d,[5,15,25,35,45]);
-frame(1).color = p_color;
+frame1(1).color = p2_color;
 frame2 = fill_frame(frame2,imgnums,d,[5,15,25,35,45]);
-frame2(1).color = p2_color;
+frame2(1).color = cl2_color;
 frame3 = fill_frame(frame3,imgnums,d,[5,15,25,35,45]);
-frame3(1).color = w_color;
+frame3(1).color = p_color;
 frame4 = fill_frame(frame4,imgnums,d,[5,15,25,35,45]);
-frame4(1).color = n_color;
+frame4(1).color = cl_color;
 
 titles = {'Global','Local','Global+Local','Local+Local'};
 fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'fmeasure',imgnums); fend(titles,'fig/d1s2-f.eps','fmeasure');
@@ -45,13 +47,13 @@ frame3 = placeholders('syn/d1s3/global-local-5/',imgnums);
 frame4 = placeholders('syn/d1s3/local-local-5/',imgnums);
 
 frame1 = fill_frame(frame1,imgnums,d,[5,15,25,35,45]);
-frame(1).color = p_color;
+frame1(1).color = p2_color;
 frame2 = fill_frame(frame2,imgnums,d,[5,15,25,35,45]);
-frame2(1).color = p2_color;
+frame2(1).color = cl2_color;
 frame3 = fill_frame(frame3,imgnums,d,[5,15,25,35,45]);
-frame3(1).color = w_color;
+frame3(1).color = p_color;
 frame4 = fill_frame(frame4,imgnums,d,[5,15,25,35,45]);
-frame4(1).color = n_color;
+frame4(1).color = cl_color;
 
 titles = {'Global','Local','Global+Local','Local+Local'};
 fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'fmeasure',imgnums); fend(titles,'fig/d1s3-f.eps','fmeasure');
@@ -67,22 +69,25 @@ frame1 = placeholders('syn/d1s10/global-10/',imgnums);
 frame2 = placeholders('syn/d1s10/local-10/',imgnums);
 frame3 = placeholders('syn/d1s10/global-local-10/',imgnums);
 frame4 = placeholders('syn/d1s10/local-local-10/',imgnums);
+frame5 = placeholders('syn/d1s10/watershed-10/',imgnums);
 
 frame1 = fill_frame(frame1,imgnums,d,[5,15,25,35,45]);
-frame(1).color = p_color;
+frame1(1).color = p2_color;
 frame2 = fill_frame(frame2,imgnums,d,[5,15,25,35,45]);
-frame2(1).color = p2_color;
+frame2(1).color = cl2_color;
 frame3 = fill_frame(frame3,imgnums,d,[5,15,25,35,45]);
-frame3(1).color = w_color;
+frame3(1).color = p_color;
 frame4 = fill_frame(frame4,imgnums,d,[5,15,25,35,45]);
-frame4(1).color = n_color;
+frame4(1).color = cl_color;
+frame5 = fill_frame(frame5,imgnums,d,[5,15,25,35,45]);
+frame5(1).color = w_color;
 
-titles = {'Global','Local','Global+Local','Local+Local'};
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'fmeasure',imgnums); fend(titles,'fig/d1s10-f.eps','fmeasure');
+titles = {'Global','Local','Global+Local','Local+Local','Watershed'};
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'fmeasure',imgnums); fend(titles,'fig/d1s10-f.eps','fmeasure');
 
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'precision', imgnums); fend(titles,'fig/d1s10-p.eps','precision');
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'recall',imgnums); fend(titles,'fig/d1s10-r.eps','recall');
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'numdiff',imgnums); fend(titles,'fig/d1s10-n.eps','numdiff');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'precision', imgnums); fend(titles,'fig/d1s10-p.eps','precision');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'recall',imgnums); fend(titles,'fig/d1s10-r.eps','recall');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'numdiff',imgnums); fend(titles,'fig/d1s10-n.eps','numdiff');
 
 imgnums = 0:49;
 d=2;
@@ -90,22 +95,25 @@ frame1 = placeholders('syn/d1s11/global-10/',imgnums);
 frame2 = placeholders('syn/d1s11/local-10/',imgnums);
 frame3 = placeholders('syn/d1s11/global-local-10/',imgnums);
 frame4 = placeholders('syn/d1s11/local-local-10/',imgnums);
+frame5 = placeholders('syn/d1s11/watershed-10/',imgnums);
 
 frame1 = fill_frame(frame1,imgnums,d,[5,15,25,35,45]);
-frame(1).color = p_color;
+frame1(1).color = p2_color;
 frame2 = fill_frame(frame2,imgnums,d,[5,15,25,35,45]);
-frame2(1).color = p2_color;
+frame2(1).color = cl2_color;
 frame3 = fill_frame(frame3,imgnums,d,[5,15,25,35,45]);
-frame3(1).color = w_color;
+frame3(1).color = p_color;
 frame4 = fill_frame(frame4,imgnums,d,[5,15,25,35,45]);
-frame4(1).color = n_color;
+frame4(1).color = cl_color;
+frame5 = fill_frame(frame5,imgnums,d,[5,15,25,35,45]);
+frame5(1).color = w_color;
 
-titles = {'Global','Local','Global+Local','Local+Local'};
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'fmeasure',imgnums); fend(titles,'fig/d1s11-f.eps','fmeasure');
+titles = {'Global','Local','Global+Local','Local+Local','Watershed'};
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'fmeasure',imgnums); fend(titles,'fig/d1s11-f.eps','fmeasure');
 
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'precision', imgnums); fend(titles,'fig/d1s11-p.eps','precision');
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'recall',imgnums); fend(titles,'fig/d1s11-r.eps','recall');
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'numdiff',imgnums); fend(titles,'fig/d1s11-n.eps','numdiff');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'precision', imgnums); fend(titles,'fig/d1s11-p.eps','precision');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'recall',imgnums); fend(titles,'fig/d1s11-r.eps','recall');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'numdiff',imgnums); fend(titles,'fig/d1s11-n.eps','numdiff');
 
 imgnums = 0:49;
 d=2;
@@ -113,22 +121,25 @@ frame1 = placeholders('syn/d1s12/global-10/',imgnums);
 frame2 = placeholders('syn/d1s12/local-10/',imgnums);
 frame3 = placeholders('syn/d1s12/global-local-10/',imgnums);
 frame4 = placeholders('syn/d1s12/local-local-10/',imgnums);
+frame5 = placeholders('syn/d1s12/watershed-10/',imgnums);
 
 frame1 = fill_frame(frame1,imgnums,d,[5,15,25,35,45]);
-frame(1).color = p_color;
+frame1(1).color = p2_color;
 frame2 = fill_frame(frame2,imgnums,d,[5,15,25,35,45]);
-frame2(1).color = p2_color;
+frame2(1).color = cl2_color;
 frame3 = fill_frame(frame3,imgnums,d,[5,15,25,35,45]);
-frame3(1).color = w_color;
+frame3(1).color = p_color;
 frame4 = fill_frame(frame4,imgnums,d,[5,15,25,35,45]);
-frame4(1).color = n_color;
+frame4(1).color = cl_color;
+frame5 = fill_frame(frame5,imgnums,d,[5,15,25,35,45]);
+frame5(1).color = w_color;
 
-titles = {'Global','Local','Global+Local','Local+Local'};
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'fmeasure',imgnums); fend(titles,'fig/d1s12-f.eps','fmeasure');
+titles = {'Global','Local','Global+Local','Local+Local','Watershed'};
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'fmeasure',imgnums); fend(titles,'fig/d1s12-f.eps','fmeasure');
 
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'precision', imgnums); fend(titles,'fig/d1s12-p.eps','precision');
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'recall',imgnums); fend(titles,'fig/d1s12-r.eps','recall');
-fstart(); plot_meanstd({frame1, frame2, frame3, frame4},'numdiff',imgnums); fend(titles,'fig/d1s12-n.eps','numdiff');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'precision', imgnums); fend(titles,'fig/d1s12-p.eps','precision');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'recall',imgnums); fend(titles,'fig/d1s12-r.eps','recall');
+fstart(); plot_meanstd({frame1, frame2, frame3, frame4, frame5},'numdiff',imgnums); fend(titles,'fig/d1s12-n.eps','numdiff');
 
 imgnums = 15:240
 d=3
@@ -277,21 +288,23 @@ function plot_meanstd(frm,field,imgnums,opt)
                 t(frames(f).skip) = [];
             end
             m = [m mean(t)];
-            s = [s std(t)];
+            s = [s ste(t)];
             l{f} = int2str(frames(f).number);
         end
         
 % $$$         eb = errorbar(1:length(m),m,s); 
         eb = errorbar(imgnums,m,s); 
         set(eb                            , ...
-            'LineWidth'       , 2         , ...
+            'LineWidth'       , 1         , ...
             'Marker'          , 'o'       , ...
-            'MarkerSize'      , 6         , ...      
+            'MarkerSize'      , 3         , ...      
             'MarkerFaceColor' , [.7 .7 .7]);
         if(~isempty(frames(1).color))
             set(eb,'Color',frames(1).color);
         end
     end
+    
+    xlim([0 length(imgnums)])
     
     if(nargin>3)
         plot_single_curve(opt,field);
