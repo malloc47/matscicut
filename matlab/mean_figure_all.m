@@ -35,26 +35,31 @@ frame_cl(1).color = 'r';
 frame_cl2 = fill_frame(frame_cl2,imgnums,d);
 frame_cl2(1).color = cl2_color;
 
-%data_o = single_placeholders(90,w2labelpath,n2labelpath);
-%data_o = fill_data(data_o,imgnums,d);
-%data_o(1).color = w2_color;
-%data_o(2).color = n_color;
-%data_o(1).y = data_o(1).y - subtr ;
-%data_o(2).y = data_o(2).y - subtr;
-data_o = single_placeholders(90,n2labelpath);
+data_o = single_placeholders(90,w2labelpath,n2labelpath);
 data_o = fill_data(data_o,imgnums,d);
-data_o(1).color = n_color;
-data_o(1).y = data_o(1).y - subtr;
+data_o(1).color = w2_color;
+data_o(2).color = n_color;
+data_o(1).y = data_o(1).y - subtr ;
+data_o(2).y = data_o(2).y - subtr;
+%data_o = single_placeholders(90,n2labelpath);
+%data_o = fill_data(data_o,imgnums,d);
+%data_o(1).color = n_color;
+%data_o(1).y = data_o(1).y - subtr;
 %titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Unpropagated Watershed','Normalized Cut'};
 %titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Normalized Cut'};
-titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Normalized Cut'};
+%titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Normalized Cut'};
+titles = {'Proposed','Propagated Watershed','Baseline Watershed','Normalized Cut'};
 %fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
 
-fstart(); plot_meanstd({frame_cl,frame,frame_c,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
+%b = {frame_cl,frame,frame_c,frame_w}
+b = {frame,frame_w};
 
-fstart(); plot_meanstd({frame_cl,frame,frame_c,frame_w},'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
-fstart(); plot_meanstd({frame_cl,frame,frame_c,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq1-r.eps','recall');
-fstart(); plot_meanstd({frame_cl,frame,frame_c,frame_w},'numdiff',imgnums-subtr,data_o); fend_upper(titles,'fig/seq1-n.eps','numdiff');
+fstart(); plot_meanstd(b,'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
+
+fstart(); plot_meanstd(b,'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
+fstart(); plot_meanstd(b,'recall',imgnums-subtr,data_o); fend(titles,'fig/seq1-r.eps','recall');
+fstart(); plot_meanstd(b,'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq1-n.eps','numdiff');
+%fstart(); plot_meanstd(b,'numdiff',imgnums-subtr,data_o); fend_upper(titles,'fig/seq1-n.eps','numdiff');
 %fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
 
 %fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'precision', imgnums-subtr,data_o); fend(titles,'fig/seq1-p.eps','precision');
@@ -97,11 +102,11 @@ fend({'90 Proposed'  , ...
 
 %% Seq9: Cotylendon
 
-imgnums = 23:60;
-subtr = 22;
-d=3;
-frame_w = placeholders(['seq9/' 'watershed/'],imgnums);
-frame_w = fill_frame(frame_w,imgnums,d);
+imgnums = 33:60;
+subtr = 32;
+d=2;
+frame_w = placeholders(['seq9/' 'watershed-homeomorphic/'],imgnums);
+frame_w = fill_frame(frame_w,imgnums,d,[38 44 50]);
 frame_w(1).color = w_color;
 % $$$ data_o = single_placeholders(44,'seq9/labels/','seq9/nc/labels/');
 % $$$ data_o = single_placeholders(44,'seq9/44/');
@@ -109,8 +114,8 @@ data_o = single_placeholders(-1,'seq9/nc/');
 data_o = fill_data(data_o,imgnums,d);
 data_o(1).color = n_color;
 data_o(1).y = data_o(1).y - subtr;
-frame = placeholders('seq9/',imgnums);
-frame = fill_frame(frame,imgnums,d,[38 44]);
+frame = placeholders('seq9/matrix/',imgnums);
+frame = fill_frame(frame,imgnums,d,[38 44 50]);
 frame(1).color = p_color;
 % $$$ titles = {'Propagated Watershed','Proposed','NC'};
 titles = {'Proposed','Propagated Watershed','Intensity-based NC'};
@@ -118,13 +123,14 @@ fstart(); plot_meanstd({frame frame_w},'fmeasure',imgnums-subtr,data_o); fend(ti
 fstart(); plot_meanstd({frame frame_w},'precision',imgnums-subtr,data_o); fend(titles,'fig/seq9-p.eps','precision');
 fstart(); plot_meanstd({frame frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq9-r.eps','recall');
 fstart(); plot_meanstd({frame frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq9-n.eps','numdiff');
+
 data_s = single_placeholders([38,44,50,38,44,50], ...
-                             ['seq9/38/'], ...
-                             ['seq9/44/'], ...
-                             ['seq9/50/'], ...
-                             ['seq9/watershed/38/'], ...
-                             ['seq9/watershed/44/'], ...
-                             ['seq9/watershed/50/'], ...
+                             ['seq9/matrix/38/'], ...
+                             ['seq9/matrix/44/'], ...
+                             ['seq9/matrix/50/'], ...
+                             ['seq9/watershed-homeomorphic/38/'], ...
+                             ['seq9/watershed-homeomorphic/44/'], ...
+                             ['seq9/watershed-homeomorphic/50/'], ...
                              ['seq9/nc/']);
 data_s = fill_data(data_s,imgnums,d);
 data_s = set_field(data_s,'color', ...
@@ -253,6 +259,9 @@ fstart(); plot_meanstd({frame,frame_o,frame_w},'fmeasure',imgnums-subtr,data_o);
 fstart(); plot_meanstd({frame,frame_o,frame_w},'precision',imgnums-subtr,data_o); fend(titles,'fig/seq12-p.eps','precision');
 fstart(); plot_meanstd({frame,frame_o,frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq12-r.eps','recall');
 fstart(); plot_meanstd({frame,frame_o,frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq12-n.eps','numdiff');
+
+fstart(); plot_mean_only({frame,frame_o,frame_w},'fmeasure',imgnums-subtr,data_o); fend_seq12(titles,'fig/seq12-fz.eps','fmeasure');
+
 data_s = single_placeholders(     ...
     [769,775,780,769,775,780]   , ...
     ['seq12/gauss-50-15-2/769/'], ...
@@ -442,6 +451,41 @@ function plot_meanstd(frm,field,imgnums,opt)
     end
 end
 
+function plot_mean_only(frm,field,imgnums,opt)
+    for fr = 1:length(frm)
+        frames = frm{fr};
+        m = [];
+        s = [];
+        l = {};
+        for f = 1:length(frames)
+            t = frames(f).(field);
+            % We're plotting all possible ground truths
+            if length(frames(f).(field)) == length(imgnums)
+                t(frames(f).skip) = [];
+            end
+            m = [m mean(t)];
+            s = [s std(t)];
+            l{f} = int2str(frames(f).number);
+        end
+        
+% $$$         eb = errorbar(1:length(m),m,s); 
+        eb = plot(imgnums,m);
+        %eb = errorbar(imgnums,m,s); 
+        set(eb                            , ...
+            'LineWidth'       , 2         , ...
+            'Marker'          , 'o'       , ...
+            'MarkerSize'      , 6         , ...      
+            'MarkerFaceColor' , [.7 .7 .7]);
+        if(~isempty(frames(1).color))
+            set(eb,'Color',frames(1).color);
+        end
+    end
+    
+    if(nargin>3)
+        plot_single_curve(opt,field);
+    end
+end
+
 function fstart()
     fig = figure('visible','off'); 
     hold all;
@@ -451,8 +495,8 @@ function fend(labels,output,field)
     leg = legend(labels);
     set(leg,'Location','SouthEast');
     set(leg,'FontSize',20);
-    xlabel('Serial Slice');
-    ylabel(field);
+    xlabel('Serial Slice','fontsize',18);
+    ylabel(field,'fontsize',18);
 	set(findobj('type','axes'),'fontsize',18) 
     print('-depsc2', output);
 end
@@ -461,8 +505,19 @@ function fend_upper(labels,output,field)
     leg = legend(labels);
     set(leg,'Location','NorthEast');
     set(leg,'FontSize',20);
-    xlabel('Serial Slice');
-    ylabel(field);
+    xlabel('Serial Slice','fontsize',18);
+    ylabel(field,'fontsize',18);
+	set(findobj('type','axes'),'fontsize',18) 
+    print('-depsc2', output);
+end
+
+function fend_seq12(labels,output,field)
+    %leg = legend(labels);
+    %set(leg,'Location','NorthWest');
+    %set(leg,'FontSize',20);
+	ylim([0.7 0.85]);
+    xlabel('Serial Slice','fontsize',18);
+    ylabel(field,'fontsize',18);
 	set(findobj('type','axes'),'fontsize',18) 
     print('-depsc2', output);
 end
