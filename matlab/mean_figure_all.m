@@ -17,11 +17,12 @@ cl2_color  = [0.5 0.5 0];
 imgnums = 90:100;
 subtr = 89;
 d=3;
-frame = placeholders('seq1/global-20/',imgnums);
+frame = placeholders('seq1/cs-20/',imgnums);
 frame_c = placeholders('seq1/global-no-local-20/',imgnums);
 frame_w = placeholders('seq1/watershed/',imgnums);
 frame_cl = placeholders('seq1/clique-local/',imgnums);
 frame_cl2 = placeholders('seq1/clique-local-2/',imgnums);
+frame_a = placeholders('seq1/auto-20/',imgnums);
 frame = fill_frame(frame,imgnums,d);
 frame(1).color = p_color;
 frame_c = fill_frame(frame_c,imgnums,d);
@@ -34,6 +35,9 @@ frame_cl = fill_frame(frame_cl,imgnums,d);
 frame_cl(1).color = 'r';
 frame_cl2 = fill_frame(frame_cl2,imgnums,d);
 frame_cl2(1).color = cl2_color;
+
+frame_a = fill_frame(frame_a,imgnums,d);
+frame_a(1).color = cl_color;
 
 data_o = single_placeholders(90,w2labelpath,n2labelpath);
 data_o = fill_data(data_o,imgnums,d);
@@ -48,11 +52,11 @@ data_o(2).y = data_o(2).y - subtr;
 %titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Unpropagated Watershed','Normalized Cut'};
 %titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Normalized Cut'};
 %titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Normalized Cut'};
-titles = {'Proposed','Propagated Watershed','Baseline Watershed','Normalized Cut'};
+titles = {'Proposed','Proposed Auto','Proposed w/o Local','Propagated Watershed','Baseline Watershed','Normalized Cut'};
 %fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
 
 %b = {frame_cl,frame,frame_c,frame_w}
-b = {frame,frame_w};
+b = {frame,frame_a,frame_c,frame_w};
 
 fstart(); plot_meanstd(b,'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
 
@@ -117,12 +121,15 @@ data_o(1).y = data_o(1).y - subtr;
 frame = placeholders('seq9/matrix/',imgnums);
 frame = fill_frame(frame,imgnums,d,[38 44 50]);
 frame(1).color = p_color;
+frame_c = placeholders('seq9/global/',imgnums);
+frame_c = fill_frame(frame_c,imgnums,d,[38 44 50]);
+frame_c(1).color = p_color;
 % $$$ titles = {'Propagated Watershed','Proposed','NC'};
 titles = {'Proposed','Propagated Watershed','Intensity-based NC'};
 fstart(); plot_meanstd({frame frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq9-f.eps','fmeasure');
 fstart(); plot_meanstd({frame frame_w},'precision',imgnums-subtr,data_o); fend(titles,'fig/seq9-p.eps','precision');
 fstart(); plot_meanstd({frame frame_w},'recall',imgnums-subtr,data_o); fend(titles,'fig/seq9-r.eps','recall');
-fstart(); plot_meanstd({frame frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq9-n.eps','numdiff');
+fstart(); plot_meanstd({frame_c frame_w},'numdiff',imgnums-subtr,data_o); fend(titles,'fig/seq9-n.eps','numdiff');
 
 data_s = single_placeholders([38,44,50,38,44,50], ...
                              ['seq9/matrix/38/'], ...
@@ -164,8 +171,8 @@ fend({'38 Proposed' , ...
 
 imgnums = 40:50;
 subtr = 39;
-d=7;
-frame_w = placeholders(['seq3/' 'watershed/'],imgnums);
+d=5;
+frame_w = placeholders(['seq3/' 'watershed-fixed/'],imgnums);
 frame_w = fill_frame(frame_w,imgnums,d);
 frame_w(1).color = w_color;
 frame = placeholders(['seq3/' 'skel/'],imgnums);
@@ -237,7 +244,8 @@ frame_w = placeholders(['seq12/' 'watershed-15/'],imgnums);
 frame_w = fill_frame(frame_w,imgnums,d,evalnums);
 frame_w(1).color = w_color;
 %frame = placeholders(['seq12/' 'gauss-50-15-2/'],imgnums);
-frame = placeholders(['seq12/' 'gauss-50-15-2/'],imgnums);
+%frame = placeholders(['seq12/' 'gauss-50-15-2/'],imgnums);
+frame = placeholders(['seq12/' 'log-30/'],imgnums);
 frame = fill_frame(frame,imgnums,d,evalnums);
 frame(1).color = p_color;
 %frame_o = placeholders(['seq12/' 'global-15/'],imgnums);
@@ -515,7 +523,7 @@ function fend_seq12(labels,output,field)
     %leg = legend(labels);
     %set(leg,'Location','NorthWest');
     %set(leg,'FontSize',20);
-	ylim([0.7 0.85]);
+	ylim([0.7 0.95]);
     xlabel('Serial Slice','fontsize',18);
     ylabel(field,'fontsize',18);
 	set(findobj('type','axes'),'fontsize',18) 

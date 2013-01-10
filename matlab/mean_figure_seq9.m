@@ -229,8 +229,8 @@ function fend(labels,output,field)
     leg = legend(labels);
     set(leg,'Location','SouthEast');
     set(leg,'FontSize',20);
-    xlabel('Serial Slice');
-    ylabel(field);
+    xlabel('Serial Slice','fontsize',18);
+    ylabel(field,'fontsize',18);
 	set(findobj('type','axes'),'fontsize',18) 
     print('-depsc2', output);
 end
@@ -239,8 +239,8 @@ function fend_upper(labels,output,field)
     leg = legend(labels);
     set(leg,'Location','NorthEast');
     set(leg,'FontSize',20);
-    xlabel('Serial Slice');
-    ylabel(field);
+    xlabel('Serial Slice','fontsize',18);
+    ylabel(field,'fontsize',18);
 	set(findobj('type','axes'),'fontsize',18) 
     print('-depsc2', output);
 end

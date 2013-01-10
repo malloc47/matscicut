@@ -47,7 +47,7 @@ data_o(1).color = n_color;
 data_o(1).y = data_o(1).y - subtr;
 %titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Unpropagated Watershed','Normalized Cut'};
 %titles = {'Proposed Local+Local','Previous Global+Local','Previous Global','Propagated Watershed','Normalized Cut'};
-titles = {'Proposed+Relabeling','Global+Relabeling','Propagated Watershed','Normalized Cut'};
+titles = {'Local','Global','Propagated Watershed','Normalized Cut'};
 %fstart(); plot_meanstd({frame_cl2, frame_cl,frame,frame_c,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
 
 fstart(); plot_meanstd({frame_cl,frame,frame_w},'fmeasure',imgnums-subtr,data_o); fend(titles,'fig/seq1-f.eps','fmeasure');
